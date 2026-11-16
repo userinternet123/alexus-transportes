@@ -1,0 +1,129 @@
+{
+  "module": "Gestión de permisos",
+  "title": "Asigne los permisos según corresponda, Rol-Usuario",
+  "msg": "Seleccione el usuario y administre los roles asignados",
+  "section": [
+    {
+      "subgrupo": "Asignación de rol a usuario",
+      "description": "Seleccione el usuario y administre los roles asignados",
+      "icon": "usercog",
+      "type": "card",
+      "defaultOpen": true,
+      "className": "border-r text-violet-600 bg-slate-50",
+      "fields": [
+        {
+          "name": "codigoUsuario",
+          "label": "Usuario",
+          "type": "text",
+          "placeholder": "usr000000",
+          "keyDown": "btnSearchUser",
+          "required": true,
+          "visibleWhen": {
+            "value": "codigoUsuario",
+            "showDefault": true
+          },
+          "size": "large"
+        },
+        {
+          "name": "btnSearchUser",
+          "label": "Buscar usuario",
+          "type": "button",
+          "icon": "search",
+          "action": "searchUser"
+        },
+        {
+          "name": "usuario",
+          "type": "infoCard",
+          "size": "full"
+        },
+        {
+          "name": "userrol",
+          "type": "assignment",
+          "size": "full",
+          "entity": "rolesDisponibles",
+          "label": "Asignación de Roles",
+          "selectorDrawer": {
+            "drawerTitle": "Agregar Roles",
+            "title": "Agregar roles a un usuario",
+            "subtitle": "Seleccione uno o varios Roles a la ves",
+            "camposDb": {
+              "codigo": "idRol",
+              "nombre": "nombreRol",
+              "descripcion": "descripcionRol"
+            }
+          }
+        },
+        {
+          "name": "label",
+          "type": "label",
+          "label": "Ingrese intervalo de vigencia",
+          "size": "full"
+        },
+        {
+          "name": "fechaInicioExpiracion",
+          "dataSource": "",
+          "label": "Fecha Inicio Vigencia",
+          "type": "date",
+          "size": "large",
+          "entity": "fechaExpiracion"
+        },
+        {
+          "name": "fechaFinExpiracion",
+          "dataSource": "",
+          "label": "Fecha Fin Vigencia",
+          "type": "date",
+          "size": "large",
+          "entity": "fechaExpiracion"
+        },
+        {
+          "name": "btnSaveUserRol",
+          "label": "Guardar Asignación",
+          "type": "button",
+          "icon": "save",
+          "confirm": true,
+          "action": "saveUserRol"
+        }
+      ]
+    },
+    {
+      "subgrupo": "Listado de Asignaciones",
+      "description": "Permisos ya asignados",
+      "icon": "link",
+      "defaultOpen": true,
+      "className": "border-r text-green-600 bg-slate-50",
+      "showSearch": true,
+      "showPagination": true,
+      "searchPlaceHolder": "Administrador, Jefe de agencia, etc.",
+      "dataField": "rolesAsignados",
+      "type": "table",
+      "fields": [],
+      "columns": [
+        {
+          "accessorKey": "idUsuario",
+          "header": "Código Usuario"
+        },
+        {
+          "accessorKey": "nombre",
+          "header": "Nombre Usuario"
+        },
+        {
+          "accessorKey": "idRol",
+          "header": "Código Rol"
+        },
+        {
+          "accessorKey": "nombreRol",
+          "header": "Rol Asignado"
+        },
+        {
+          "accessorKey": "descripcionRol",
+          "header": "Descripción del Rol"
+        },
+
+        {
+          "accessorKey": "fecha_asignacion",
+          "header": "Fecha de Asignación"
+        }
+      ]
+    }
+  ]
+}

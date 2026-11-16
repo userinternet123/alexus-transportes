@@ -1,0 +1,101 @@
+{
+  "title": "",
+  "module":"Mantenimiento de plataforma",
+  "showSearch": true,
+  "showPagination": true,
+  "searchPlaceHolder": "Código a buscar",
+  "headerBtn": 
+    {
+      "label": "Agregar Nuevo Rol",
+      "action": "create",
+      "icon": "plus",
+      "size": 35,
+      "variant": "primary"
+    }
+  ,
+  
+  "filters": [
+    {
+      "name": "estado",
+      "type": "select",
+      "options": [
+        {
+          "label": "Todos",
+          "value": ""
+        },
+        {
+          "label": "Enviada",
+          "value": "ENVIADA"
+        },
+        {
+          "label": "Completa",
+          "value": "COMPLETA"
+        }
+      ]
+    }
+  ],
+  "columns": [
+    {
+      "accessorKey": "codigo",
+      "header": "Código"
+    },
+    {
+      "accessorKey":"nombre",
+      "header":"Nombre"
+    },
+    {
+      "accessorKey": "descripcion",
+      "header": "Descripción"
+    },
+    {
+      "accessorKey": "fechaCreacion",
+      "header": "Fecha Creación"
+    },
+    {
+      "accessorKey": "estado",
+      "header": "Estado",
+      "type": "badge"
+    }
+  ],
+  "actions": [
+    {
+      "estado": [
+        "ACTIVO"
+      ],
+      "options": [
+        {
+         "action":"view",
+         "icon":"eye",
+         "variant":"text-green-600",
+         "tamano":"icon"
+        },
+        {
+          "label": "",
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        },
+        {
+          "label": "",
+          "action": "delete",
+          "icon": "trash",
+          "variant": "text-red-600",
+          "tamano": "icon"
+        }
+        
+      ]
+      
+    },
+     {
+      "estado": [
+        "DESACTIVADO"
+      ],
+      "options":[
+        {"label": "Eliminar",
+        "action": "delete",
+        "icon": "trash"}]
+    }
+    
+  ]
+}

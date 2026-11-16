@@ -1,0 +1,364 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+
+    body {
+        background: #f4f7fb;
+        color: #1f2937;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+    button {
+        @apply rounded-md bg-transparent opacity-80 cursor-pointer  hover:scale-105  transform transition-transform duration-500 ease-in-out active:scale-90
+    }
+}
+
+@layer components {
+    .menu-button {
+        @apply px-4 py-2 bg-gray-300 hover:bg-gray-600 hover:bg-gray-300;
+    }
+    .btn-header {
+        @apply bg-white text-green-800 hover:bg-white;
+    }
+
+    .menu-button-hover {
+        @apply hover:bg-green-100;
+    }
+    .btn-send {
+        @apply bg-green-600 text-white hover:bg-green-600;
+    }
+
+    .menu-button-danger {
+        @apply bg-red-500 text-white hover:bg-red-50 hover:text-white hover:bg-red-700;
+    }
+    .submenu {
+        @apply ml-5 border-l border-gray-400 pl-3;
+    }
+    .header {
+        @apply sticky top-0 z-50 h-28 bg-green-900 shadow-md rounded-lg border-b flex items-center justify-between px-6 text-white ease-in-out;
+    }
+    /*h-20 bg-[#00613a] rounded-lg flex items-center justify-between px-6;*/
+    .user-info {
+        @apply flex items-center gap-3 text-white;
+    }
+    .user-photo {
+        @apply w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm;
+    }
+    .user-photo img {
+        @apply w-full h-full object-cover;
+    }
+    .btn-logout {
+        @apply bg-[#dc2626] text-white px-3 py-2 rounded-lg hover:bg-red-700 transition;
+    }
+    .sidebar {
+        @apply fixed w-64 h-screen bg-white overflow-y-auto transition-all duration-300;
+    }
+    .brand {
+        @apply h-24 flex items-center gap-3 p-3 justify-center border-b border-[$e5e7eb] hover:shadow-md;
+    }
+    .brand-logo {
+        @apply flex justify-center h-[70px] max-w-[234px] rounded-lg object-contain;
+    }
+    /*
+    @apply flex justify-center md:h-[52px] md:max-w-[122px] lg:h-[82px] lg:max-w-[244px] object-contain;
+    */
+    .brand-text {
+        @apply text-[#43B02A] text-xl   font-semibold;
+    }
+    .brand-text-empresa {
+        @apply text-[#006b3f] text-2xl font-bold;
+    }
+    .menu {
+        @apply p-4 space-y-2;
+    }
+    .menu-item {
+        @apply w-full block px-4 py-3 hover:bg-[#eef7f2] hover:text-[#006b3f];
+    }
+    .submenu-item {
+        @apply block p-2  rounded-md hover:bg-[#eef7f2] hover:text-[#006b3f] hover:cursor-pointer transition transform hover:scale-105;
+    }
+
+    .main {
+        @apply ml-72 min-h-screen p-3 flex flex-col transition-all duration-300;
+    }
+    .menu-toogle {
+        @apply w-10 h-10 bg-white flex items-center justify-center text-[22px];
+    }
+    .content {
+        @apply flex justify-between flex-1;
+    }
+    .content-card {
+        @apply w-full min-h-[520px] bg-white rounded-lg p-6;
+    }
+    .menu-toggle-option {
+        @apply text-left text-base flex items-center justify-between p-3 transition w-full;
+    }
+    .menu-toggle-option-danger {
+        @apply w-full bg-transparent text-left text-base flex items-center justify-between  p-3 rounded-lg transition w-full hover:bg-red-200 hover:text-black hover:font-bold;
+    }
+
+    .arrow {
+        @apply transition-transform duration-300;
+    }
+    .input-icon {
+        @apply relative w-full;
+    }
+    .input-icon-svg {
+        @apply bsolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500;
+    }
+    .input-icon-input {
+        @apply pl-9 w-full;
+    }
+    .footer {
+        @apply mt-5 min-h-[60px] bg-white border border-gray-200 rounded-lg flex flex-col md:flex-row items-center justify-between gap-2.5 p-4 text-gray-500 text-sm text-center md:text-left;
+    }
+    .footer-left {
+        @apply flex items-center;
+    }
+    .footer-center {
+        @apply flex items-center font-semibold;
+    }
+    .footer-right {
+        @apply flex items-center text-green-700 font-bold;
+    }
+}
+
+/*cual es el maximo w-12 porque no acepta w-13 */
+
+/*Tailwindcss 1 unidad = 0.25rem = 4px
+ejemplo :
+w-64 x 0.25rem = 16rem
+16rem x 16px = 256px
+
+ejemplo header:
+80px / 16px = 5rem
+5rem / .25rem = h-20
+
+h-screen = 100vh
+h-[50vh] = 50vh
+
+*/
+/*
+.header {
+  height: 80px;
+  background: #00613a;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 25px;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+}
+.user-photo {
+
+  width: 48px;
+
+  height: 48px;
+
+  border-radius: 50%;
+
+  overflow: hidden;
+
+  border: 2px solid white;
+
+}
+
+.user-photo img {
+
+  width: 100%;
+
+  height: 100%;
+
+}
+
+.user-data {
+
+  text-align: right;
+
+}
+
+.user-data strong {
+
+  display: block;
+
+}
+
+.btn-logout {
+
+  background: #dc2626;
+
+  color: white;
+
+  border: none;
+
+  padding: 10px 14px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+}
+
+
+
+.sidebar {
+
+  position: fixed;
+
+  width: 270px;
+
+  height: 100vh;
+
+  background: white;
+
+  transition: 0.3s;
+
+  overflow-y: auto;
+
+}
+
+.sidebar.hide {
+
+  left: -270px;
+
+}
+
+.brand {
+
+  height: 95px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 18px;
+
+  border-bottom: 1px solid #e5e7eb;
+
+}
+
+.brand-logo {
+
+  width: 48px;
+
+  height: 48px;
+
+  background: #006b3f;
+
+  color: white;
+
+  border-radius: 10px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+}
+
+.brand-text h3 {
+
+  color: #006b3f;
+
+}
+
+.menu {
+
+  padding: 15px;
+
+}
+
+.menu-item,
+
+.submenu-item {
+
+  display: block;
+
+  padding: 13px 15px;
+
+  text-decoration: none;
+
+  color: #1f2937;
+
+  border-radius: 8px;
+
+}
+
+.menu-item:hover,
+
+.submenu-item:hover,
+
+.menu-item.active {
+
+  background: #eef7f2;
+
+  color: #006b3f;
+
+}
+*/
+
+/* RESPONSIVE */
+/*
+@media (max-width: 768px) {
+
+  .sidebar {
+
+    left: -270px;
+
+  }
+
+  .sidebar.show {
+
+    left: 0;
+
+  }
+
+  .main {
+
+    margin-left: 0;
+
+  }
+
+  .user-data {
+
+    display: none;
+
+  }
+
+  .btn-logout {
+
+    padding: 9px 10px;
+
+    font-size: 12px;
+
+  }
+
+  .footer {
+
+    flex-direction: column;
+
+    gap: 10px;
+
+    padding: 15px;
+
+    text-align: center;
+
+  }
+
+}*/
+/* INDEX */

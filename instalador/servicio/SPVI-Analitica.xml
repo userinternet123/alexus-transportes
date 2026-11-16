@@ -1,0 +1,26 @@
+<!--
+  Servicio de Windows del motor analitico de SPVI (Python embebido + WinSW).
+  %BASE% = carpeta de este archivo (C:\Program Files\SPVI\servicio).
+  Solo escucha en 127.0.0.1: no se puede llamar desde otra computadora.
+  Su token esta en C:\ProgramData\SPVI\config\analitica.env (solo administradores) y es el mismo del API.
+-->
+<service>
+  <id>SPVI-Analitica</id>
+  <name>SPVI Analitica</name>
+  <description>Motor analitico local de SPVI (temporadas y demanda). Solo atiende a este equipo.</description>
+  <executable>%BASE%\..\runtime\python\python.exe</executable>
+  <arguments>-m uvicorn spvi_analitica.app:app --host 127.0.0.1 --port 4100 --no-server-header --no-access-log</arguments>
+  <workingdirectory>%BASE%\..\analitica</workingdirectory>
+  <env name="ANALITICA_ENV" value="%ProgramData%\SPVI\config\analitica.env" />
+  <env name="PYTHONDONTWRITEBYTECODE" value="1" />
+  <startmode>Automatic</startmode>
+  <delayedAutoStart>true</delayedAutoStart>
+  <onfailure action="restart" delay="10 sec" />
+  <onfailure action="restart" delay="30 sec" />
+  <resetfailure>1 hour</resetfailure>
+  <logpath>%ProgramData%\SPVI\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+</service>

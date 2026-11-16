@@ -1,0 +1,76 @@
+# Plan de migración del frontend (SPVI WinForms → portal React)
+
+## Mapa de pantallas
+| SPVI 1.x (WinForms) | SPVI 2.0 (React) | Tipo | Estado |
+|---|---|---|---|
+| `Login` | `pages/Login.jsx` (adaptado) + `pages/CambiarPassword.jsx` | Dedicada | ✅ Lote 1 |
+| — | `comun/SelectorSucursal.jsx` en el Header | Dedicada | ✅ Lote 1 |
+| `MarcaUI`, `MarcaProductoUI`, `frmMarcaProducto` | Marcas | JSON | ✅ Generado |
+| `PresentacionUI` | Presentaciones | JSON | ✅ Generado |
+| `frmTipoProducto`, `frmFamilia`, `NombreGenericoUI` | Categorías, Grupos, Sub-agrupaciones | JSON | ✅ Generado |
+| `ProductoUI`, `frmProducto` | Productos | JSON | ✅ Generado |
+| `PersonaUI`, `BuscaClienteUI` | Clientes | JSON | ✅ Generado |
+| `ProveedorUI` | Proveedores | JSON | ✅ Generado |
+| `PaisUI`, `DepartamentoUI`, `MunicipioUI`, `ColoniaUI` | Geografía | JSON | 🔜 Lote 3 (agregar al generador) |
+| `DescuentoUI` | Políticas de descuento | JSON | ✅ Generado |
+| `VentaUI`, `BuscaProductoUI` | `pos/PuntoVenta.jsx` | Dedicada | ✅ Entregado |
+| `MantanimientoVentaUI` | `operacion/VentasDelDia.jsx` (anular, devolver, convertir, FEL) | Dedicada | ✅ Lote 1 |
+| `IngresoUI` | `operacion/IngresoCompra.jsx` | Dedicada | ✅ Lote 1 |
+| `rptInventarioUI`, `RptInventarioTipoGridUI`, `ValidacionesUI` | `operacion/Existencias.jsx` (+ kardex) | Dedicada | ✅ Lote 1 |
+| `RptCuadreVentas` | `pos/CuadreCaja.jsx` + `pos/CierreDiario.jsx` | Dedicada | ✅ Entregado |
+| `RptVentasTipoGridUI` | `pos/CentroReportes.jsx` | Metadata | ✅ Entregado |
+| `RolUI` | Roles y permisos (asignación por módulo) | Dedicada | 🔜 Lote 2 |
+| — (nuevo) | Usuarios (alta, roles, sucursales, reset) | Dedicada | 🔜 Lote 2 |
+| — (nuevo) | Conteo físico / ajustes | Dedicada | 🔜 Lote 2 |
+| — (nuevo) | Traslados entre sucursales | Dedicada | 🔜 Lote 2 |
+| — (nuevo) | Parámetros del sistema | Dedicada | 🔜 Lote 2 |
+| — (nuevo) | Bodegas, cajas, empleados, puestos | JSON | ✅ Generado |
+| — (nuevo) | Asistencia, ausencias, planillas | Dedicada | 🔜 Lote 3 |
+| — (nuevo) | Ticket térmico 80 mm, tablero de inicio | Dedicada | 🔜 Lote 4 |
+
+## Lote 1 — integración
+
+### Archivos
+Copie `apps/web/src/` sobre `src/` del portal (solo agrega archivos nuevos; `services/api.js` es el que ya adoptó).
+
+### Rutas (`routes/AppRouter.jsx`)
+```jsx
+import CambiarPassword from '../pages/CambiarPassword'
+import { VentasDelDia, IngresoCompra, Existencias } from '../components/operacion'
+
+// Nivel superior, junto a <Route path="/" element={<Login />} />
+<Route path="/cambiar-password" element={<CambiarPassword />} />
+
+// Dentro de <Route path="/home" ...>
+<Route path="ventas" element={<VentasDelDia />} />
+<Route path="compras" element={<IngresoCompra />} />
+<Route path="existencias" element={<Existencias />} />
+```
+
+### Menú (`sidebarMenu.js`)
+```js
+{ name: 'ventas', label: 'Ventas y cotizaciones', component: 'ventas', action: 'path', path: 'ventas', tag: 'ventas.ver', button: [] },
+{ name: 'compras', label: 'Ingreso de compras', component: 'compras', action: 'path', path: 'compras', tag: 'compras.crear', button: [] },
+{ name: 'existencias', label: 'Existencias y kardex', component: 'existencias', action: 'path', path: 'existencias', tag: 'inventario.ver', button: [] },
+```
+
+### Header (`components/layout/Header.jsx`)
+```jsx
+import SelectorSucursal from '../comun/SelectorSucursal'
+// dentro de <div className="user-info ...">, antes del bloque del nombre:
+<SelectorSucursal />
+// y cambie {user?.usuario?.usuario} por {user?.usuario?.username}
+```
+
+### Login (`pages/Login.jsx`)
+Después de `login({ usuario, roles: [], permisos: usuario.permisos })`:
+```js
+navigate(usuario.debeCambiarPassword ? '/cambiar-password' : '/home')
+```
+
+## Lineamientos
+- **Catálogos** = JSON generado (`npm run configs`). **Operación** = componente dedicado.
+- El API es la fuente de verdad de precios, descuentos y totales; el front solo muestra vistas previas.
+- Permisos: botones y menús con `puede('codigo')`; el API valida igual (doble control).
+- Errores: mostrar `errorApi(e).mensaje`; reaccionar por `codigo` cuando aplica (`CAJA_CERRADA`, `DUPLICADO`…).
+

@@ -1,0 +1,10 @@
+
+app-movil/  Ícono, ícono adaptable de Android y pantalla de arranque (ya copiados en apps/movil/assets).
+
+portal-web/ Íconos del portal: copie estos archivos a la carpeta public/ del portal y en index.html use:
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+Concepto: "El anillo". ALEXUS viene del griego alexein: ayudar, proteger. La A protegida por un
+anillo de presencia, con la luz ámbar de "te escucho" de los asistentes de voz.

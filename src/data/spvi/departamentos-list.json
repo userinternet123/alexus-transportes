@@ -1,0 +1,94 @@
+{
+  "title": "",
+  "module": "Áreas de la empresa",
+  "endpoint": "/rrhh/departamentos",
+  "showSearch": true,
+  "showPagination": true,
+  "searchPlaceHolder": "Área",
+  "headerBtn": {
+    "label": "Agregar área",
+    "action": "create",
+    "icon": "plus",
+    "size": 35,
+    "variant": "primary"
+  },
+  "filters": [
+    {
+      "name": "activo",
+      "type": "select",
+      "options": [
+        {
+          "label": "Activos",
+          "value": "true"
+        },
+        {
+          "label": "Inactivos",
+          "value": "false"
+        },
+        {
+          "label": "Todos",
+          "value": "todos"
+        }
+      ]
+    }
+  ],
+  "columns": [
+    {
+      "accessorKey": "id",
+      "header": "Código"
+    },
+    {
+      "accessorKey": "nombre",
+      "header": "Bodega"
+    },
+    {
+      "accessorKey": "activo",
+      "header": "Estado",
+      "type": "badge"
+    }
+  ],
+  "actions": [
+    {
+      "estado": [
+        "ACTIVO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "view",
+          "icon": "eye",
+          "variant": "text-green-600",
+          "tamano": "icon"
+        },
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        },
+        {
+          "action": "delete",
+          "icon": "trash",
+          "variant": "text-red-600",
+          "tamano": "icon"
+        }
+      ]
+    },
+    {
+      "estado": [
+        "INACTIVO",
+        "BAJA",
+        "SUSPENDIDO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        }
+      ]
+    }
+  ]
+}

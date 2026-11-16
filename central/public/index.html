@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPVI Central</title>
+<style>
+  :root { --fondo:#F2F2F7; --sup:#fff; --texto:#1D1D1F; --sec:#6E6E73; --sep:#D1D1D6; --acento:#1E7B4F; --acento-s:#ECF7F1; --rojo:#D70015; --ambar:#B25000; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); -webkit-font-smoothing:antialiased; }
+  button, input, select, textarea { font:inherit; }
+  .app { display:flex; min-height:100vh; }
+  nav { width:230px; background:rgba(255,255,255,.75); border-right:1px solid var(--sep); padding:18px 12px; }
+  nav h1 { font-size:17px; margin:0 8px 18px; }
+  nav button { display:block; width:100%; text-align:left; border:0; background:none; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:15px; color:var(--texto); }
+  nav button.activo { background:var(--acento); color:#fff; }
+  nav .salir { margin-top:24px; color:var(--rojo); }
+  main { flex:1; padding:24px; max-width:1200px; }
+  h2 { font-size:28px; margin:0 0 16px; letter-spacing:-.02em; }
+  .tarjetas { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:20px; }
+  .tarjeta { background:var(--sup); border:1px solid var(--sep); border-radius:12px; padding:16px; }
+  .tarjeta .n { font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .tarjeta .t { color:var(--sec); font-size:13px; }
+  table { width:100%; border-collapse:collapse; background:var(--sup); border:1px solid var(--sep); border-radius:12px; overflow:hidden; }
+  th { text-align:left; font-size:13px; font-weight:500; color:var(--sec); background:#F9F9FB; padding:10px 12px; border-bottom:1px solid var(--sep); }
+  td { padding:10px 12px; border-top:1px solid #E5E5EA; font-size:14px; vertical-align:top; }
+  tr.clic:hover td { background:#F9F9FB; cursor:pointer; }
+  .chip { display:inline-block; padding:2px 8px; border-radius:99px; font-size:12px; font-weight:500; background:#E5E5EA; }
+  .ok { background:var(--acento-s); color:var(--acento); } .mal { background:#FDECEC; color:var(--rojo); } .warn { background:#FFF4E5; color:var(--ambar); }
+  .barra { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  .btn { border:1px solid var(--sep); background:var(--sup); border-radius:8px; padding:7px 14px; cursor:pointer; }
+  .btn.p { background:var(--acento); border-color:var(--acento); color:#fff; font-weight:600; }
+  input, select, textarea { border:1px solid var(--sep); border-radius:8px; padding:8px 10px; background:#fff; width:100%; }
+  label { display:block; font-size:13px; color:var(--sec); margin-top:10px; }
+  .hoja { position:fixed; inset:0; background:rgba(0,0,0,.25); display:flex; justify-content:flex-end; }
+  .hoja > div { width:min(560px,100%); background:var(--fondo); height:100%; overflow:auto; padding:20px; }
+  .msg { background:var(--sup); border-radius:12px; padding:10px 12px; margin:8px 0; border:1px solid var(--sep); }
+  .msg.soporte { background:var(--acento-s); border-color:#B7E4C7; }
+  .msg small { color:var(--sec); }
+  pre { white-space:pre-wrap; font-size:12px; background:#fff; border:1px solid var(--sep); border-radius:8px; padding:10px; max-height:260px; overflow:auto; }
+  .login { max-width:360px; margin:12vh auto; background:var(--sup); border-radius:16px; padding:28px; border:1px solid var(--sep); }
+  .token { font-family:ui-monospace,monospace; word-break:break-all; background:#FFF4E5; padding:10px; border-radius:8px; }
+  .sec { color:var(--sec); font-size:13px; }
+</style>
+</head>
+<body>
+<div id="raiz"></div>
+<script src="/panel.js"></script>
+</body>
+</html>

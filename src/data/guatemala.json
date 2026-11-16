@@ -1,0 +1,96 @@
+{
+  "value": "01",
+  "label": "Guatemala",
+  "municipios": [
+    {
+      "value": "0101",
+      "label": "Guatemala",
+      "zonas": [
+        "Zona 1","Zona 2","Zona 3","Zona 4","Zona 5","Zona 6",
+        "Zona 7","Zona 8","Zona 9","Zona 10","Zona 11","Zona 12",
+        "Zona 13","Zona 14","Zona 15","Zona 16","Zona 17","Zona 18",
+        "Zona 19","Zona 21","Zona 24","Zona 25"
+      ]
+    },
+    {
+      "value": "0102",
+      "label": "Santa Catarina Pinula",
+      "zonas": []
+    },
+    {
+      "value": "0103",
+      "label": "San José Pinula",
+      "zonas": []
+    },
+    {
+      "value": "0104",
+      "label": "San José del Golfo",
+      "zonas": []
+    },
+    {
+      "value": "0105",
+      "label": "Palencia",
+      "zonas": []
+    },
+    {
+      "value": "0106",
+      "label": "Chinautla",
+      "zonas": []
+    },
+    {
+      "value": "0107",
+      "label": "San Pedro Ayampuc",
+      "zonas": []
+    },
+    {
+      "value": "0108",
+      "label": "Mixco",
+      "zonas": ["Zona 1","Zona 4","Zona 7","Zona 11"]
+    },
+    {
+      "value": "0109",
+      "label": "San Pedro Sacatepéquez",
+      "zonas": []
+    },
+    {
+      "value": "0110",
+      "label": "San Juan Sacatepéquez",
+      "zonas": []
+    },
+    {
+      "value": "0111",
+      "label": "San Raymundo",
+      "zonas": []
+    },
+    {
+      "value": "0112",
+      "label": "Chuarrancho",
+      "zonas": []
+    },
+    {
+      "value": "0113",
+      "label": "Fraijanes",
+      "zonas": []
+    },
+    {
+      "value": "0114",
+      "label": "Amatitlán",
+      "zonas": []
+    },
+    {
+      "value": "0115",
+      "label": "Villa Nueva",
+      "zonas": []
+    },
+    {
+      "value": "0116",
+      "label": "Villa Canales",
+      "zonas": []
+    },
+    {
+      "value": "0117",
+      "label": "San Miguel Petapa",
+      "zonas": []
+    }
+  ]
+}

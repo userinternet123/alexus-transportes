@@ -1,0 +1,1502 @@
+// =============================================================================
+// SPVI 2.0 — Modelo de datos unificado (multi-sucursal)
+// -----------------------------------------------------------------------------
+// Principios:
+//  1. UNA sola base de datos para todas las sucursales (antes: una BD por
+//     sucursal -> dbCSRUSSiquinala, dbCSRUSElPilar). Toda transacción lleva
+//     sucursalId / bodegaId.
+//  2. El inventario NO se edita: se deriva de un KARDEX inmutable
+//     (MovimientoInventario). `Existencia` es un saldo materializado que se
+//     actualiza en la MISMA transacción que el movimiento, con bloqueo de fila.
+//  3. Montos Decimal(14,2), cantidades Decimal(14,3), costos Decimal(14,4)
+//     (antes DECIMAL(6,2): tope de Q9,999.99 por precio).
+//  4. Usuarios != Personas. Contraseñas con Argon2id. Permisos granulares.
+//  5. Auditoría transversal (AuditLog) en lugar de columnas "UsuarioInserto".
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Cambiable a "sqlserver" si infraestructura lo exige (ver ADR-0002)
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── PLATAFORMA ─────────────────────────────────
+
+model Empresa {
+  id              Int        @id @default(autoincrement())
+  nombre          String
+  nombreComercial String?    @map("nombre_comercial")
+  nit             String     @unique
+  direccion       String?
+  telefono        String?
+  email           String?
+  logoUrl         String?    @map("logo_url")
+  activo          Boolean    @default(true)
+  creadoEn        DateTime   @default(now()) @map("creado_en")
+  actualizadoEn   DateTime   @updatedAt @map("actualizado_en")
+  sucursales      Sucursal[]
+
+  @@map("empresas")
+}
+
+model Sucursal {
+  id                 Int                  @id @default(autoincrement())
+  empresaId          Int                  @map("empresa_id")
+  codigo             String               @unique
+  nombre             String
+  direccion          String?
+  telefono           String?
+  municipioId        Int?                 @map("municipio_id")
+  establecimientoFel Int?                 @map("establecimiento_fel") // código de establecimiento ante SAT
+  activo             Boolean              @default(true)
+  creadoEn           DateTime             @default(now()) @map("creado_en")
+  actualizadoEn      DateTime             @updatedAt @map("actualizado_en")
+
+  empresa            Empresa              @relation(fields: [empresaId], references: [id])
+  municipio          Municipio?           @relation(fields: [municipioId], references: [id])
+  bodegas            Bodega[]
+  cajas              Caja[]
+  usuarios           UsuarioSucursal[]
+  ventas             Venta[]
+  compras            Compra[]
+  secuencias         SecuenciaDocumento[]
+  cierres            CierreDiario[]
+  empleados          Empleado[]
+  trasladosOrigen    Traslado[]           @relation("TrasladoOrigen")
+  trasladosDestino   Traslado[]           @relation("TrasladoDestino")
+
+  pedidosCompra PedidoCompra[]
+  gastos Gasto[]
+  @@map("sucursales")
+}
+
+model Bodega {
+  id          Int                    @id @default(autoincrement())
+  sucursalId  Int                    @map("sucursal_id")
+  nombre      String
+  esPrincipal Boolean                @default(false) @map("es_principal")
+  activo      Boolean                @default(true)
+  sucursal    Sucursal               @relation(fields: [sucursalId], references: [id])
+  secciones   Seccion[]
+  existencias Existencia[]
+  ubicaciones Ubicacion[]
+  movimientos MovimientoInventario[]
+  ventas      Venta[]
+  compras     Compra[]
+
+  @@unique([sucursalId, nombre])
+  @@map("bodegas")
+}
+
+model Seccion {
+  id       Int     @id @default(autoincrement())
+  bodegaId Int     @map("bodega_id")
+  nombre   String
+  activo   Boolean @default(true)
+  bodega   Bodega  @relation(fields: [bodegaId], references: [id])
+
+  @@unique([bodegaId, nombre])
+  @@map("secciones")
+}
+
+/// Parámetros configurables sin desplegar código (IVA, tasas IGSS, tolerancias...)
+model ParametroSistema {
+  clave         String   @id
+  valor         String
+  tipo          String   @default("string") // string | number | boolean | json
+  modulo        String
+  descripcion   String?
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  @@map("parametros_sistema")
+}
+
+// ───────────────────────────── SEGURIDAD / RBAC ─────────────────────────────
+
+model Usuario {
+  id                  Int               @id @default(autoincrement())
+  username            String            @unique
+  email               String?           @unique
+  nombre              String
+  passwordHash        String            @map("password_hash")
+  debeCambiarPassword Boolean           @default(false) @map("debe_cambiar_password")
+  intentosFallidos    Int               @default(0) @map("intentos_fallidos")
+  bloqueadoHasta      DateTime?         @map("bloqueado_hasta")
+  ultimoLogin         DateTime?         @map("ultimo_login")
+  empleadoId          Int?              @unique @map("empleado_id")
+  activo              Boolean           @default(true)
+  creadoEn            DateTime          @default(now()) @map("creado_en")
+  actualizadoEn       DateTime          @updatedAt @map("actualizado_en")
+
+  empleado            Empleado?         @relation(fields: [empleadoId], references: [id])
+  roles               UsuarioRol[]
+  sucursales          UsuarioSucursal[]
+  sesiones            SesionRefresh[]
+  ventas              Venta[]           @relation("VentaVendedor")
+  cajaSesiones        CajaSesion[]
+
+  pedidosCompra PedidoCompra[]
+  gastos Gasto[]
+  @@map("usuarios")
+  plantillasAnaliticas PlantillaAnalitica[] @relation("PlantillasAnaliticas")
+  tablerosAnaliticos   TableroAnalitico[]   @relation("TablerosAnaliticos")
+}
+
+model Rol {
+  id                 Int                 @id @default(autoincrement())
+  nombre             String              @unique
+  descripcion        String?
+  esSistema          Boolean             @default(false) @map("es_sistema") // no editable/eliminable
+  activo             Boolean             @default(true)
+  permisos           RolPermiso[]
+  usuarios           UsuarioRol[]
+  politicasDescuento PoliticaDescuento[]
+
+  @@map("roles")
+}
+
+/// Permiso granular "modulo.accion" (ej. ventas.crear, caja.cerrar, cierre.reabrir)
+model Permiso {
+  id          Int          @id @default(autoincrement())
+  codigo      String       @unique
+  modulo      String
+  descripcion String
+  roles       RolPermiso[]
+
+  @@map("permisos")
+}
+
+model RolPermiso {
+  rolId     Int     @map("rol_id")
+  permisoId Int     @map("permiso_id")
+  rol       Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  permiso   Permiso @relation(fields: [permisoId], references: [id], onDelete: Cascade)
+
+  @@id([rolId, permisoId])
+  @@map("roles_permisos")
+}
+
+model UsuarioRol {
+  usuarioId Int     @map("usuario_id")
+  rolId     Int     @map("rol_id")
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  rol       Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, rolId])
+  @@map("usuarios_roles")
+}
+
+model UsuarioSucursal {
+  usuarioId      Int      @map("usuario_id")
+  sucursalId     Int      @map("sucursal_id")
+  predeterminada Boolean  @default(false)
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  sucursal       Sucursal @relation(fields: [sucursalId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, sucursalId])
+  @@map("usuarios_sucursales")
+}
+
+model SesionRefresh {
+  id        String   @id @default(uuid())
+  usuarioId Int      @map("usuario_id")
+  tokenHash String   @unique @map("token_hash")
+  expiraEn  DateTime @map("expira_en")
+  revocado  Boolean  @default(false)
+  ip        String?
+  userAgent String?  @map("user_agent")
+  creadoEn  DateTime @default(now()) @map("creado_en")
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("sesiones_refresh")
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  usuarioId  Int?     @map("usuario_id")
+  sucursalId Int?     @map("sucursal_id")
+  accion     String // CREAR | ACTUALIZAR | ELIMINAR | ANULAR | LOGIN | CIERRE ...
+  entidad    String
+  entidadId  String?  @map("entidad_id")
+  antes      Json?
+  despues    Json?
+  ip         String?
+  requestId  String?  @map("request_id")
+  fecha      DateTime @default(now())
+
+  @@index([entidad, entidadId])
+  @@index([fecha])
+  @@map("audit_log")
+}
+
+// ─────────────────────────────── CATÁLOGOS ──────────────────────────────────
+
+model Pais {
+  id            Int            @id @default(autoincrement())
+  nombre        String         @unique
+  codigoIso     String?        @unique @map("codigo_iso")
+  activo        Boolean        @default(true)
+  departamentos Departamento[]
+
+  @@map("paises")
+}
+
+model Departamento {
+  id         Int         @id @default(autoincrement())
+  paisId     Int         @map("pais_id")
+  nombre     String
+  activo     Boolean     @default(true)
+  pais       Pais        @relation(fields: [paisId], references: [id])
+  municipios Municipio[]
+
+  @@unique([paisId, nombre])
+  @@map("departamentos")
+}
+
+model Municipio {
+  id             Int          @id @default(autoincrement())
+  departamentoId Int          @map("departamento_id")
+  nombre         String
+  activo         Boolean      @default(true)
+  departamento   Departamento @relation(fields: [departamentoId], references: [id])
+  sucursales     Sucursal[]
+  terceros       Tercero[]
+  empleados      Empleado[]
+
+  @@unique([departamentoId, nombre])
+  @@map("municipios")
+}
+
+// ─────────────────────── TERCEROS (clientes / proveedores) ──────────────────
+
+enum TipoTercero {
+  PERSONA
+  EMPRESA
+}
+
+/// Unifica TPersona (clientes) y TProveedor. Un tercero puede ser ambos.
+model Tercero {
+  id              Int         @id @default(autoincrement())
+  tipo            TipoTercero @default(PERSONA)
+  nit             String? // "CF" = consumidor final
+  cui             String?
+  nombres         String?
+  apellidos       String?
+  razonSocial     String?     @map("razon_social")
+  nombreComercial String?     @map("nombre_comercial")
+  email           String?
+  telefono        String?
+  direccion       String?
+  municipioId     Int?        @map("municipio_id")
+  esCliente       Boolean     @default(true) @map("es_cliente")
+  esProveedor     Boolean     @default(false) @map("es_proveedor")
+  limiteCredito   Decimal     @default(0) @map("limite_credito") @db.Decimal(14, 2)
+  diasCredito     Int         @default(0) @map("dias_credito")
+  activo          Boolean     @default(true)
+  legacyId        String?     @unique @map("legacy_id") // "<sucursal>:<tabla>:<id>" trazabilidad ETL
+  creadoEn        DateTime    @default(now()) @map("creado_en")
+  actualizadoEn   DateTime    @updatedAt @map("actualizado_en")
+
+  municipio       Municipio?  @relation(fields: [municipioId], references: [id])
+  ventas          Venta[]
+  compras         Compra[]
+
+  gastos Gasto[]
+  @@index([nit])
+  @@index([cui])
+  productosProveedor ProveedorProducto[]
+  pedidosCompra      PedidoCompra[]
+  @@map("terceros")
+}
+
+// ─────────────────────────────── PRODUCTOS ──────────────────────────────────
+// Jerarquía: Categoría (TTipoProducto) > Grupo (TGrupo) > Subgrupo (TNombreGenerico)
+
+model Categoria {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  activo Boolean @default(true)
+  grupos Grupo[]
+
+  @@map("categorias")
+}
+
+model Grupo {
+  id          Int        @id @default(autoincrement())
+  categoriaId Int        @map("categoria_id")
+  nombre      String
+  activo      Boolean    @default(true)
+  categoria   Categoria  @relation(fields: [categoriaId], references: [id])
+  subgrupos   Subgrupo[]
+
+  @@unique([categoriaId, nombre])
+  @@map("grupos")
+}
+
+/// Sub-agrupación. Se anida sin límite: Categoría › Grupo › Sub › Sub › …
+/// (padreId = sub-agrupación madre dentro del MISMO grupo; null = primer nivel).
+/// El nombre es único dentro del grupo, para que cada ruta se lea sin ambigüedad.
+model Subgrupo {
+  id                 Int                 @id @default(autoincrement())
+  grupoId            Int                 @map("grupo_id")
+  padreId            Int?                @map("padre_id")
+  nombre             String
+  activo             Boolean             @default(true)
+  grupo              Grupo               @relation(fields: [grupoId], references: [id])
+  padre              Subgrupo?           @relation("ArbolSubgrupos", fields: [padreId], references: [id])
+  hijos              Subgrupo[]          @relation("ArbolSubgrupos")
+  productos          Producto[]
+  politicasDescuento PoliticaDescuento[]
+
+  @@unique([grupoId, nombre])
+  @@index([padreId])
+  @@map("subgrupos")
+}
+
+model Marca {
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique
+  activo    Boolean    @default(true)
+  productos Producto[]
+
+  @@map("marcas")
+}
+
+model Presentacion {
+  id               Int        @id @default(autoincrement())
+  nombre           String     @unique // Unidad, Caja x12, Galón, Libra...
+  abreviatura      String?
+  permiteDecimales Boolean    @default(false) @map("permite_decimales")
+  activo           Boolean    @default(true)
+  productos        Producto[]
+
+  @@map("presentaciones")
+}
+
+model Producto {
+  id                 Int                    @id @default(autoincrement())
+  sku                String                 @unique
+  codigoBarra        String?                @unique @map("codigo_barra")
+  codigoProveedor    String?                @map("codigo_proveedor")
+  nombre             String
+  descripcion        String?
+  subgrupoId         Int                    @map("subgrupo_id")
+  marcaId            Int?                   @map("marca_id")
+  presentacionId     Int                    @map("presentacion_id")
+  precioVenta        Decimal                @map("precio_venta") @db.Decimal(14, 2)
+  stockMinimo        Decimal                @default(0) @map("stock_minimo") @db.Decimal(14, 3)
+  manejaInventario   Boolean                @default(true) @map("maneja_inventario") // false = servicio
+  exentoIva          Boolean                @default(false) @map("exento_iva")
+  imagenId           String?                @map("imagen_id") // Archivo público (foto del producto)
+  atributos          Json              @default("{}") // campos del giro: { "medida": "205/55R16", "rin": 16 }
+  textoBusqueda      String?           @map("texto_busqueda") // valores de los campos buscables (para el buscador y el POS)
+  activo             Boolean                @default(true)
+  legacyId           String?                @unique @map("legacy_id")
+  creadoEn           DateTime               @default(now()) @map("creado_en")
+  actualizadoEn      DateTime               @updatedAt @map("actualizado_en")
+
+  subgrupo           Subgrupo               @relation(fields: [subgrupoId], references: [id])
+  marca              Marca?                 @relation(fields: [marcaId], references: [id])
+  presentacion       Presentacion           @relation(fields: [presentacionId], references: [id])
+  existencias        Existencia[]
+  movimientos        MovimientoInventario[]
+  historialPrecios   HistorialPrecio[]
+  politicasDescuento PoliticaDescuento[]
+  ventaDetalles      VentaDetalle[]
+  compraDetalles     CompraDetalle[]
+  ajusteDetalles     AjusteDetalle[]
+  trasladoDetalles   TrasladoDetalle[]
+
+  /// Creado desde una cotización ("por conseguir"): se cotiza pero no se vende hasta que llegue su primera compra
+  porConseguir Boolean @default(false) @map("por_conseguir")
+  @@index([nombre])
+  proveedoresProducto ProveedorProducto[]
+  pedidosDetalle      PedidoCompraDetalle[]
+  @@map("productos")
+  conteoLineas       ConteoLinea[]
+  alias              ProductoAlias[]
+}
+
+model HistorialPrecio {
+  id             Int      @id @default(autoincrement())
+  productoId     Int      @map("producto_id")
+  precioAnterior Decimal  @map("precio_anterior") @db.Decimal(14, 2)
+  precioNuevo    Decimal  @map("precio_nuevo") @db.Decimal(14, 2)
+  usuarioId      Int      @map("usuario_id")
+  fecha          DateTime @default(now())
+  producto       Producto @relation(fields: [productoId], references: [id])
+
+  @@map("historial_precios")
+}
+
+/// Reemplaza TDescuento: tope de descuento por rol y (producto | subgrupo | global)
+model PoliticaDescuento {
+  id             Int       @id @default(autoincrement())
+  rolId          Int       @map("rol_id")
+  productoId     Int?      @map("producto_id")
+  subgrupoId     Int?      @map("subgrupo_id")
+  porcentajeMax  Decimal   @map("porcentaje_max") @db.Decimal(5, 2)
+  cantidadMaxima Decimal?  @map("cantidad_maxima") @db.Decimal(14, 3)
+  vigenteDesde   DateTime  @default(now()) @map("vigente_desde")
+  vigenteHasta   DateTime? @map("vigente_hasta")
+  activo         Boolean   @default(true)
+  rol            Rol       @relation(fields: [rolId], references: [id])
+  producto       Producto? @relation(fields: [productoId], references: [id])
+  subgrupo       Subgrupo? @relation(fields: [subgrupoId], references: [id])
+
+  @@map("politicas_descuento")
+}
+
+// ─────────────────────────────── INVENTARIO ─────────────────────────────────
+
+/// Saldo materializado por producto/bodega. SOLO lo modifica KardexService.
+model Existencia {
+  id            Int      @id @default(autoincrement())
+  productoId    Int      @map("producto_id")
+  bodegaId      Int      @map("bodega_id")
+  cantidad      Decimal  @default(0) @db.Decimal(14, 3)
+  costoPromedio Decimal  @default(0) @map("costo_promedio") @db.Decimal(14, 4)
+  ubicacionId   Int?     @map("ubicacion_id") // dónde está el producto en esta bodega (propia: gana sobre la heredada)
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+  producto      Producto @relation(fields: [productoId], references: [id])
+  bodega        Bodega   @relation(fields: [bodegaId], references: [id])
+  ubicacion     Ubicacion? @relation(fields: [ubicacionId], references: [id])
+
+  @@unique([productoId, bodegaId])
+  @@map("existencias")
+}
+
+enum TipoMovimiento {
+  INVENTARIO_INICIAL
+  ENTRADA_COMPRA
+  SALIDA_VENTA
+  ANULACION_VENTA
+  DEVOLUCION_CLIENTE
+  ANULACION_COMPRA
+  AJUSTE_POSITIVO
+  AJUSTE_NEGATIVO
+  TRASLADO_SALIDA
+  TRASLADO_ENTRADA
+}
+
+/// KARDEX: inmutable, append-only. Nunca UPDATE ni DELETE (reforzar con trigger/permisos de BD).
+model MovimientoInventario {
+  id                 BigInt         @id @default(autoincrement())
+  fecha              DateTime       @default(now())
+  bodegaId           Int            @map("bodega_id")
+  productoId         Int            @map("producto_id")
+  tipo               TipoMovimiento
+  cantidad           Decimal        @db.Decimal(14, 3) // con signo (+ entra / - sale)
+  costoUnitario      Decimal        @map("costo_unitario") @db.Decimal(14, 4)
+  saldoCantidad      Decimal        @map("saldo_cantidad") @db.Decimal(14, 3)
+  saldoCostoPromedio Decimal        @map("saldo_costo_promedio") @db.Decimal(14, 4)
+  documentoTipo      String         @map("documento_tipo") // VENTA | COMPRA | AJUSTE | TRASLADO | DEVOLUCION
+  documentoId        Int            @map("documento_id")
+  usuarioId          Int            @map("usuario_id")
+  observacion        String?
+  bodega             Bodega         @relation(fields: [bodegaId], references: [id])
+  producto           Producto       @relation(fields: [productoId], references: [id])
+
+  @@index([productoId, bodegaId, fecha])
+  @@index([documentoTipo, documentoId])
+  @@map("movimientos_inventario")
+}
+
+enum EstadoDocumento {
+  BORRADOR
+  CONFIRMADO
+  ANULADO
+}
+
+model Ajuste {
+  id          Int             @id @default(autoincrement())
+  bodegaId    Int             @map("bodega_id")
+  motivo      String // CONTEO_FISICO | MERMA | VENCIMIENTO | DANIO | OTRO
+  observacion String?
+  estado      EstadoDocumento @default(BORRADOR)
+  usuarioId   Int             @map("usuario_id")
+  fecha       DateTime        @default(now())
+  detalles    AjusteDetalle[]
+
+  @@map("ajustes")
+}
+
+model AjusteDetalle {
+  id              Int      @id @default(autoincrement())
+  ajusteId        Int      @map("ajuste_id")
+  productoId      Int      @map("producto_id")
+  cantidadSistema Decimal  @map("cantidad_sistema") @db.Decimal(14, 3)
+  cantidadFisica  Decimal  @map("cantidad_fisica") @db.Decimal(14, 3)
+  diferencia      Decimal  @db.Decimal(14, 3)
+  ajuste          Ajuste   @relation(fields: [ajusteId], references: [id], onDelete: Cascade)
+  producto        Producto @relation(fields: [productoId], references: [id])
+
+  @@map("ajustes_detalle")
+}
+
+model Traslado {
+  id                Int               @id @default(autoincrement())
+  sucursalOrigenId  Int               @map("sucursal_origen_id")
+  bodegaOrigenId    Int               @map("bodega_origen_id")
+  sucursalDestinoId Int               @map("sucursal_destino_id")
+  bodegaDestinoId   Int               @map("bodega_destino_id")
+  estado            String            @default("EN_TRANSITO") // EN_TRANSITO | RECIBIDO | ANULADO
+  usuarioEnviaId    Int               @map("usuario_envia_id")
+  usuarioRecibeId   Int?              @map("usuario_recibe_id")
+  fechaEnvio        DateTime          @default(now()) @map("fecha_envio")
+  fechaRecepcion    DateTime?         @map("fecha_recepcion")
+  observacion       String?
+  observacionRecepcion String?        @map("observacion_recepcion") // diferencias al recibir
+  motivoAnulacion   String?           @map("motivo_anulacion")
+  usuarioAnulaId    Int?              @map("usuario_anula_id")
+  sucursalOrigen    Sucursal          @relation("TrasladoOrigen", fields: [sucursalOrigenId], references: [id])
+  sucursalDestino   Sucursal          @relation("TrasladoDestino", fields: [sucursalDestinoId], references: [id])
+  detalles          TrasladoDetalle[]
+
+  @@map("traslados")
+}
+
+model TrasladoDetalle {
+  id            Int      @id @default(autoincrement())
+  trasladoId    Int      @map("traslado_id")
+  productoId    Int      @map("producto_id")
+  cantidad      Decimal  @db.Decimal(14, 3)
+  cantidadRecibida Decimal? @map("cantidad_recibida") @db.Decimal(14, 3) // menor que "cantidad" = faltante en tránsito
+  costoUnitario Decimal  @map("costo_unitario") @db.Decimal(14, 4)
+  traslado      Traslado @relation(fields: [trasladoId], references: [id], onDelete: Cascade)
+  producto      Producto @relation(fields: [productoId], references: [id])
+
+  @@map("traslados_detalle")
+}
+
+// ───────────────────────────────── COMPRAS ──────────────────────────────────
+
+model Compra {
+  id            Int             @id @default(autoincrement())
+  sucursalId    Int             @map("sucursal_id")
+  bodegaId      Int             @map("bodega_id")
+  proveedorId   Int             @map("proveedor_id")
+  serieFactura  String          @map("serie_factura")
+  numeroFactura String          @map("numero_factura")
+  fechaFactura  DateTime        @map("fecha_factura") @db.Date
+  fechaContable DateTime        @map("fecha_contable") @db.Date
+  subtotal      Decimal         @db.Decimal(14, 2)
+  descuento     Decimal         @default(0) @db.Decimal(14, 2)
+  total         Decimal         @db.Decimal(14, 2)
+  estado        EstadoDocumento @default(CONFIRMADO)
+  usuarioId     Int             @map("usuario_id")
+  observacion   String?
+  legacyId      String?         @unique @map("legacy_id")
+  uuidFel       String?         @unique @map("uuid_fel") // número de autorización SAT si se importó del XML
+  creadoEn      DateTime        @default(now()) @map("creado_en")
+  sucursal      Sucursal        @relation(fields: [sucursalId], references: [id])
+  bodega        Bodega          @relation(fields: [bodegaId], references: [id])
+  proveedor     Tercero         @relation(fields: [proveedorId], references: [id])
+  detalles      CompraDetalle[]
+
+  @@unique([proveedorId, serieFactura, numeroFactura]) // evita doble ingreso de la misma factura
+  @@index([sucursalId, fechaContable])
+  @@map("compras")
+}
+
+model CompraDetalle {
+  id            Int      @id @default(autoincrement())
+  compraId      Int      @map("compra_id")
+  productoId    Int      @map("producto_id")
+  cantidad      Decimal  @db.Decimal(14, 3)
+  costoUnitario Decimal  @map("costo_unitario") @db.Decimal(14, 4)
+  descuento     Decimal  @default(0) @db.Decimal(14, 2)
+  subtotal      Decimal  @db.Decimal(14, 2)
+  compra        Compra   @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  producto      Producto @relation(fields: [productoId], references: [id])
+
+  @@map("compras_detalle")
+}
+
+// ────────────────────────────── VENTAS / POS ────────────────────────────────
+
+enum TipoVenta {
+  VENTA
+  COTIZACION
+}
+
+enum EstadoVenta {
+  BORRADOR
+  CONFIRMADA
+  ANULADA
+  CONVERTIDA // cotización convertida en venta
+  VENCIDA
+}
+
+enum EstadoFel {
+  NO_APLICA
+  PENDIENTE
+  CERTIFICADO
+  ERROR
+  ANULADO
+}
+
+enum MedioPago {
+  EFECTIVO
+  TARJETA
+  TRANSFERENCIA
+  CHEQUE
+  CREDITO
+  VALE
+}
+
+model SecuenciaDocumento {
+  id         Int      @id @default(autoincrement())
+  sucursalId Int      @map("sucursal_id")
+  tipo       String // VENTA | COTIZACION | DEVOLUCION | TRASLADO
+  serie      String
+  siguiente  Int      @default(1)
+  sucursal   Sucursal @relation(fields: [sucursalId], references: [id])
+
+  @@unique([sucursalId, tipo, serie])
+  @@map("secuencias_documento")
+}
+
+model Venta {
+  id                 Int            @id @default(autoincrement())
+  sucursalId         Int            @map("sucursal_id")
+  bodegaId           Int            @map("bodega_id")
+  cajaSesionId       Int?           @map("caja_sesion_id")
+  tipo               TipoVenta
+  estado             EstadoVenta    @default(BORRADOR)
+  serie              String
+  numero             Int
+  fecha              DateTime       @default(now())
+  fechaContable      DateTime       @map("fecha_contable") @db.Date // día operativo (cierre)
+  clienteId          Int            @map("cliente_id")
+  vendedorId         Int            @map("vendedor_id")
+  subtotal           Decimal        @db.Decimal(14, 2)
+  descuentoTotal     Decimal        @default(0) @map("descuento_total") @db.Decimal(14, 2)
+  ivaIncluido        Decimal        @default(0) @map("iva_incluido") @db.Decimal(14, 2)
+  total              Decimal        @db.Decimal(14, 2)
+  costoTotal         Decimal        @default(0) @map("costo_total") @db.Decimal(14, 2)
+  cambio             Decimal        @default(0) @db.Decimal(14, 2)
+  validaHasta        DateTime?      @map("valida_hasta") // cotizaciones
+  cotizacionOrigenId Int?           @map("cotizacion_origen_id")
+  felEstado          EstadoFel      @default(NO_APLICA) @map("fel_estado")
+  felUuid            String?        @unique @map("fel_uuid")
+  felSerie           String?        @map("fel_serie")
+  felNumero          String?        @map("fel_numero")
+  felMensaje         String?        @map("fel_mensaje")
+  observaciones      String?
+  motivoAnulacion    String?        @map("motivo_anulacion")
+  anuladaPorId       Int?           @map("anulada_por_id")
+  anuladaEn          DateTime?      @map("anulada_en")
+  legacyId           String?        @unique @map("legacy_id")
+  creadoEn           DateTime       @default(now()) @map("creado_en")
+
+  sucursal           Sucursal       @relation(fields: [sucursalId], references: [id])
+  bodega             Bodega         @relation(fields: [bodegaId], references: [id])
+  cajaSesion         CajaSesion?    @relation(fields: [cajaSesionId], references: [id])
+  cliente            Tercero        @relation(fields: [clienteId], references: [id])
+  vendedor           Usuario        @relation("VentaVendedor", fields: [vendedorId], references: [id])
+  cotizacionOrigen   Venta?         @relation("CotizacionVenta", fields: [cotizacionOrigenId], references: [id])
+  ventasGeneradas    Venta[]        @relation("CotizacionVenta")
+  detalles           VentaDetalle[]
+  pagos              VentaPago[]
+  devoluciones       Devolucion[]
+
+  /// Lista reutilizable (p. ej. lista de útiles de un colegio): la cotización se vende muchas veces y no se cierra
+  reutilizable         Boolean @default(false)
+  nombreLista          String? @map("nombre_lista")
+  compradoresEsperados Int?    @map("compradores_esperados")
+  @@unique([sucursalId, tipo, serie, numero])
+  @@index([sucursalId, fechaContable])
+  @@index([vendedorId, fechaContable])
+  @@map("ventas")
+}
+
+model VentaDetalle {
+  id                  Int      @id @default(autoincrement())
+  ventaId             Int      @map("venta_id")
+  productoId          Int      @map("producto_id")
+  descripcion         String
+  cantidad            Decimal  @db.Decimal(14, 3)
+  precioLista         Decimal  @map("precio_lista") @db.Decimal(14, 2)
+  porcentajeDescuento Decimal  @default(0) @map("porcentaje_descuento") @db.Decimal(5, 2)
+  descuento           Decimal  @default(0) @db.Decimal(14, 2)
+  precioUnitario      Decimal  @map("precio_unitario") @db.Decimal(14, 2)
+  subtotal            Decimal  @db.Decimal(14, 2)
+  costoUnitario       Decimal  @default(0) @map("costo_unitario") @db.Decimal(14, 4) // costo promedio al vender
+  venta               Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  producto            Producto @relation(fields: [productoId], references: [id])
+
+  @@map("ventas_detalle")
+}
+
+model VentaPago {
+  id         Int       @id @default(autoincrement())
+  ventaId    Int       @map("venta_id")
+  medioPago  MedioPago @map("medio_pago")
+  monto      Decimal   @db.Decimal(14, 2)
+  referencia String? // voucher, # transferencia, # cheque
+  banco           String? // transferencias y cheques
+  estado          String    @default("PENDIENTE") // PENDIENTE, VERIFICADO o RECHAZADO (el efectivo no se verifica aquí)
+  comprobanteId   String?   @map("comprobante_id") // foto del voucher, de la transferencia o del cheque
+  nota            String?
+  verificadoPorId Int?      @map("verificado_por_id")
+  verificadoEn    DateTime? @map("verificado_en")
+  venta      Venta     @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  comprobante     Archivo?  @relation(fields: [comprobanteId], references: [id])
+
+  @@index([medioPago, estado])
+  @@map("ventas_pagos")
+}
+
+model Devolucion {
+  id                  Int                 @id @default(autoincrement())
+  ventaId             Int                 @map("venta_id")
+  fecha               DateTime            @default(now())
+  fechaContable       DateTime            @map("fecha_contable") @db.Date
+  motivo              String
+  total               Decimal             @db.Decimal(14, 2)
+  reingresaInventario Boolean             @default(true) @map("reingresa_inventario")
+  usuarioId           Int                 @map("usuario_id")
+  felUuid             String?             @map("fel_uuid") // nota de crédito
+  venta               Venta               @relation(fields: [ventaId], references: [id])
+  detalles            DevolucionDetalle[]
+
+  @@map("devoluciones")
+}
+
+model DevolucionDetalle {
+  id           Int        @id @default(autoincrement())
+  devolucionId Int        @map("devolucion_id")
+  productoId   Int        @map("producto_id")
+  cantidad     Decimal    @db.Decimal(14, 3)
+  monto        Decimal    @db.Decimal(14, 2)
+  devolucion   Devolucion @relation(fields: [devolucionId], references: [id], onDelete: Cascade)
+
+  @@map("devoluciones_detalle")
+}
+
+// ──────────────────────────── CAJA / CUADRE / CIERRE ────────────────────────
+
+model Caja {
+  id         Int          @id @default(autoincrement())
+  sucursalId Int          @map("sucursal_id")
+  nombre     String
+  activo     Boolean      @default(true)
+  sucursal   Sucursal     @relation(fields: [sucursalId], references: [id])
+  sesiones   CajaSesion[]
+
+  @@unique([sucursalId, nombre])
+  @@map("cajas")
+}
+
+enum EstadoCajaSesion {
+  ABIERTA
+  CERRADA
+}
+
+/// Turno de caja: Apertura -> Movimientos -> Arqueo (cuadre) -> Cierre
+model CajaSesion {
+  id            Int              @id @default(autoincrement())
+  cajaId        Int              @map("caja_id")
+  usuarioId     Int              @map("usuario_id")
+  fechaContable DateTime         @map("fecha_contable") @db.Date
+  abiertaEn     DateTime         @default(now()) @map("abierta_en")
+  montoApertura Decimal          @map("monto_apertura") @db.Decimal(14, 2)
+  cerradaEn     DateTime?        @map("cerrada_en")
+  cerradaPorId  Int?             @map("cerrada_por_id")
+  estado        EstadoCajaSesion @default(ABIERTA)
+  totalEsperado Decimal?         @map("total_esperado") @db.Decimal(14, 2)
+  totalContado  Decimal?         @map("total_contado") @db.Decimal(14, 2)
+  diferencia    Decimal?         @db.Decimal(14, 2)
+  observacion   String?
+  caja          Caja             @relation(fields: [cajaId], references: [id])
+  usuario       Usuario          @relation(fields: [usuarioId], references: [id])
+  movimientos   CajaMovimiento[]
+  arqueos       CajaArqueo[]
+  ventas        Venta[]
+  depositos     CajaDeposito[]
+
+  @@index([cajaId, estado])
+  @@index([fechaContable])
+  @@map("caja_sesiones")
+}
+
+enum TipoMovimientoCaja {
+  INGRESO
+  EGRESO
+  RETIRO_PARCIAL // sangría / depósito a bóveda
+}
+
+model CajaMovimiento {
+  id        Int                @id @default(autoincrement())
+  sesionId  Int                @map("sesion_id")
+  tipo      TipoMovimientoCaja
+  medioPago MedioPago          @default(EFECTIVO) @map("medio_pago")
+  monto     Decimal            @db.Decimal(14, 2)
+  concepto  String
+  usuarioId Int                @map("usuario_id")
+  fecha     DateTime           @default(now())
+  sesion    CajaSesion         @relation(fields: [sesionId], references: [id])
+
+  @@map("caja_movimientos")
+}
+
+/// Cuadre: por cada medio de pago, lo que el sistema espera vs. lo contado
+model CajaArqueo {
+  id             Int        @id @default(autoincrement())
+  sesionId       Int        @map("sesion_id")
+  medioPago      MedioPago  @map("medio_pago")
+  montoEsperado  Decimal    @map("monto_esperado") @db.Decimal(14, 2)
+  montoContado   Decimal    @map("monto_contado") @db.Decimal(14, 2)
+  diferencia     Decimal    @db.Decimal(14, 2)
+  denominaciones Json? // { "200": 3, "100": 5, "0.25": 8 }
+  sesion         CajaSesion @relation(fields: [sesionId], references: [id])
+
+  @@unique([sesionId, medioPago])
+  @@map("caja_arqueos")
+}
+
+/// Cierre del día operativo por sucursal. Cerrado => no se crean/anulan
+/// ventas ni compras con esa fecha contable (bloqueo de período).
+model CierreDiario {
+  id               Int      @id @default(autoincrement())
+  sucursalId       Int      @map("sucursal_id")
+  fecha            DateTime @db.Date
+  estado           String   @default("CERRADO") // CERRADO | REABIERTO
+  ventasCantidad   Int      @map("ventas_cantidad")
+  ventasTotal      Decimal  @map("ventas_total") @db.Decimal(14, 2)
+  anulacionesTotal Decimal  @map("anulaciones_total") @db.Decimal(14, 2)
+  devolucionesTotal Decimal @map("devoluciones_total") @db.Decimal(14, 2)
+  costoTotal       Decimal  @map("costo_total") @db.Decimal(14, 2)
+  utilidadBruta    Decimal  @map("utilidad_bruta") @db.Decimal(14, 2)
+  comprasTotal     Decimal  @map("compras_total") @db.Decimal(14, 2)
+  diferenciaCajas  Decimal  @map("diferencia_cajas") @db.Decimal(14, 2)
+  porMedioPago     Json     @map("por_medio_pago")
+  usuarioId        Int      @map("usuario_id")
+  cerradoEn        DateTime @default(now()) @map("cerrado_en")
+  observacion      String?
+  sucursal         Sucursal @relation(fields: [sucursalId], references: [id])
+
+  @@unique([sucursalId, fecha])
+  @@map("cierres_diarios")
+}
+
+// ────────────────────────────────── RRHH ────────────────────────────────────
+
+model DepartamentoOrg {
+  id      Int      @id @default(autoincrement())
+  nombre  String   @unique
+  activo  Boolean  @default(true)
+  puestos Puesto[]
+
+  @@map("rrhh_departamentos")
+}
+
+model Puesto {
+  id             Int             @id @default(autoincrement())
+  departamentoId Int             @map("departamento_id")
+  nombre         String
+  salarioMinimo  Decimal?        @map("salario_minimo") @db.Decimal(14, 2)
+  salarioMaximo  Decimal?        @map("salario_maximo") @db.Decimal(14, 2)
+  activo         Boolean         @default(true)
+  departamento   DepartamentoOrg @relation(fields: [departamentoId], references: [id])
+  empleados      Empleado[]
+
+  @@unique([departamentoId, nombre])
+  @@map("rrhh_puestos")
+}
+
+enum EstadoEmpleado {
+  ACTIVO
+  SUSPENDIDO
+  BAJA
+}
+
+model Empleado {
+  id                    Int               @id @default(autoincrement())
+  codigo                String            @unique
+  nombres               String
+  apellidos             String
+  cui                   String            @unique
+  nit                   String?
+  afiliacionIgss        String?           @map("afiliacion_igss")
+  fechaNacimiento       DateTime?         @map("fecha_nacimiento") @db.Date
+  telefono              String?
+  email                 String?
+  direccion             String?
+  municipioId           Int?              @map("municipio_id")
+  sucursalId            Int               @map("sucursal_id")
+  puestoId              Int               @map("puesto_id")
+  fechaIngreso          DateTime          @map("fecha_ingreso") @db.Date
+  fechaBaja             DateTime?         @map("fecha_baja") @db.Date
+  motivoBaja            String?           @map("motivo_baja")
+  salarioBase           Decimal           @map("salario_base") @db.Decimal(14, 2) // mensual
+  bonificacionIncentivo Decimal           @default(250) @map("bonificacion_incentivo") @db.Decimal(14, 2)
+  porcentajeComision    Decimal           @default(0) @map("porcentaje_comision") @db.Decimal(5, 2)
+  banco                 String?
+  cuentaBancaria        String?           @map("cuenta_bancaria")
+  estado                EstadoEmpleado    @default(ACTIVO)
+  creadoEn              DateTime          @default(now()) @map("creado_en")
+  actualizadoEn         DateTime          @updatedAt @map("actualizado_en")
+
+  sucursal              Sucursal          @relation(fields: [sucursalId], references: [id])
+  puesto                Puesto            @relation(fields: [puestoId], references: [id])
+  municipio             Municipio?        @relation(fields: [municipioId], references: [id])
+  usuario               Usuario?
+  asistencias           Asistencia[]
+  ausencias             Ausencia[]
+  planillaDetalles      PlanillaDetalle[]
+
+  @@map("rrhh_empleados")
+}
+
+model Asistencia {
+  id            Int       @id @default(autoincrement())
+  empleadoId    Int       @map("empleado_id")
+  fecha         DateTime  @db.Date
+  entrada       DateTime?
+  salida        DateTime?
+  horasNormales Decimal   @default(0) @map("horas_normales") @db.Decimal(5, 2)
+  horasExtra    Decimal   @default(0) @map("horas_extra") @db.Decimal(5, 2)
+  origen        String    @default("MANUAL") // MANUAL | BIOMETRICO | APP
+  empleado      Empleado  @relation(fields: [empleadoId], references: [id])
+
+  @@unique([empleadoId, fecha])
+  @@map("rrhh_asistencias")
+}
+
+enum TipoAusencia {
+  VACACIONES
+  PERMISO_CON_GOCE
+  PERMISO_SIN_GOCE
+  SUSPENSION_IGSS
+  FALTA_INJUSTIFICADA
+}
+
+model Ausencia {
+  id          Int          @id @default(autoincrement())
+  empleadoId  Int          @map("empleado_id")
+  tipo        TipoAusencia
+  desde       DateTime     @db.Date
+  hasta       DateTime     @db.Date
+  dias        Decimal      @db.Decimal(5, 2)
+  estado      String       @default("SOLICITADA") // SOLICITADA | APROBADA | RECHAZADA
+  aprobadaPor Int?         @map("aprobada_por")
+  observacion String?
+  empleado    Empleado     @relation(fields: [empleadoId], references: [id])
+
+  @@map("rrhh_ausencias")
+}
+
+enum EstadoPlanilla {
+  BORRADOR
+  APROBADA
+  PAGADA
+  ANULADA
+}
+
+model Planilla {
+  id              Int               @id @default(autoincrement())
+  periodo         String // "2026-10" o "2026-10-Q1"
+  tipo            String // MENSUAL | QUINCENAL | AGUINALDO | BONO14
+  fechaInicio     DateTime          @map("fecha_inicio") @db.Date
+  fechaFin        DateTime          @map("fecha_fin") @db.Date
+  estado          EstadoPlanilla    @default(BORRADOR)
+  totalDevengado  Decimal           @default(0) @map("total_devengado") @db.Decimal(14, 2)
+  totalDescuentos Decimal           @default(0) @map("total_descuentos") @db.Decimal(14, 2)
+  totalLiquido    Decimal           @default(0) @map("total_liquido") @db.Decimal(14, 2)
+  totalPatronal   Decimal           @default(0) @map("total_patronal") @db.Decimal(14, 2)
+  generadaPor     Int               @map("generada_por")
+  aprobadaPor     Int?              @map("aprobada_por")
+  creadoEn        DateTime          @default(now()) @map("creado_en")
+  detalles        PlanillaDetalle[]
+
+  @@unique([periodo, tipo])
+  @@map("rrhh_planillas")
+}
+
+model PlanillaDetalle {
+  id                     Int      @id @default(autoincrement())
+  planillaId             Int      @map("planilla_id")
+  empleadoId             Int      @map("empleado_id")
+  diasLaborados          Decimal  @map("dias_laborados") @db.Decimal(5, 2)
+  salarioDevengado       Decimal  @map("salario_devengado") @db.Decimal(14, 2)
+  horasExtraMonto        Decimal  @default(0) @map("horas_extra_monto") @db.Decimal(14, 2)
+  comisiones             Decimal  @default(0) @db.Decimal(14, 2)
+  bonificacionIncentivo  Decimal  @default(0) @map("bonificacion_incentivo") @db.Decimal(14, 2)
+  otrosIngresos          Decimal  @default(0) @map("otros_ingresos") @db.Decimal(14, 2)
+  totalDevengado         Decimal  @map("total_devengado") @db.Decimal(14, 2)
+  igssLaboral            Decimal  @map("igss_laboral") @db.Decimal(14, 2)
+  isr                    Decimal  @default(0) @db.Decimal(14, 2)
+  otrosDescuentos        Decimal  @default(0) @map("otros_descuentos") @db.Decimal(14, 2)
+  totalDescuentos        Decimal  @map("total_descuentos") @db.Decimal(14, 2)
+  liquido                Decimal  @db.Decimal(14, 2)
+  igssPatronal           Decimal  @map("igss_patronal") @db.Decimal(14, 2)
+  irtra                  Decimal  @db.Decimal(14, 2)
+  intecap                Decimal  @db.Decimal(14, 2)
+  provisionAguinaldo     Decimal  @default(0) @map("provision_aguinaldo") @db.Decimal(14, 2)
+  provisionBono14        Decimal  @default(0) @map("provision_bono14") @db.Decimal(14, 2)
+  provisionIndemnizacion Decimal  @default(0) @map("provision_indemnizacion") @db.Decimal(14, 2)
+  planilla               Planilla @relation(fields: [planillaId], references: [id], onDelete: Cascade)
+  empleado               Empleado @relation(fields: [empleadoId], references: [id])
+
+  @@unique([planillaId, empleadoId])
+  @@map("rrhh_planillas_detalle")
+}
+
+// ─────────────────────── DEPÓSITOS BANCARIOS DE CAJA ────────────────────────
+
+/// Depósito del efectivo de caja al banco. Sale de la gaveta como RETIRO_PARCIAL
+/// y queda respaldado con boleta, depositante, comprobante (foto) y el encargado
+/// que validó la boleta.
+model CajaDeposito {
+  id              Int        @id @default(autoincrement())
+  sesionId        Int        @map("sesion_id")
+  movimientoId    Int        @unique @map("movimiento_id") // CajaMovimiento RETIRO_PARCIAL generado
+  banco           String
+  numeroBoleta    String     @map("numero_boleta")
+  depositante     String
+  monto           Decimal    @db.Decimal(14, 2)
+  fechaDeposito   DateTime   @map("fecha_deposito") @db.Date
+  comprobanteId   String?    @map("comprobante_id")
+  observacion     String?
+  validadoPorId   Int        @map("validado_por_id")
+  registradoPorId Int        @map("registrado_por_id")
+  creadoEn        DateTime   @default(now()) @map("creado_en")
+  sesion          CajaSesion @relation(fields: [sesionId], references: [id])
+  comprobante     Archivo?   @relation(fields: [comprobanteId], references: [id])
+
+  @@unique([banco, numeroBoleta]) // una boleta no se registra dos veces
+  @@map("caja_depositos")
+}
+
+// ──────────────────────────────── ARCHIVOS ──────────────────────────────────
+
+/// Imágenes y documentos pequeños (comprobantes, logos, fondos). Se guardan en
+/// la BD para no depender de un disco compartido; el portal los comprime antes
+/// de subir. Evolución: mover a almacenamiento de objetos (S3/MinIO) sin cambiar el API.
+model Archivo {
+  id          String         @id @default(uuid())
+  nombre      String
+  mime        String
+  tamano      Int
+  datos       Bytes
+  publico     Boolean        @default(false) // true: logos/fondos visibles sin sesión (login)
+  creadoPorId Int?           @map("creado_por_id")
+  creadoEn    DateTime       @default(now()) @map("creado_en")
+  depositos   CajaDeposito[]
+  pagos       VentaPago[]
+
+  @@map("archivos")
+}
+
+// ───────────────────── APRENDIZAJE DE FACTURAS DE PROVEEDOR ─────────────────
+
+/// "Este renglón de la factura de este proveedor = este producto".
+/// Se aprende al registrar compras importadas del XML FEL; la siguiente
+/// factura del mismo proveedor se asigna sola. `factor` = unidades por empaque
+/// (la factura dice 1 caja, el sistema vende 12 unidades).
+model ProductoProveedor {
+  id          Int      @id @default(autoincrement())
+  proveedorId Int      @map("proveedor_id")
+  descripcion String // normalizada: mayúsculas, sin tildes ni espacios dobles
+  productoId  Int      @map("producto_id")
+  factor      Decimal  @default(1) @db.Decimal(12, 3)
+  usos        Int      @default(1)
+  actualizado DateTime @updatedAt
+
+  @@unique([proveedorId, descripcion])
+  @@index([productoId])
+  @@map("productos_proveedores")
+}
+
+// ─────────────────────────────── CONTEO FÍSICO ──────────────────────────────
+
+enum EstadoConteo {
+  ABIERTO
+  APROBADO
+  CANCELADO
+}
+
+/// Sesión de conteo físico de una bodega. Varias personas cuentan (también
+/// desde el celular); un encargado revisa y aprueba. Se puede contar con la
+/// tienda abierta: cada línea guarda lo que decía el sistema AL CONTAR, y al
+/// aprobar solo se ajusta esa diferencia (las ventas posteriores no se duplican).
+model Conteo {
+  id            Int           @id @default(autoincrement())
+  sucursalId    Int           @map("sucursal_id")
+  bodegaId      Int           @map("bodega_id")
+  nombre        String
+  ciego         Boolean       @default(true) // quien cuenta no ve la existencia del sistema
+  alcanceTipo   String?       @map("alcance_tipo") // CATEGORIA, GRUPO o SUBGRUPO (vacío = toda la bodega)
+  alcanceId     Int?          @map("alcance_id")
+  alcanceNombre String?       @map("alcance_nombre") // ruta legible, por ejemplo: Ferretería › Electricidad
+  estado        EstadoConteo  @default(ABIERTO)
+  observacion   String?
+  creadoPorId   Int           @map("creado_por_id")
+  aprobadoPorId Int?          @map("aprobado_por_id")
+  ajusteId      Int?          @unique @map("ajuste_id")
+  creadoEn      DateTime      @default(now()) @map("creado_en")
+  cerradoEn     DateTime?     @map("cerrado_en")
+  lineas        ConteoLinea[]
+
+  @@index([sucursalId, estado])
+  @@map("conteos")
+}
+
+model ConteoLinea {
+  id              Int      @id @default(autoincrement())
+  conteoId        Int      @map("conteo_id")
+  productoId      Int      @map("producto_id")
+  cantidadFisica  Decimal  @map("cantidad_fisica") @db.Decimal(14, 3)
+  sistemaAlContar Decimal  @map("sistema_al_contar") @db.Decimal(14, 3)
+  contadoPorId    Int      @map("contado_por_id")
+  actualizado     DateTime @updatedAt
+  conteo          Conteo   @relation(fields: [conteoId], references: [id], onDelete: Cascade)
+  producto        Producto @relation(fields: [productoId], references: [id])
+
+  @@unique([conteoId, productoId])
+  @@map("conteos_lineas")
+}
+
+// ─────────────────────────── CAMPOS PROPIOS DEL GIRO ────────────────────────
+
+/// Campo adicional de producto según el giro del negocio (llantas: medida y rin;
+/// librería: autor e ISBN…). El valor de cada producto se guarda en
+/// Producto.atributos con la "clave" del campo.
+model CampoProducto {
+  id           Int      @id @default(autoincrement())
+  clave        String   @unique // medida, rin, isbn (no cambia: es la llave en atributos)
+  etiqueta     String
+  tipo         String // TEXTO | NUMERO | LISTA | SI_NO
+  opciones     String[] @default([]) // para LISTA
+  unidad       String? // mm, pulg., días
+  ayuda        String? // ejemplo que se muestra en el formulario: 205/55R16
+  obligatorio  Boolean  @default(false)
+  buscable     Boolean  @default(false) // se encuentra al escribirlo en el buscador y el POS
+  mostrarEnPos Boolean  @default(false) @map("mostrar_en_pos")
+  categoriaIds Int[]    @default([]) @map("categoria_ids") // vacío = todas las categorías
+  orden        Int      @default(0)
+  activo       Boolean  @default(true)
+  plantilla    String? // giro del que vino (llantas, libreria…)
+  creadoEn     DateTime @default(now()) @map("creado_en")
+
+  @@map("campos_producto")
+}
+
+// ──────────────────────────── UBICACIONES FÍSICAS ───────────────────────────
+
+/// Dónde está la mercadería dentro de una bodega: Pasillo › Estante › División › Posición
+/// (niveles libres). El código completo une los códigos de cada nivel: P2E2D2P15.
+/// Es independiente de la clasificación ("qué es"): la ubicación dice "dónde está".
+model Ubicacion {
+  id             Int                      @id @default(autoincrement())
+  bodegaId       Int                      @map("bodega_id")
+  padreId        Int?                     @map("padre_id")
+  codigo         String // código del nivel: P2, E2, D2, P15
+  nombre         String? // descripción opcional: Pasillo 2
+  codigoCompleto String                   @map("codigo_completo") // P2E2D2P15
+  activo         Boolean                  @default(true)
+  bodega         Bodega                   @relation(fields: [bodegaId], references: [id])
+  padre          Ubicacion?               @relation("ArbolUbicaciones", fields: [padreId], references: [id])
+  hijos          Ubicacion[]              @relation("ArbolUbicaciones")
+  existencias    Existencia[]
+  asignaciones   UbicacionClasificacion[]
+
+  @@unique([bodegaId, codigoCompleto])
+  @@index([padreId])
+  @@map("ubicaciones")
+}
+
+/// Ubicación de una clasificación en una bodega: sus productos la heredan
+/// (salvo los que tienen ubicación propia). Gana la clasificación más cercana al producto.
+model UbicacionClasificacion {
+  id          Int       @id @default(autoincrement())
+  bodegaId    Int       @map("bodega_id")
+  tipo        String // CATEGORIA, GRUPO o SUBGRUPO
+  refId       Int       @map("ref_id")
+  ubicacionId Int       @map("ubicacion_id")
+  ubicacion   Ubicacion @relation(fields: [ubicacionId], references: [id], onDelete: Cascade)
+
+  @@unique([bodegaId, tipo, refId])
+  @@map("ubicaciones_clasificacion")
+}
+
+// ───────────────────── MEMORIA DE LISTAS DE ÚTILES ─────────────────────
+
+/// "Este renglón de una lista = este producto". Se guarda cuando el vendedor confirma una lista,
+/// y la próxima vez que aparezca el mismo renglón se resuelve sin consultar a la IA.
+model ProductoAlias {
+  id          Int      @id @default(autoincrement())
+  texto       String   @unique // renglón normalizado: minúsculas, sin tildes ni signos
+  productoId  Int      @map("producto_id")
+  usos        Int      @default(1)
+  actualizado DateTime @updatedAt
+  producto    Producto @relation(fields: [productoId], references: [id])
+
+  @@index([productoId])
+  @@map("producto_alias")
+}
+
+// ─────────────────── ANÁLISIS GUARDADOS (plantillas y tableros) ───────────────────
+
+/// Consulta guardada con períodos relativos ("este mes", "últimos 12 meses"). Es personal: la ve su dueño
+/// y quienes la reciban (por usuario o por rol). Se ejecuta con los permisos de quien la corre.
+model PlantillaAnalitica {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  descripcion   String?
+  propietarioId Int      @map("propietario_id")
+  definicion    Json
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+  propietario   Usuario  @relation("PlantillasAnaliticas", fields: [propietarioId], references: [id])
+
+  @@index([propietarioId])
+  @@map("plantillas_analiticas")
+}
+
+/// Conjunto ordenado de plantillas que se ven juntas, con un período común que se puede cambiar.
+model TableroAnalitico {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  propietarioId Int      @map("propietario_id")
+  plantillaIds  Int[]    @default([]) @map("plantilla_ids")
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+  propietario   Usuario  @relation("TablerosAnaliticos", fields: [propietarioId], references: [id])
+
+  @@index([propietarioId])
+  @@map("tableros_analiticos")
+}
+
+/// A quién se compartió una plantilla o un tablero: un usuario o todo un rol.
+model AnaliticaCompartida {
+  id          Int    @id @default(autoincrement())
+  objeto      String // PLANTILLA | TABLERO
+  objetoId    Int    @map("objeto_id")
+  destinoTipo String @map("destino_tipo") // ROL | USUARIO
+  destinoId   Int    @map("destino_id")
+
+  @@unique([objeto, objetoId, destinoTipo, destinoId])
+  @@index([destinoTipo, destinoId])
+  @@map("analitica_compartida")
+}
+
+// ─────────────────── TEMPORADAS DE VENTA ───────────────────
+
+/// Período del año que se repite (p. ej. 15 dic → 15 feb) con más ventas de ciertos productos. La define el dueño
+/// (MANUAL) o la propone el motor analítico (DETECTADA, estado PROPUESTA) para que el dueño la confirme o descarte.
+model Temporada {
+  id               Int                @id @default(autoincrement())
+  nombre           String
+  inicioMes        Int                @map("inicio_mes")
+  inicioDia        Int                @map("inicio_dia")
+  finMes           Int                @map("fin_mes")
+  finDia           Int                @map("fin_dia")
+  anticipacionDias Int                @default(45) @map("anticipacion_dias")
+  estado           String             @default("ACTIVA") // ACTIVA | PROPUESTA | DESCARTADA | INACTIVA
+  origen           String             @default("MANUAL") // MANUAL | DETECTADA
+  factor           Decimal?           @db.Decimal(6, 2)
+  confianza        String?
+  indices          Json?
+  notas            String?
+  creadoEn         DateTime           @default(now()) @map("creado_en")
+  actualizadoEn    DateTime           @updatedAt @map("actualizado_en")
+  alcance          TemporadaAlcance[]
+
+  @@index([estado])
+  @@map("temporadas")
+}
+
+/// Qué abarca una temporada: categorías, grupos, subgrupos o productos.
+model TemporadaAlcance {
+  id          Int       @id @default(autoincrement())
+  temporadaId Int       @map("temporada_id")
+  tipo        String // CATEGORIA | GRUPO | SUBGRUPO | PRODUCTO
+  refId       Int       @map("ref_id")
+  temporada   Temporada @relation(fields: [temporadaId], references: [id], onDelete: Cascade)
+
+  @@unique([temporadaId, tipo, refId])
+  @@index([tipo, refId])
+  @@map("temporadas_alcance")
+}
+
+// ─────────────────── EXPERIENCIA (para mejorar SPVI; solo con consentimiento) ───────────────────
+
+/// Conteo diario de uso: qué pantallas y funciones se usan, por rol y tipo de dispositivo. Sin montos, nombres ni
+/// datos de clientes. Solo se registra si el negocio aceptó compartir su uso; viaja cifrado a SPVI Central.
+model UsoDiario {
+  id          Int      @id @default(autoincrement())
+  fecha       DateTime @db.Date
+  evento      String
+  rol         String
+  dispositivo String
+  veces       Int      @default(0)
+  enviado     Boolean  @default(false)
+
+  @@unique([fecha, evento, rol, dispositivo])
+  @@index([enviado, fecha])
+  @@map("uso_diario")
+}
+
+/// Opiniones que los usuarios envían a ALEXUS: recomendación (0 a 10), "¿le sirvió?" y sugerencias.
+model Opinion {
+  id        Int      @id @default(autoincrement())
+  tipo      String // NPS | UTIL | SUGERENCIA
+  puntaje   Int?
+  texto     String?
+  pantalla  String?
+  contacto  String? // nombre, solo si la persona autorizó incluirlo
+  rol       String?
+  creadoEn  DateTime @default(now()) @map("creado_en")
+  enviado   Boolean  @default(false)
+
+  @@index([enviado])
+  @@index([tipo, creadoEn])
+  @@map("opiniones")
+}
+
+// ─────────────────── PEDIDOS A PROVEEDORES ───────────────────
+
+/// Proveedor elegido para un producto (lo decide el negocio). Sin elección, se sugiere el de la última compra.
+model ProveedorProducto {
+  id          Int      @id @default(autoincrement())
+  productoId  Int      @map("producto_id")
+  proveedorId Int      @map("proveedor_id")
+  principal   Boolean  @default(true)
+  creadoEn    DateTime @default(now()) @map("creado_en")
+  producto    Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  proveedor   Tercero  @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, proveedorId])
+  @@index([proveedorId])
+  @@map("proveedores_producto")
+}
+
+enum EstadoPedido {
+  BORRADOR
+  ENVIADO
+  RECIBIDO_PARCIAL
+  RECIBIDO
+  ANULADO
+}
+
+/// Pedido a un proveedor: lo que se le pide (cantidades, sin precios). Se arma desde "Qué comprar" y se comparte en PDF.
+model PedidoCompra {
+  id          Int                   @id @default(autoincrement())
+  sucursalId  Int                   @map("sucursal_id")
+  proveedorId Int                   @map("proveedor_id")
+  estado      EstadoPedido          @default(BORRADOR)
+  nota        String?
+  usuarioId   Int                   @map("usuario_id")
+  creadoEn    DateTime              @default(now()) @map("creado_en")
+  enviadoEn   DateTime?             @map("enviado_en")
+  medioEnvio  String?               @map("medio_envio") // WHATSAPP, CORREO, TELEFONO, PERSONA, OTRO
+  recibidoEn  DateTime?             @map("recibido_en")
+  notaRecepcion String?             @map("nota_recepcion")
+  sucursal    Sucursal              @relation(fields: [sucursalId], references: [id])
+  proveedor   Tercero               @relation(fields: [proveedorId], references: [id])
+  usuario     Usuario               @relation(fields: [usuarioId], references: [id])
+  detalles    PedidoCompraDetalle[]
+
+  @@index([sucursalId, estado, creadoEn])
+  @@map("pedidos_compra")
+}
+
+model PedidoCompraDetalle {
+  id         Int          @id @default(autoincrement())
+  pedidoId   Int          @map("pedido_id")
+  productoId Int          @map("producto_id")
+  cantidad   Decimal      @db.Decimal(14, 3)
+  existencia Decimal?     @db.Decimal(14, 3) // existencia cuando se armó el pedido (referencia)
+  cantidadRecibida Decimal @default(0) @db.Decimal(14, 3) @map("cantidad_recibida") // lo que ya llegó (puede llegar en partes)
+  pedido     PedidoCompra @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  producto   Producto     @relation(fields: [productoId], references: [id])
+
+  @@map("pedidos_compra_detalle")
+}
+
+// ─────────────────── GASTOS FUERA DE CAJA ───────────────────
+// Lo pagado con el efectivo de la caja se registra como egreso en la caja (para que el cuadre cuadre); aquí va lo demás.
+
+enum MedioGasto {
+  TRANSFERENCIA
+  TARJETA
+  CHEQUE
+  DEBITO
+  EFECTIVO_FUERA_CAJA
+}
+
+enum EstadoGasto {
+  REGISTRADO
+  ANULADO
+}
+
+model CategoriaGasto {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  activo Boolean @default(true)
+  gastos Gasto[]
+
+  @@map("categorias_gasto")
+}
+
+/// Gasto pagado fuera de la caja (alquiler, luz, internet, servicios…). Entra al análisis financiero.
+model Gasto {
+  id              Int            @id @default(autoincrement())
+  sucursalId      Int            @map("sucursal_id")
+  categoriaId     Int            @map("categoria_id")
+  fecha           DateTime       @db.Date
+  concepto        String
+  monto           Decimal        @db.Decimal(14, 2)
+  medioPago       MedioGasto     @map("medio_pago")
+  proveedorId     Int?           @map("proveedor_id")
+  documento       String? // factura, recibo o referencia de la transferencia
+  estado          EstadoGasto    @default(REGISTRADO)
+  motivoAnulacion String?        @map("motivo_anulacion")
+  usuarioId       Int            @map("usuario_id")
+  creadoEn        DateTime       @default(now()) @map("creado_en")
+  sucursal        Sucursal       @relation(fields: [sucursalId], references: [id])
+  categoria       CategoriaGasto @relation(fields: [categoriaId], references: [id])
+  proveedor       Tercero?       @relation(fields: [proveedorId], references: [id])
+  usuario         Usuario        @relation(fields: [usuarioId], references: [id])
+
+  @@index([fecha])
+  @@index([sucursalId, fecha])
+  @@map("gastos")
+}
+
+// ─────────────────── NOTIFICACIONES ───────────────────
+
+/// Hechos que se avisan en la campana (p. ej. "pedido enviado"): se muestran durante 7 días.
+model EventoNotificacion {
+  id         Int      @id @default(autoincrement())
+  sucursalId Int?     @map("sucursal_id") // null = todas las sucursales
+  permiso    String // solo lo ven quienes tienen este permiso
+  tipo       String
+  nivel      String   @default("info")
+  titulo     String
+  detalle    String
+  ruta       String?
+  creadoEn   DateTime @default(now()) @map("creado_en")
+
+  @@index([creadoEn])
+  @@map("eventos_notificacion")
+}
+
+/// Qué notificaciones ya vio cada usuario (las vistas siguen en la lista, abajo y en gris).
+model NotificacionVista {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("usuario_id")
+  clave     String
+  vistoEn   DateTime @default(now()) @map("visto_en")
+
+  @@unique([usuarioId, clave])
+  @@index([vistoEn])
+  @@map("notificaciones_vistas")
+}

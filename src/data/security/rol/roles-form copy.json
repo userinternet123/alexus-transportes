@@ -1,0 +1,176 @@
+[
+  {
+    "subgrupo": "Información de Roles",
+    "icon": "building",
+    "description": "Listado de Roles en base de datos",
+    "dataField": "trabajos",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "accessorKey": "codigo",
+        "header": "Código",
+        "name": "codigo",
+        "size": "medium",
+        "label": "Código",
+        "placeholder": "Ingrese el código",
+        "mask": "number"
+      },
+      {
+        "accessorKey": "nombre",
+        "header": "Nombre",
+        "name": "nombre",
+        "size": "medium",
+        "label": "Nombre",
+        "placeholder": "Ingrese el nombre"
+      },
+      {
+        "accessorKey": "descripcion",
+        "header": "Descripción",
+        "name": "descripcion",
+        "size": "medium",
+        "label": "Descripción",
+        "placeholder": "Ingrese la descripción"
+      },
+      {
+        "accessorKey": "estado",
+        "header": "Estado",
+        "name": "estado",
+        "type": "badge",
+        "label": "Estado",
+        "placeholder": ""
+      }
+    ],
+
+    "columns": [
+      {
+        "accessorKey": "id",
+        "header": "ID"
+      },
+      {
+        "accessorKey": "nombre",
+        "header": "Nombre"
+      },
+      {
+        "accessorKey": "descripcion",
+        "header": "Descripción"
+      },
+      {
+        "accessorKey": "estado",
+        "header": "Estado",
+        "type": "badge"
+      },
+      {
+        "accessorKey": "fechaCreacion",
+        "header": "Fecha Creación"
+      }
+    ],
+    "actions": [
+      {
+        "estado": ["ACTIVO"],
+        "options": [
+          {
+            "label": "",
+            "action": "edit",
+            "icon": "edit",
+            "variant": "na",
+            "tamano": "icon"
+          },
+          {
+            "label": "",
+            "action": "delete",
+            "icon": "trash",
+            "variant": "na",
+            "tamano": "icon"
+          }
+        ]
+      },
+      {
+        "estado": ["DESACTIVADO"],
+        "options": [{ "label": "Eliminar", "action": "delete", "icon": "trash" }]
+      }
+    ]
+  },
+  {
+    "subgrupo": "Asignación de ",
+    "icon": "clipboardList",
+    "defaultOpen": true,
+    "className": "border-b",
+    "fields": [
+      {
+        "name": "plataforma",
+        "dataSource": "",
+        "label": "Plataforma",
+        "type": "select",
+        "placeholder": "Solicitud de Nueva Tarjeta",
+        "required": true,
+        "size": "large",
+        "entity": "usuarios",
+        "options": ["Solicitudtc"]
+      },
+
+      {
+        "name": "btnBuscarUsuario",
+        "label": "Buscar",
+        "type": "button",
+        "icon": "search",
+        "action": "searchUser"
+      },
+      {
+        "name": "asignacionFormulario",
+        "type": "assignment",
+        "size": "full",
+        "entity": "formEntity",
+        "selectorDrawer": {
+          "drawerTitle": "Agregar Formulario",
+          "title": "Agregar Formularios a la plataforma",
+          "subtitle": "Seleccione uno o varios Formularios a la ves"
+        },
+        "options": [
+          {
+            "codigo": 1,
+            "nombre": "Solicitud de Nueva TC"
+          },
+          {
+            "codigo": 2,
+            "nombre": "Listado de Solicitudes"
+          },
+          {
+            "codigo": 3,
+            "nombre": "Gestión Roles"
+          },
+          {
+            "codigo": 4,
+            "nombre": "Gestión Plataforma"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "subgrupo": "Roles Asignados",
+    "icon": "shield",
+    "defaultOpen": true,
+    "className": "border-b",
+    "fields": [
+      {
+        "name": "roles",
+        "type": "assignment",
+        "size": "full",
+        "entity": "roles",
+        "drawerTitle": "Agregar Roles",
+        "options": [
+          {
+            "codigo": 1,
+            "nombre": "Administrador"
+          },
+          {
+            "codigo": 2,
+            "nombre": "Supervisor"
+          }
+        ]
+      }
+    ]
+  }
+]

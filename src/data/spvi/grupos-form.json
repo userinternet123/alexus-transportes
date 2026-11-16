@@ -1,0 +1,40 @@
+[
+  {
+    "subgrupo": "Información de grupos de producto",
+    "icon": "building",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "grupos",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "categoriaId",
+        "label": "Categoría",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/catalogos/categorias",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombre"
+        },
+        "required": true
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese nombre",
+        "required": true
+      }
+    ]
+  }
+]

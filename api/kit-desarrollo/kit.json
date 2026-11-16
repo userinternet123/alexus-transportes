@@ -1,0 +1,21 @@
+{
+  "motores": [
+    "query_engine-windows.dll.node",
+    "schema-engine-windows.exe"
+  ],
+  "preparado": "2026-11-09T22:07:25.381Z",
+  "equipo": "Bill_PC",
+  "node": "v22.22.0",
+  "plataforma": "win32-x64",
+  "proyectos": {
+    "api": {
+      "lock": "F01C5FA58A97B63B6B9966E3DBFEE4C08F048F5563E72E1F710E9DA8AECAF9E7",
+      "lockGenerado": false
+    },
+    "portal": {
+      "lock": "18F941983D51AD9E118E5E9E4E4F567900D8D7BC61BE6CC84108B8C00D32F4AB",
+      "lockGenerado": false
+    }
+  },
+  "prisma": "6.19.3"
+}

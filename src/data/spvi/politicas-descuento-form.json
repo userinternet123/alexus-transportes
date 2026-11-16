@@ -1,0 +1,80 @@
+[
+  {
+    "subgrupo": "Información de políticas de descuento",
+    "icon": "money",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "politicas-descuento",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "rolId",
+        "label": "Rol",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/seguridad/roles",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombre"
+        },
+        "required": true
+      },
+      {
+        "name": "productoId",
+        "label": "Producto (opcional)",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/productos",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombre"
+        }
+      },
+      {
+        "name": "subgrupoId",
+        "label": "Sub-agrupación (opcional)",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/catalogos/subgrupos",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombre"
+        }
+      },
+      {
+        "name": "porcentajeMax",
+        "label": "% máximo",
+        "type": "number",
+        "size": "small",
+        "mask": "number",
+        "required": true
+      },
+      {
+        "name": "cantidadMaxima",
+        "label": "Cantidad máxima con descuento",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "vigenteHasta",
+        "label": "Vigente hasta",
+        "type": "date",
+        "size": "small"
+      },
+      {
+        "name": "ayuda",
+        "type": "label",
+        "label": "Sin producto ni sub-agrupación = aplica a todo el catálogo para ese rol."
+      }
+    ]
+  }
+]

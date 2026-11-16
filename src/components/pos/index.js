@@ -1,0 +1,5 @@
+export { default as PuntoVenta } from './PuntoVenta'
+export { default as CuadreCaja } from './CuadreCaja'
+export { default as CierreDiario } from './CierreDiario'
+export { default as CentroReportes } from './CentroReportes'
+export { default as AperturaCaja } from './AperturaCaja'

@@ -1,0 +1,1 @@
+export const urlAuditoria = 'http://10.160.110.61:4010/';

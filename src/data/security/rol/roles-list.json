@@ -1,0 +1,106 @@
+{
+  "title": "",
+  "module": "Mantenimiento de Roles",
+  "showSearch": true,
+  "showPagination": true,
+  "searchPlaceHolder": "Administrador, Jefe, etc.",
+  "headerBtn": {
+    "label": "Agregar Nuevo Rol",
+    "action": "create",
+    "icon": "plus",
+    "size": 35,
+    "variant": "primary"
+  },
+  "filters": [
+    {
+      "name": "estado",
+      "type": "select",
+      "options": [
+        {
+          "label": "Todos",
+          "value": ""
+        },
+        {
+          "label": "Activo",
+          "value": "ACTIVO"
+        },
+        {
+          "label": "Inactivo",
+          "value": "INACTIVO"
+        }
+      ]
+    }
+  ],
+
+  "columns": [
+    {
+      "accessorKey": "idRol",
+      "header": "Código",
+      "name": "idRol",
+      "size": "medium",
+      "label": "Código",
+      "placeholder": "Ingrese el código",
+      "mask": "number"
+    },
+    {
+      "accessorKey": "nombreRol",
+      "header": "Nombre",
+      "name": "nombreRol",
+      "size": "medium",
+      "label": "Nombre",
+      "placeholder": "Ingrese el nombre"
+    },
+    {
+      "accessorKey": "descripcionRol",
+      "header": "Descripción",
+      "name": "descripcionRol",
+      "size": "medium",
+      "label": "Descripción",
+      "placeholder": "Ingrese la descripción"
+    },
+    {
+      "accessorKey": "estadoRol",
+      "header": "Estado",
+      "name": "estadoRol",
+      "type": "badge",
+      "label": "Estado",
+      "placeholder": ""
+    },
+    {
+      "accessorKey": "fechaCreacionRol",
+      "header": "Fecha Creación",
+      "name": "fechaCreacionRol",
+      "size": "medium",
+      "label": "Fecha Creación",
+      "placeholder": ""
+    }
+  ],
+  "actions": [
+    {
+      "estado": ["ACTIVO"],
+      "columnaDb": "estadoRol",
+      "options": [
+        {
+          "action": "view",
+          "icon": "eye",
+          "variant": "text-green-600",
+          "tamano": "icon"
+        },
+        {
+          "label": "",
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        },
+        {
+          "label": "",
+          "action": "delete",
+          "icon": "trash",
+          "variant": "text-red-600",
+          "tamano": "icon"
+        }
+      ]
+    }
+  ]
+}

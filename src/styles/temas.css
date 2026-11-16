@@ -1,0 +1,134 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   SPVI · Sistema de diseño
+   Inspiración: interfaces de Apple (fondos agrupados, separadores finos,
+   fuente del sistema, materiales translúcidos). Valores en RGB sin coma para
+   que Tailwind aplique opacidad: rgb(var(--acento-700) / .5)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Grises claros (por defecto) */
+:root {
+  --gris-50: 249 249 251;  --gris-100: 242 242 247; --gris-200: 229 229 234; --gris-300: 209 209 214;
+  --gris-400: 174 174 178; --gris-500: 142 142 147; --gris-600: 110 110 115; --gris-700: 72 72 74;
+  --gris-800: 44 44 46;    --gris-900: 29 29 31;    --gris-950: 0 0 0;
+  --superficie: 255 255 255;
+  --fondo: 242 242 247;
+  --material: 255 255 255 / 0.72; /* barras translúcidas */
+
+  /* Tema "Tienda" (verde) */
+  --acento-50: 236 247 241;  --acento-100: 209 237 222; --acento-200: 166 219 190; --acento-300: 112 194 151;
+  --acento-400: 64 165 113;  --acento-500: 38 140 90;   --acento-600: 30 123 79;   --acento-700: 24 104 66;
+  --acento-800: 21 83 54;    --acento-900: 17 63 42;    --acento-950: 8 37 24;
+
+  color-scheme: light;
+}
+
+:root[data-tema='oceano'] {
+  --acento-50: 235 244 255;  --acento-100: 214 232 255; --acento-200: 173 208 255; --acento-300: 120 176 255;
+  --acento-400: 64 140 245;  --acento-500: 18 113 235;  --acento-600: 0 113 227;   --acento-700: 0 94 192;
+  --acento-800: 0 76 156;    --acento-900: 0 57 117;    --acento-950: 0 33 69;
+}
+:root[data-tema='mandarina'] {
+  --acento-50: 255 245 237;  --acento-100: 255 231 212; --acento-200: 254 205 166; --acento-300: 251 168 108;
+  --acento-400: 245 128 56;  --acento-500: 226 100 22;  --acento-600: 201 84 12;   --acento-700: 168 66 10;
+  --acento-800: 134 53 14;   --acento-900: 106 44 14;   --acento-950: 60 22 5;
+}
+:root[data-tema='uva'] {
+  --acento-50: 246 241 254;  --acento-100: 236 226 252; --acento-200: 216 196 248; --acento-300: 189 155 240;
+  --acento-400: 160 113 227; --acento-500: 136 80 210;  --acento-600: 117 62 189;  --acento-700: 98 49 160;
+  --acento-800: 80 41 129;   --acento-900: 62 33 99;    --acento-950: 37 18 61;
+}
+:root[data-tema='grafito'] {
+  --acento-50: 245 245 247;  --acento-100: 232 232 237; --acento-200: 210 210 215; --acento-300: 174 174 178;
+  --acento-400: 134 134 139; --acento-500: 99 99 102;   --acento-600: 72 72 74;    --acento-700: 58 58 60;
+  --acento-800: 44 44 46;    --acento-900: 29 29 31;    --acento-950: 0 0 0;
+}
+
+/* Modo oscuro: los grises se invierten y las superficies se oscurecen */
+:root[data-modo='oscuro'] {
+  --gris-50: 28 28 30;     --gris-100: 0 0 0;       --gris-200: 44 44 46;    --gris-300: 58 58 60;
+  --gris-400: 99 99 102;   --gris-500: 142 142 147; --gris-600: 174 174 178; --gris-700: 209 209 214;
+  --gris-800: 229 229 234; --gris-900: 245 245 247; --gris-950: 255 255 255;
+  --superficie: 28 28 30;
+  --fondo: 0 0 0;
+  --material: 30 30 32 / 0.72;
+  color-scheme: dark;
+}
+/* En oscuro, los tonos claros del acento (fondos de selección) se atenúan */
+:root[data-modo='oscuro'] {
+  --acento-50: 18 40 30; --acento-100: 24 56 41;
+}
+:root[data-modo='oscuro'][data-tema='oceano'] { --acento-50: 12 30 56; --acento-100: 16 42 78; }
+:root[data-modo='oscuro'][data-tema='mandarina'] { --acento-50: 52 26 10; --acento-100: 72 36 14; }
+:root[data-modo='oscuro'][data-tema='uva'] { --acento-50: 38 24 58; --acento-100: 52 32 80; }
+:root[data-modo='oscuro'][data-tema='grafito'] { --acento-50: 36 36 38; --acento-100: 48 48 50; --acento-600: 174 174 178; --acento-700: 209 209 214; }
+
+/* Superficies blancas de todas las pantallas siguen al modo */
+:root[data-modo='oscuro'] .bg-white { background-color: rgb(var(--superficie)); }
+:root[data-modo='oscuro'] .text-black { color: rgb(var(--gris-900)); }
+:root[data-modo='oscuro'] input, :root[data-modo='oscuro'] select, :root[data-modo='oscuro'] textarea {
+  background-color: rgb(var(--gris-50)); color: rgb(var(--gris-900)); border-color: rgb(var(--gris-300));
+}
+
+/* Base tipográfica */
+html {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern';
+}
+html body { background-color: rgb(var(--fondo)); color: rgb(var(--gris-900)); } /* gana a la regla base de styles/index.css */
+
+/* Utilidades del sistema */
+.material { background-color: rgb(var(--material)); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+.separador { border-color: rgb(var(--gris-300) / 0.6); }
+.titulo-grande { font-size: 1.75rem; line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; }
+.cifra { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+/* Foco visible y consistente (teclado) */
+:focus-visible { outline: 2px solid rgb(var(--acento-600)); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ── Modo oscuro: tonos de alerta e insignias (no siguen al tema, pero sí al modo) ── */
+:root[data-modo='oscuro'] .bg-red-50, :root[data-modo='oscuro'] .bg-red-100 { background-color: rgb(127 29 29 / 0.35); }
+:root[data-modo='oscuro'] .text-red-500, :root[data-modo='oscuro'] .text-red-600, :root[data-modo='oscuro'] .text-red-700, :root[data-modo='oscuro'] .text-red-800 { color: rgb(252 165 165); }
+:root[data-modo='oscuro'] .border-red-200, :root[data-modo='oscuro'] .border-red-300 { border-color: rgb(153 27 27 / 0.7); }
+:root[data-modo='oscuro'] .bg-rose-50, :root[data-modo='oscuro'] .bg-rose-100 { background-color: rgb(136 19 55 / 0.35); }
+:root[data-modo='oscuro'] .text-rose-500, :root[data-modo='oscuro'] .text-rose-600, :root[data-modo='oscuro'] .text-rose-700, :root[data-modo='oscuro'] .text-rose-800 { color: rgb(253 164 175); }
+:root[data-modo='oscuro'] .border-rose-200, :root[data-modo='oscuro'] .border-rose-300 { border-color: rgb(159 18 57 / 0.7); }
+:root[data-modo='oscuro'] .bg-orange-50, :root[data-modo='oscuro'] .bg-orange-100 { background-color: rgb(124 45 18 / 0.35); }
+:root[data-modo='oscuro'] .text-orange-500, :root[data-modo='oscuro'] .text-orange-600, :root[data-modo='oscuro'] .text-orange-700, :root[data-modo='oscuro'] .text-orange-800 { color: rgb(253 186 116); }
+:root[data-modo='oscuro'] .border-orange-200, :root[data-modo='oscuro'] .border-orange-300 { border-color: rgb(154 52 18 / 0.7); }
+:root[data-modo='oscuro'] .bg-amber-50, :root[data-modo='oscuro'] .bg-amber-100 { background-color: rgb(120 53 15 / 0.35); }
+:root[data-modo='oscuro'] .text-amber-500, :root[data-modo='oscuro'] .text-amber-600, :root[data-modo='oscuro'] .text-amber-700, :root[data-modo='oscuro'] .text-amber-800 { color: rgb(252 211 77); }
+:root[data-modo='oscuro'] .border-amber-200, :root[data-modo='oscuro'] .border-amber-300 { border-color: rgb(146 64 14 / 0.7); }
+:root[data-modo='oscuro'] .bg-yellow-50, :root[data-modo='oscuro'] .bg-yellow-100 { background-color: rgb(113 63 18 / 0.35); }
+:root[data-modo='oscuro'] .text-yellow-500, :root[data-modo='oscuro'] .text-yellow-600, :root[data-modo='oscuro'] .text-yellow-700, :root[data-modo='oscuro'] .text-yellow-800 { color: rgb(253 224 71); }
+:root[data-modo='oscuro'] .border-yellow-200, :root[data-modo='oscuro'] .border-yellow-300 { border-color: rgb(133 77 14 / 0.7); }
+:root[data-modo='oscuro'] .bg-emerald-50, :root[data-modo='oscuro'] .bg-emerald-100 { background-color: rgb(6 78 59 / 0.35); }
+:root[data-modo='oscuro'] .text-emerald-500, :root[data-modo='oscuro'] .text-emerald-600, :root[data-modo='oscuro'] .text-emerald-700, :root[data-modo='oscuro'] .text-emerald-800 { color: rgb(110 231 183); }
+:root[data-modo='oscuro'] .border-emerald-200, :root[data-modo='oscuro'] .border-emerald-300 { border-color: rgb(6 95 70 / 0.7); }
+:root[data-modo='oscuro'] .bg-teal-50, :root[data-modo='oscuro'] .bg-teal-100 { background-color: rgb(19 78 74 / 0.35); }
+:root[data-modo='oscuro'] .text-teal-500, :root[data-modo='oscuro'] .text-teal-600, :root[data-modo='oscuro'] .text-teal-700, :root[data-modo='oscuro'] .text-teal-800 { color: rgb(94 234 212); }
+:root[data-modo='oscuro'] .border-teal-200, :root[data-modo='oscuro'] .border-teal-300 { border-color: rgb(17 94 89 / 0.7); }
+:root[data-modo='oscuro'] .bg-sky-50, :root[data-modo='oscuro'] .bg-sky-100 { background-color: rgb(12 74 110 / 0.35); }
+:root[data-modo='oscuro'] .text-sky-500, :root[data-modo='oscuro'] .text-sky-600, :root[data-modo='oscuro'] .text-sky-700, :root[data-modo='oscuro'] .text-sky-800 { color: rgb(125 211 252); }
+:root[data-modo='oscuro'] .border-sky-200, :root[data-modo='oscuro'] .border-sky-300 { border-color: rgb(7 89 133 / 0.7); }
+:root[data-modo='oscuro'] .bg-blue-50, :root[data-modo='oscuro'] .bg-blue-100 { background-color: rgb(30 58 138 / 0.35); }
+:root[data-modo='oscuro'] .text-blue-500, :root[data-modo='oscuro'] .text-blue-600, :root[data-modo='oscuro'] .text-blue-700, :root[data-modo='oscuro'] .text-blue-800 { color: rgb(147 197 253); }
+:root[data-modo='oscuro'] .border-blue-200, :root[data-modo='oscuro'] .border-blue-300 { border-color: rgb(30 64 175 / 0.7); }
+:root[data-modo='oscuro'] .bg-indigo-50, :root[data-modo='oscuro'] .bg-indigo-100 { background-color: rgb(49 46 129 / 0.35); }
+:root[data-modo='oscuro'] .text-indigo-500, :root[data-modo='oscuro'] .text-indigo-600, :root[data-modo='oscuro'] .text-indigo-700, :root[data-modo='oscuro'] .text-indigo-800 { color: rgb(165 180 252); }
+:root[data-modo='oscuro'] .border-indigo-200, :root[data-modo='oscuro'] .border-indigo-300 { border-color: rgb(55 48 163 / 0.7); }
+:root[data-modo='oscuro'] .bg-violet-50, :root[data-modo='oscuro'] .bg-violet-100 { background-color: rgb(76 29 149 / 0.35); }
+:root[data-modo='oscuro'] .text-violet-500, :root[data-modo='oscuro'] .text-violet-600, :root[data-modo='oscuro'] .text-violet-700, :root[data-modo='oscuro'] .text-violet-800 { color: rgb(196 181 253); }
+:root[data-modo='oscuro'] .border-violet-200, :root[data-modo='oscuro'] .border-violet-300 { border-color: rgb(91 33 182 / 0.7); }
+:root[data-modo='oscuro'] .bg-purple-50, :root[data-modo='oscuro'] .bg-purple-100 { background-color: rgb(88 28 135 / 0.35); }
+:root[data-modo='oscuro'] .text-purple-500, :root[data-modo='oscuro'] .text-purple-600, :root[data-modo='oscuro'] .text-purple-700, :root[data-modo='oscuro'] .text-purple-800 { color: rgb(216 180 254); }
+:root[data-modo='oscuro'] .border-purple-200, :root[data-modo='oscuro'] .border-purple-300 { border-color: rgb(107 33 168 / 0.7); }
+
+/* Textos del acento en modo oscuro: más claros para mantener contraste sobre superficies oscuras */
+:root[data-modo='oscuro'] .text-green-700, :root[data-modo='oscuro'] .text-green-800, :root[data-modo='oscuro'] .text-green-900 { color: rgb(var(--acento-300)); }
+:root[data-modo='oscuro'] .text-green-600 { color: rgb(var(--acento-400)); }

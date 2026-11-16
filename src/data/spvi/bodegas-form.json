@@ -1,0 +1,34 @@
+[
+  {
+    "subgrupo": "Información de bodegas",
+    "icon": "building",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "bodegas",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese nombre",
+        "required": true
+      },
+      {
+        "name": "esPrincipal",
+        "label": "Bodega principal de la sucursal",
+        "type": "checkbox",
+        "size": "small"
+      }
+    ]
+  }
+]

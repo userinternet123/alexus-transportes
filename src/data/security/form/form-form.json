@@ -1,0 +1,42 @@
+[
+  {
+    "subgrupo": "Información de los Permisos",
+    "icon": "building",
+    "description": "Listado de los permisos en base de datos",
+    "dataField": "formularios",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "idFormulario",
+        "size": "full",
+        "label": "Código",
+        "placeholder": "Código generado automáticamente",
+        "mask": "number",
+        "readOnly": true,
+        "defaultValue": "999"
+      },
+      {
+        "name": "nombreFormulario",
+        "size": "full",
+        "label": "Nombre",
+        "placeholder": "Ingrese el nombre"
+      },
+      {
+        "name": "descripcionFormulario",
+        "size": "full",
+        "label": "Descripción",
+        "placeholder": "Ingrese la descripción"
+      },
+      {
+        "name": "estadoFormulario",
+        "type": "badge",
+        "label": "Estado",
+        "placeholder": "",
+        "readOnly": true,
+        "defaultValue": "ACTIVO"
+      }
+    ]
+  }
+]

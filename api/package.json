@@ -1,0 +1,85 @@
+{
+  "name": "@spvi/api",
+  "version": "2.0.0",
+  "private": true,
+  "description": "SPVI 2.0 — API REST (NestJS + Prisma + PostgreSQL)",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "postinstall": "prisma generate",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "dev": "nest start --watch",
+    "lint": "eslint \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:cov": "jest --coverage",
+    "prisma:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "usuarios": "tsx prisma/usuarios.ts",
+    "db:studio": "prisma studio",
+    "etl:sucursal": "tsx scripts/etl/migrar-sucursal.ts",
+    "humo": "node scripts/prueba-humo.mjs",
+    "build:seed": "tsc -p tsconfig.seed.json",
+    "build:release": "prisma generate && nest build && tsc -p tsconfig.seed.json && tsc -p tsconfig.etl.json",
+    "licencia:claves": "tsx scripts/licencia/claves.ts",
+    "licencia:emitir": "tsx scripts/licencia/emitir.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/swagger": "^11.0.0",
+    "@nestjs/throttler": "^6.3.0",
+    "@prisma/client": "^6.2.0",
+    "argon2": "^0.41.1",
+    "decimal.js": "^10.4.3",
+    "docx": "^9.15.1",
+    "exceljs": "^4.4.0",
+    "fast-xml-parser": "^4.5.0",
+    "helmet": "^8.0.0",
+    "nestjs-pino": "^4.2.0",
+    "pdfkit": "^0.20.2",
+    "pino-http": "^10.3.0",
+    "prisma": "^6.2.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
+    "@types/mssql": "^9.1.5",
+    "@types/node": "^22.10.0",
+    "@types/pdfkit": "^0.17.7",
+    "jest": "^29.7.0",
+    "mssql": "^11.0.1",
+    "pino-pretty": "^13.0.0",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "testEnvironment": "node"
+  }
+}

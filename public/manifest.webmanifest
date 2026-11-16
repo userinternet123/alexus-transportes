@@ -1,0 +1,15 @@
+{
+  "name": "SPVI · Punto de venta",
+  "short_name": "SPVI",
+  "description": "Punto de venta, inventario y administración. SPVI by ALEXUS.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B2D6B",
+  "theme_color": "#0B2D6B",
+  "lang": "es-GT",
+  "icons": [
+    { "src": "/icono-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icono-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

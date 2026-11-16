@@ -1,0 +1,84 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   MOVIMIENTO ESTILO macOS
+   Curvas de Apple: entrada con desaceleración suave, salida más rápida.
+   Con "reducir movimiento" se cambia por desvanecidos cortos (ver al final).
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  --mac-curva: cubic-bezier(0.32, 0.72, 0, 1);      /* desaceleración de las hojas de macOS/iOS */
+  --mac-resorte: cubic-bezier(0.34, 1.36, 0.64, 1); /* pequeño rebote de las ventanas emergentes */
+  --mac-salida: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* Fondo de ventanas: oscurece y desenfoca como el cristal de macOS */
+@keyframes mac-fondo-entra { from { opacity: 0; backdrop-filter: blur(0); } to { opacity: 1; } }
+@keyframes mac-fondo-sale { to { opacity: 0; } }
+.mac-fondo { backdrop-filter: blur(4px) saturate(120%); -webkit-backdrop-filter: blur(4px) saturate(120%); animation: mac-fondo-entra 240ms ease-out both; }
+.mac-fondo.saliendo { animation: mac-fondo-sale 180ms var(--mac-salida) both; }
+
+/* Ventana (modal): aparece creciendo levemente desde el centro */
+@keyframes mac-ventana-entra { from { opacity: 0; transform: translateY(10px) scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes mac-ventana-sale { to { opacity: 0; transform: translateY(6px) scale(0.97); } }
+.mac-ventana { animation: mac-ventana-entra 340ms var(--mac-resorte) both; box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.35), 0 0 0 0.5px rgb(0 0 0 / 0.08); }
+.mac-ventana.saliendo { animation: mac-ventana-sale 160ms var(--mac-salida) both; }
+
+/* Hoja lateral: entra desde la derecha (escritorio) o desde abajo (celular) */
+@keyframes mac-hoja-entra-lado { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes mac-hoja-sale-lado { to { transform: translateX(100%); } }
+@keyframes mac-hoja-entra-abajo { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes mac-hoja-sale-abajo { to { transform: translateY(100%); } }
+.mac-hoja { animation: mac-hoja-entra-abajo 420ms var(--mac-curva) both; }
+.mac-hoja.saliendo { animation: mac-hoja-sale-abajo 220ms var(--mac-salida) both; }
+@media (min-width: 640px) {
+  .mac-hoja { animation-name: mac-hoja-entra-lado; }
+  .mac-hoja.saliendo { animation-name: mac-hoja-sale-lado; }
+}
+
+/* Paleta de comandos: como Spotlight */
+@keyframes mac-spotlight { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.mac-spotlight { animation: mac-spotlight 220ms var(--mac-curva) both; }
+
+/* Cambio de página: desvanecido con un leve desplazamiento */
+@keyframes mac-pagina { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.mac-pagina { animation: mac-pagina 280ms var(--mac-curva) both; }
+
+/* Botones: se "hunden" al presionarlos (transform no mueve el diseño) */
+button:not(:disabled), a[role='button'] { transition: transform 120ms var(--mac-curva), background-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease; }
+button:not(:disabled):active { transform: scale(0.97); }
+
+/* Tarjetas interactivas: se elevan al pasar el puntero (escritorio) */
+@media (hover: hover) {
+  .mac-elevar { transition: transform 200ms var(--mac-curva), box-shadow 200ms var(--mac-curva); }
+  .mac-elevar:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -10px rgb(0 0 0 / 0.25); }
+}
+
+/* Ventana del punto de venta: en el celular sube desde abajo; en pantallas grandes aparece al centro */
+.mac-emergente { animation: mac-hoja-entra-abajo 380ms var(--mac-curva) both; }
+.mac-emergente.saliendo { animation: mac-hoja-sale-abajo 200ms var(--mac-salida) both; }
+@media (min-width: 640px) {
+  .mac-emergente { animation: mac-ventana-entra 340ms var(--mac-resorte) both; }
+  .mac-emergente.saliendo { animation: mac-ventana-sale 160ms var(--mac-salida) both; }
+}
+/* Panel lateral: siempre entra desde la derecha */
+.mac-lateral { animation: mac-hoja-entra-lado 380ms var(--mac-curva) both; }
+.mac-lateral.saliendo { animation: mac-hoja-sale-lado 200ms var(--mac-salida) both; }
+/* Mientras algo se cierra no se le puede dar clic (evita cobrar dos veces, por ejemplo) */
+.saliendo { pointer-events: none; }
+
+/* ─── Movimiento reducido ───────────────────────────────────────────────────
+   Con "reducir movimiento" del sistema (o el ahorro de batería) NO se quita todo: se cambia por un
+   desvanecido corto, como hacen macOS e iOS. La persona puede forzar "Siempre" o "Reducidas" en Apariencia
+   (atributo data-movimiento en <html>). */
+@keyframes mac-desvanece { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mac-desvanece-sale { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-movimiento='completo']) :is(.mac-fondo, .mac-ventana, .mac-hoja, .mac-emergente, .mac-lateral, .mac-spotlight, .mac-pagina) { animation: mac-desvanece 150ms ease-out both !important; }
+  html:not([data-movimiento='completo']) :is(.mac-fondo, .mac-ventana, .mac-hoja, .mac-emergente, .mac-lateral).saliendo { animation: mac-desvanece-sale 120ms ease-in both !important; }
+  html:not([data-movimiento='completo']) button:not(:disabled):active { transform: none; }
+  html:not([data-movimiento='completo']) .mac-elevar:hover { transform: none; }
+  html:not([data-movimiento='completo']) .mac-cajon { transition-duration: 0ms !important; }
+}
+html[data-movimiento='reducido'] :is(.mac-fondo, .mac-ventana, .mac-hoja, .mac-emergente, .mac-lateral, .mac-spotlight, .mac-pagina) { animation: mac-desvanece 150ms ease-out both !important; }
+html[data-movimiento='reducido'] :is(.mac-fondo, .mac-ventana, .mac-hoja, .mac-emergente, .mac-lateral).saliendo { animation: mac-desvanece-sale 120ms ease-in both !important; }
+html[data-movimiento='reducido'] button:not(:disabled):active { transform: none; }
+html[data-movimiento='reducido'] .mac-elevar:hover { transform: none; }
+html[data-movimiento='reducido'] .mac-cajon { transition-duration: 0ms !important; }

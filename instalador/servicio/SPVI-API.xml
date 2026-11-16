@@ -1,0 +1,27 @@
+﻿<!--
+  Servicio de Windows del API de SPVI (WinSW: https://github.com/winsw/winsw).
+  %BASE% = carpeta de este archivo (C:\Program Files\SPVI\servicio).
+  El API lee su configuración de C:\ProgramData\SPVI\config\.env (directorio de trabajo).
+-->
+<service>
+  <id>SPVI-API</id>
+  <name>SPVI API</name>
+  <description>Servidor del sistema SPVI: API y portal web.</description>
+  <executable>%BASE%\..\runtime\node\node.exe</executable>
+  <arguments>"%BASE%\..\api\dist\main.js"</arguments>
+  <workingdirectory>%ProgramData%\SPVI\config</workingdirectory>
+  <!-- Sin consultas a internet: Prisma no busca actualizaciones (funciona igual en redes cerradas) -->
+  <env name="CHECKPOINT_DISABLE" value="1" />
+  <env name="PRISMA_HIDE_UPDATE_MESSAGE" value="1" />
+  <startmode>Automatic</startmode>
+  <delayedAutoStart>true</delayedAutoStart>
+  <depend>SPVI-PostgreSQL</depend>
+  <onfailure action="restart" delay="10 sec" />
+  <onfailure action="restart" delay="30 sec" />
+  <resetfailure>1 hour</resetfailure>
+  <logpath>%ProgramData%\SPVI\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+</service>

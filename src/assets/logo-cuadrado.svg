@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><g transform="translate(75 70) scale(4.5)">
+    <defs><linearGradient id="anillo10" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1A73F0"/><stop offset="1" stop-color="#0B2D6B"/></linearGradient></defs>
+    <path d="M78.6 78.6 A40 40 0 1 1 90 50" stroke="url(#anillo10)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <circle cx="86.5" cy="68" r="6.5" fill="#FFB020"/>
+    <path d="M33 72 L50 32 L67 72" stroke="#0B2D6B" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g></svg>

@@ -1,0 +1,50 @@
+[
+  {
+    "subgrupo": "Información de la sucursal",
+    "icon": "building",
+    "description": "Los campos marcados con * son obligatorios. Al crearla se agregan su bodega principal y su primera caja.",
+    "dataField": "sucursales",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "codigo",
+        "label": "Código",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ej. ZONA1",
+        "required": true
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ej. Sucursal Zona 1",
+        "required": true
+      },
+      {
+        "name": "direccion",
+        "label": "Dirección",
+        "type": "text",
+        "size": "large",
+        "placeholder": "Dirección de la sucursal"
+      },
+      {
+        "name": "telefono",
+        "label": "Teléfono",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ej. 2222-3333"
+      },
+      {
+        "name": "establecimientoFel",
+        "label": "Establecimiento FEL",
+        "type": "number",
+        "size": "small",
+        "placeholder": "Número que asignó la SAT (opcional)"
+      }
+    ]
+  }
+]

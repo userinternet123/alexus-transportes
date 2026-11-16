@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dte:GTDocumento xmlns:dte="http://www.sat.gob.gt/dte/fel/0.2.0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Version="0.1">
+  <dte:SAT ClaseDocumento="dte">
+    <dte:DTE ID="DatosCertificados">
+      <dte:DatosEmision ID="DatosEmision">
+        <dte:DatosGenerales CodigoMoneda="GTQ" FechaHoraEmision="2026-10-20T09:15:00-06:00" Tipo="FACT"/>
+        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="1" NITEmisor="0012345-6" NombreComercial="DISTRIBUIDORA EL SOL" NombreEmisor="DISTRIBUIDORA EL SOL, SOCIEDAD ANONIMA">
+          <dte:DireccionEmisor><dte:Direccion>CIUDAD</dte:Direccion></dte:DireccionEmisor>
+        </dte:Emisor>
+        <dte:Receptor IDReceptor="4587219K" NombreReceptor="ABARROTERIA DENISSE"/>
+        <dte:Items>
+          <dte:Item BienOServicio="B" NumeroLinea="1">
+            <dte:Cantidad>2</dte:Cantidad><dte:UnidadMedida>CJA</dte:UnidadMedida>
+            <dte:Descripcion>Aceite  Vegetal 1 L  caja 12 u</dte:Descripcion>
+            <dte:PrecioUnitario>216.00</dte:PrecioUnitario><dte:Precio>432.00</dte:Precio><dte:Descuento>12.00</dte:Descuento>
+            <dte:Impuestos><dte:Impuesto><dte:NombreCorto>IVA</dte:NombreCorto><dte:MontoImpuesto>45.00</dte:MontoImpuesto></dte:Impuesto></dte:Impuestos>
+            <dte:Total>420.00</dte:Total>
+          </dte:Item>
+          <dte:Item BienOServicio="B" NumeroLinea="2">
+            <dte:Cantidad>24</dte:Cantidad><dte:UnidadMedida>UNI</dte:UnidadMedida>
+            <dte:Descripcion>CAFÉ MOLIDO ALTIPLANO 200G 7401234567890</dte:Descripcion>
+            <dte:PrecioUnitario>22.50</dte:PrecioUnitario><dte:Precio>540.00</dte:Precio><dte:Descuento>0</dte:Descuento>
+            <dte:Total>540.00</dte:Total>
+          </dte:Item>
+          <dte:Item BienOServicio="S" NumeroLinea="3">
+            <dte:Cantidad>1</dte:Cantidad><dte:UnidadMedida>UNI</dte:UnidadMedida>
+            <dte:Descripcion>FLETE</dte:Descripcion>
+            <dte:PrecioUnitario>35.00</dte:PrecioUnitario><dte:Precio>35.00</dte:Precio><dte:Descuento>0.00</dte:Descuento>
+            <dte:Total>35.00</dte:Total>
+          </dte:Item>
+        </dte:Items>
+        <dte:Totales><dte:GranTotal>995.00</dte:GranTotal></dte:Totales>
+      </dte:DatosEmision>
+    </dte:DTE>
+    <dte:Certificacion>
+      <dte:NITCertificador>12521337</dte:NITCertificador>
+      <dte:NombreCertificador>CERTIFICADOR DE PRUEBA</dte:NombreCertificador>
+      <dte:NumeroAutorizacion Numero="3721958312" Serie="9A1B2C3D">9a1b2c3d-dda8-4bc0-9b2e-5f6e7d8c9b0a</dte:NumeroAutorizacion>
+      <dte:FechaHoraCertificacion>2026-10-20T09:15:05-06:00</dte:FechaHoraCertificacion>
+    </dte:Certificacion>
+  </dte:SAT>
+</dte:GTDocumento>

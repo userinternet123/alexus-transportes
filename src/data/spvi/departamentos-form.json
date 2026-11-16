@@ -1,0 +1,28 @@
+[
+  {
+    "subgrupo": "Información del área",
+    "icon": "building",
+    "description": "Áreas de la empresa (Ventas, Bodega, Administración…): cada puesto pertenece a una. No son los departamentos de Guatemala: esos ya están cargados y se usan en las direcciones.",
+    "dataField": "departamentos",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ej. Ventas",
+        "required": true
+      }
+    ]
+  }
+]

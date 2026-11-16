@@ -1,0 +1,19 @@
+[
+  {
+    "subgrupo": "Asignación de Roles",
+    "icon": "user",
+    "fields": [
+      {
+        "name": "usuario",
+        "label": "Usuario",
+        "type": "autocomplete"
+      },
+      {
+        "name": "roles",
+        "label": "Roles",
+        "type": "assignment",
+        "size": "full"
+      }
+    ]
+  }
+]

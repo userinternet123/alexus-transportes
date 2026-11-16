@@ -1,0 +1,28 @@
+[
+  {
+    "subgrupo": "Información de marcas",
+    "icon": "building",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "marcas",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ingrese nombre",
+        "required": true
+      }
+    ]
+  }
+]
