@@ -26,7 +26,9 @@ export const MENU_ITEMS = {
     {
       label: 'Viajes', name: 'mod-viajes', icon: Route, tag: 'viajes.ver',
       submenu: [
-        // Fase 1: pantallas de viajes (programar, en ruta, liquidar) y cotizador
+        pantalla('viajes', 'Viajes', 'viajes', 'viajes.ver'),
+        pantalla('cotizador', 'Cotizador', 'cotizador', 'viajes.cotizar'),
+        pantalla('inspecciones', 'Inspección pre viaje', 'inspecciones', 'inspecciones.ver'),
         catalogo('rutas', 'Rutas', 'catalogos.ver'),
         catalogo('tarifas', 'Tarifas por cliente', 'tarifas.ver'),
       ],
@@ -42,7 +44,7 @@ export const MENU_ITEMS = {
     {
       label: 'Combustible', name: 'mod-combustible', icon: Fuel, tag: 'combustible.ver',
       submenu: [
-        // Fase 1: registro de cargas y rendimiento por cabezal
+        pantalla('combustible', 'Cargas y rendimiento', 'combustible', 'combustible.ver'),
       ],
     },
     {

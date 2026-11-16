@@ -9,6 +9,10 @@ import CambiarPassword from '../pages/CambiarPassword'
 import Home from '../pages/Home'
 import DynamicPage from '../pages/DynamicPage'
 
+import Viajes from '../components/operacion/Viajes'
+import Cotizador from '../components/operacion/Cotizador'
+import Combustible from '../components/operacion/Combustible'
+import Inspecciones from '../components/operacion/Inspecciones'
 import Gastos from '../components/finanzas/Gastos'
 import CentroReportes from '../components/finanzas/CentroReportes'
 import { RolesPermisos, Usuarios, Parametros, ConfigNegocio, Licencia } from '../components/admin'
@@ -28,6 +32,12 @@ function AppRouter() {
           {Object.keys(indice).map((clave) => (
             <Route key={clave} path={clave} element={<DynamicPage />} />
           ))}
+
+          {/* Operación */}
+          <Route path="viajes" element={<Viajes />} />
+          <Route path="cotizador" element={<Cotizador />} />
+          <Route path="combustible" element={<Combustible />} />
+          <Route path="inspecciones" element={<Inspecciones />} />
 
           {/* Finanzas y reportes */}
           <Route path="gastos" element={<Gastos />} />

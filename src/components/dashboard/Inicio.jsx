@@ -1,7 +1,7 @@
 /**
  * INICIO: saludo, avisos de Central y licencia, resumen de la flota y accesos rápidos.
- * El resumen sale de los catálogos y reportes del API; cuando entren viajes y combustible
- * (fase 1) se completa con viajes en ruta, ingresos del mes y alertas de mantenimiento.
+ * El resumen sale de los catálogos, de /viajes (en ruta, programados, ingresos y utilidad del
+ * mes) y del reporte de documentos por vencer. Las alertas de mantenimiento llegan por notificaciones.
  */
 import FirmaAlexus from '../comun/FirmaAlexus'
 import { useContext, useEffect, useState } from 'react'
@@ -26,6 +26,7 @@ export default function Inicio() {
   const marca = useMarca()
   const [flota, setFlota] = useState(null)
   const [porVencer, setPorVencer] = useState(null)
+  const [viajes, setViajes] = useState(null)
 
   useEffect(() => {
     if (hasPermission('flota.ver')) {
@@ -36,6 +37,9 @@ export default function Inicio() {
         const cabezales = c.data.data ?? []
         setFlota({ cabezales: cabezales.length, enTaller: cabezales.filter((x) => x.estado === 'EN_TALLER').length, pilotos: (p.data.data ?? []).length })
       }).catch(() => {})
+    }
+    if (hasPermission('viajes.ver')) {
+      api.get('/viajes').then(({ data }) => setViajes(data.data)).catch(() => {})
     }
     if (hasPermission('reportes.flota')) {
       api.get('/reportes/documentos-por-vencer', { params: { dias: 30 } }).then(({ data }) => setPorVencer(data.data ?? [])).catch(() => {})
@@ -78,9 +82,21 @@ export default function Inicio() {
       {porVencer?.length > 0 && (
         <button type="button" onClick={() => navigate('/home/reportes?clave=documentos-por-vencer')} className="flex w-full items-center justify-between gap-3 rounded-tarjeta border border-amber-300 bg-amber-50 p-4 text-left">
           <span><span className="block font-semibold text-amber-900">{porVencer.length === 1 ? 'Un documento o licencia vence en los próximos 30 días' : `${porVencer.length} documentos o licencias vencen en los próximos 30 días`}</span>
-          <span className="text-sm text-amber-800">Seguros, tarjetas de circulación y licencias de pilotos. Renuévelos antes de que la unidad quede fuera de ruta.</span></span>
+            <span className="text-sm text-amber-800">Seguros, tarjetas de circulación y licencias de pilotos. Renuévelos antes de que la unidad quede fuera de ruta.</span></span>
           <span className="shrink-0 font-medium text-amber-900">Ver →</span>
         </button>
+      )}
+
+      {viajes && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <button type="button" onClick={() => navigate('/home/viajes')} className="rounded-xl border bg-white p-4 text-left hover:border-green-600"><p className="text-sm text-gray-500">En ruta ahora</p><p className="text-2xl font-semibold tabular-nums">{viajes.totales.enRuta}</p>
+            <p className="text-xs text-gray-500">{viajes.viajes.filter((v) => v.estado === 'EN_RUTA').slice(0, 3).map((v) => `${v.cabezal} → ${v.destino}`).join(' · ') || 'Ningún cabezal en ruta'}</p></button>
+          <button type="button" onClick={() => navigate('/home/viajes')} className="rounded-xl border bg-white p-4 text-left hover:border-green-600"><p className="text-sm text-gray-500">Programados</p><p className="text-2xl font-semibold tabular-nums">{viajes.totales.programados}</p>
+            {viajes.viajes.some((v) => v.atrasado) && <p className="text-xs text-red-700">{viajes.viajes.filter((v) => v.atrasado).length} con entrega atrasada</p>}</button>
+          <div className="rounded-xl border bg-white p-4"><p className="text-sm text-gray-500">Viajes cerrados del mes</p><p className="text-2xl font-semibold tabular-nums">{viajes.totales.cerrados}</p><p className="text-xs text-gray-500">{new Intl.NumberFormat('es-GT', { maximumFractionDigits: 0 }).format(viajes.totales.km)} km recorridos</p></div>
+          <div className="rounded-xl border bg-white p-4"><p className="text-sm text-gray-500">Ingresos del mes</p><p className="text-2xl font-semibold tabular-nums">{new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(viajes.totales.ingresos)}</p>
+            {viajes.totales.utilidad !== undefined && <p className={`text-xs ${viajes.totales.utilidad < 0 ? 'text-red-700' : 'text-green-700'}`}>utilidad {new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(viajes.totales.utilidad)} ({viajes.totales.margen}%)</p>}</div>
+        </div>
       )}
 
       {flota && (

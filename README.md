@@ -46,8 +46,9 @@ Entre con `admin` y la contraseña del seed (pide cambiarla). Sin `CLAVE_PUBLICA
 
 ## Estado del proyecto
 
-- **Fase 0 (esta versión):** plataforma limpia, esquema de datos completo de transporte, permisos y roles (gerente, despachador, piloto, taller, contador, RRHH), 17 catálogos en el portal (cabezales, remolques, documentos, pilotos, rutas, tarifas, llantas, planes, repuestos, marcas, clientes, proveedores, talleres, sedes, áreas, puestos, empleados), 10 reportes SQL, gastos de operación, datos de prueba.
-- **Siguiente, fase 1:** pantallas de viajes (programar, en ruta, finalizar, liquidar), cotizador, cargas de combustible, inspección pre viaje y app del piloto.
+- **Fase 0:** plataforma limpia, esquema de datos completo de transporte, permisos y roles (gerente, despachador, piloto, taller, contador, RRHH), 17 catálogos en el portal, 10 reportes SQL, gastos de operación, datos de prueba.
+- **Fase 1 (esta versión):** **viajes** (programar → en ruta → finalizar → liquidar, con costos, foto del recibo, saldo del piloto y utilidad), **cotizador** (costo real por km desde el historial o parámetros, precio sugerido con margen objetivo, comparación con la tarifa del cliente y con viajes anteriores de la ruta), **combustible** (cargas con vale, rendimiento km/gal tanque lleno a tanque lleno, alerta de consumo, costo automático en el viaje) e **inspección pre viaje** (checklist de 32 puntos tipo DOT; una falla crítica no deja salir y abre sola la orden de taller). Alertas: entrega atrasada, km vacíos sobre la meta, margen bajo, servicio por km próximo.
+- **Siguiente, fase 2:** órdenes de trabajo en pantalla, alertas de mantenimiento en el inicio, cuentas por cobrar, incidentes y multas. Fase 3: llantas por posición, scorecard del piloto, tablero de gerencia, app del piloto.
 
 ## Agregar un catálogo nuevo
 1. Modelo en `api/prisma/schema.prisma` con campo `activo` → `npx prisma migrate dev`.

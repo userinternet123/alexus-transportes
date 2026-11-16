@@ -58,6 +58,9 @@ export const PERMISOS: Record<string, { modulo: string; descripcion: string }> =
   'combustible.ver': { modulo: 'Combustible', descripcion: 'Ver cargas y rendimiento' },
   'combustible.registrar': { modulo: 'Combustible', descripcion: 'Registrar cargas de combustible' },
   'combustible.anular': { modulo: 'Combustible', descripcion: 'Anular cargas de combustible' },
+  // Inspección pre viaje (checklist del cabezal y remolque antes de salir)
+  'inspecciones.ver': { modulo: 'Inspecciones', descripcion: 'Ver inspecciones pre viaje' },
+  'inspecciones.registrar': { modulo: 'Inspecciones', descripcion: 'Registrar inspecciones pre viaje' },
 
   // Llantas
   'llantas.ver': { modulo: 'Llantas', descripcion: 'Ver llantas, montajes y vida útil' },
@@ -110,16 +113,16 @@ export const ROLES_BASE: Record<string, { descripcion: string; permisos: string[
     permisos: [
       'catalogos.ver', 'terceros.ver', 'terceros.crear', 'terceros.editar', 'tarifas.ver', 'flota.ver', 'pilotos.ver',
       'viajes.ver', 'viajes.crear', 'viajes.editar', 'viajes.cerrar', 'viajes.cotizar',
-      'combustible.ver', 'combustible.registrar', 'mantenimiento.ver', 'reportes.viajes', 'reportes.flota',
+      'combustible.ver', 'combustible.registrar', 'inspecciones.ver', 'inspecciones.registrar', 'mantenimiento.ver', 'reportes.viajes', 'reportes.flota',
     ],
   },
   PILOTO: {
     descripcion: 'Piloto: ve sus viajes, registra combustible y gastos del viaje desde el celular',
-    permisos: ['viajes.ver', 'viajes.editar', 'combustible.registrar', 'flota.ver'],
+    permisos: ['viajes.ver', 'viajes.editar', 'combustible.ver', 'combustible.registrar', 'inspecciones.ver', 'inspecciones.registrar', 'flota.ver'],
   },
   TALLER: {
     descripcion: 'Taller: órdenes de trabajo, repuestos y llantas',
-    permisos: ['catalogos.ver', 'flota.ver', 'flota.editar', 'llantas.ver', 'llantas.crear', 'llantas.editar', 'llantas.eliminar', 'mantenimiento.ver', 'mantenimiento.crear', 'mantenimiento.editar', 'mantenimiento.cerrar', 'reportes.mantenimiento'],
+    permisos: ['catalogos.ver', 'flota.ver', 'flota.editar', 'inspecciones.ver', 'llantas.ver', 'llantas.crear', 'llantas.editar', 'llantas.eliminar', 'mantenimiento.ver', 'mantenimiento.crear', 'mantenimiento.editar', 'mantenimiento.cerrar', 'reportes.mantenimiento'],
   },
   CONTADOR: {
     descripcion: 'Contabilidad: gastos, liquidaciones, planilla y reportes financieros',

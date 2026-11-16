@@ -137,15 +137,15 @@ async function main() {
         estado: k === 2 ? 'FINALIZADO' : 'LIQUIDADO', creadoPorId: admin.id,
       } });
       numero += 1;
-      await prisma.costoViaje.createMany({ data: [
-        { viajeId: viaje.id, tipo: 'COMBUSTIBLE', descripcion: 'Diésel', monto: D(combustible), fecha: salida, registradoPorId: admin.id },
-        { viajeId: viaje.id, tipo: 'PEAJE', descripcion: 'Peajes ida y vuelta', monto: D(peajes), fecha: salida, registradoPorId: admin.id },
-        { viajeId: viaje.id, tipo: 'VIATICO', descripcion: 'Alimentación y hospedaje', monto: D(viatico), fecha: salida, registradoPorId: admin.id },
-      ] });
-      await prisma.cargaCombustible.create({ data: {
+      const cargaSalida = await prisma.cargaCombustible.create({ data: {
         sucursalId: sucursal.id, cabezalId: cabezales[c].id, pilotoId: pilotos[c].id, viajeId: viaje.id, fecha: salida, odometro: D(kmSalida),
         galones: D(galones), precioGalon: D(precioGal), total: D(combustible), tanqueLleno: true, estacion: 'Puma Calzada Roosevelt', documento: `VALE-${numero}`, registradoPorId: admin.id,
       } });
+      await prisma.costoViaje.createMany({ data: [
+        { viajeId: viaje.id, tipo: 'COMBUSTIBLE', descripcion: `${galones} gal en Puma Calzada Roosevelt`, monto: D(combustible), fecha: salida, pagadoPorPiloto: false, cargaId: cargaSalida.id, registradoPorId: admin.id },
+        { viajeId: viaje.id, tipo: 'PEAJE', descripcion: 'Peajes ida y vuelta', monto: D(peajes), fecha: salida, pagadoPorPiloto: true, registradoPorId: admin.id },
+        { viajeId: viaje.id, tipo: 'VIATICO', descripcion: 'Alimentación y hospedaje', monto: D(viatico), fecha: salida, pagadoPorPiloto: true, registradoPorId: admin.id },
+      ] });
       // Cierre del tramo: carga al llegar (para rendimiento tanque lleno a tanque lleno)
       await prisma.cargaCombustible.create({ data: {
         sucursalId: sucursal.id, cabezalId: cabezales[c].id, pilotoId: pilotos[c].id, viajeId: viaje.id, fecha: new Date(salida.getTime() + 20 * 3_600_000), odometro: D(kmSalida + kmRuta),
@@ -167,6 +167,24 @@ async function main() {
   await prisma.ordenTrabajoRepuesto.create({ data: { ordenId: o2.id, repuestoId: repuestos[3].id, marcaId: marcas.Bendix, cantidad: D(2), costoUnitario: D(1450), total: D(2900) } });
   await ot(3, { cabezalId: cabezales[3].id, tipo: 'SERVICIO_MAYOR', tallerId: taller.id, descripcion: 'Servicio mayor: inyectores y turbo', odometro: D(455000), fechaApertura: dia(2), manoObra: D(6500), totalRepuestos: D(0), total: D(6500), estado: 'EN_PROCESO' });
 
+  // Operación de hoy: un viaje programado para mañana y otro en ruta (para ver el flujo completo en pantalla)
+  const hoyMs = Date.now();
+  await prisma.viaje.create({ data: { numero: `V-${String(numero).padStart(6, '0')}`, sucursalId: sucursal.id, clienteId: clientes[0].id, rutaId: rutas[0].id, tarifaId: tarifas[0].id, cabezalId: cabezales[0].id, remolqueId: remolques[0].id, pilotoId: pilotos[0].id, origen: rutas[0].origen, destino: rutas[0].destino, carga: 'Contenedor 40 pies', referencia: 'OS-2041', fechaSalida: new Date(hoyMs + 20 * 3_600_000), fechaCompromiso: new Date(hoyMs + 48 * 3_600_000), montoCobrado: tarifas[0].monto, anticipoPiloto: D(800), pagoPiloto: D(150), estado: 'PROGRAMADO', creadoPorId: admin.id } });
+  numero += 1;
+  const enRuta = await prisma.viaje.create({ data: { numero: `V-${String(numero).padStart(6, '0')}`, sucursalId: sucursal.id, clienteId: clientes[1].id, rutaId: rutas[1].id, tarifaId: tarifas[1].id, cabezalId: cabezales[2].id, remolqueId: remolques[1].id, pilotoId: pilotos[2].id, origen: rutas[1].origen, destino: rutas[1].destino, carga: 'Cemento en sacos (28 t)', toneladas: D(28), fechaSalida: new Date(hoyMs - 5 * 3_600_000), fechaCompromiso: new Date(hoyMs + 30 * 3_600_000), kmSalida: cabezales[2].odometro, montoCobrado: tarifas[1].monto, anticipoPiloto: D(600), pagoPiloto: D(150), totalCostos: D(120), estado: 'EN_RUTA', creadoPorId: admin.id } });
+  numero += 1;
+  await prisma.costoViaje.create({ data: { viajeId: enRuta.id, tipo: 'PEAJE', descripcion: 'Peaje Palín', monto: D(120), fecha: new Date(hoyMs - 3 * 3_600_000), pagadoPorPiloto: true, registradoPorId: admin.id } });
+
+  // Inspecciones pre viaje: aprobada (C-03, la del viaje en ruta), con observaciones (C-02) y rechazada (C-05 → orden correctiva)
+  const CHECK = (await import('../src/modules/inspecciones/inspecciones.logica')).CHECKLIST;
+  const itemsDe = (fallas: Record<string, string>) => CHECK.map((i) => ({ clave: i.clave, grupo: i.grupo, nombre: i.nombre, critico: i.critico, ok: !(i.clave in fallas), observacion: fallas[i.clave] ?? null }));
+  await prisma.inspeccion.create({ data: { sucursalId: sucursal.id, cabezalId: cabezales[2].id, remolqueId: remolques[1].id, pilotoId: pilotos[2].id, viajeId: enRuta.id, fecha: new Date(hoyMs - 5.5 * 3_600_000), odometro: cabezales[2].odometro, resultado: 'APROBADA', fallas: 0, realizadoPorId: admin.id, items: { create: itemsDe({}) } } });
+  const obs = { ESPEJOS: 'Espejo derecho con fisura', TRIANGULOS: 'Falta un cono' };
+  await prisma.inspeccion.create({ data: { sucursalId: sucursal.id, cabezalId: cabezales[1].id, pilotoId: pilotos[1].id, fecha: dia(1), odometro: cabezales[1].odometro, resultado: 'CON_OBSERVACIONES', fallas: 2, observaciones: 'Puede salir; programar cambio de espejo', realizadoPorId: admin.id, items: { create: itemsDe(obs) } } });
+  const criticas = { PRESION_AIRE: 'Pierde presión con el motor apagado', LLANTAS_LABRADO: 'Llanta 4 lisa' };
+  const o4 = await ot(4, { cabezalId: cabezales[4].id, tipo: 'CORRECTIVO', descripcion: `Inspección pre viaje rechazada: ${Object.values(criticas).join('; ')}`, odometro: cabezales[4].odometro, fechaApertura: dia(3), estado: 'ABIERTA', observaciones: 'Abierta automáticamente por la inspección del piloto' });
+  await prisma.inspeccion.create({ data: { sucursalId: sucursal.id, cabezalId: cabezales[4].id, pilotoId: pilotos[4].id, fecha: dia(3), odometro: cabezales[4].odometro, resultado: 'RECHAZADA', fallas: 2, ordenId: o4.id, realizadoPorId: admin.id, items: { create: itemsDe(criticas) } } });
+
   // Gastos de operación del mes
   const cat = async (n: string) => (await prisma.categoriaGasto.findFirst({ where: { nombre: { contains: n } } }))?.id ?? (await prisma.categoriaGasto.create({ data: { nombre: n } })).id;
   await prisma.gasto.createMany({ data: [
@@ -176,7 +194,7 @@ async function main() {
     { sucursalId: sucursal.id, categoriaId: await cat('Salarios'), fecha: ymd(10), concepto: 'Planilla administrativa', monto: D(12000), medioPago: 'TRANSFERENCIA', usuarioId: admin.id },
   ] });
 
-  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 3 órdenes de taller.`);
+  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes (uno programado y uno en ruta), 4 órdenes de taller, 3 inspecciones.`);
 }
 
 main()
