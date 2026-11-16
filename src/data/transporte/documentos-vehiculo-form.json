@@ -1,0 +1,116 @@
+[
+  {
+    "subgrupo": "Información de documentos de vehículos",
+    "icon": "clipboardList",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "documentos-vehiculo",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "tipo",
+        "label": "Tipo de documento",
+        "type": "select",
+        "size": "medium",
+        "options": [
+          {
+            "value": "SEGURO",
+            "label": "Seguro"
+          },
+          {
+            "value": "TARJETA_CIRCULACION",
+            "label": "Tarjeta de circulación"
+          },
+          {
+            "value": "CALCOMANIA",
+            "label": "Calcomanía"
+          },
+          {
+            "value": "PERMISO_PESO",
+            "label": "Permiso de peso y dimensiones"
+          },
+          {
+            "value": "REVISION",
+            "label": "Revisión técnica"
+          },
+          {
+            "value": "OTRO",
+            "label": "Otro"
+          }
+        ],
+        "required": true
+      },
+      {
+        "name": "cabezalId",
+        "label": "Cabezal",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/flota/cabezales",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "codigo"
+        }
+      },
+      {
+        "name": "remolqueId",
+        "label": "Remolque",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/flota/remolques",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "codigo"
+        }
+      },
+      {
+        "name": "numero",
+        "label": "Número de póliza o documento",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese número de póliza o documento"
+      },
+      {
+        "name": "emisor",
+        "label": "Emisor (aseguradora, SAT…)",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese emisor (aseguradora, sat…)"
+      },
+      {
+        "name": "emitido",
+        "label": "Emitido",
+        "type": "date",
+        "size": "small"
+      },
+      {
+        "name": "vence",
+        "label": "Vence",
+        "type": "date",
+        "size": "small",
+        "required": true
+      },
+      {
+        "name": "costo",
+        "label": "Costo",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      },
+      {
+        "name": "notas",
+        "label": "Notas",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ingrese notas"
+      }
+    ]
+  }
+]

@@ -1,0 +1,111 @@
+{
+  "title": "",
+  "module": "Repuestos",
+  "endpoint": "/mantenimiento/repuestos",
+  "showSearch": true,
+  "showPagination": true,
+  "searchPlaceHolder": "Código o nombre",
+  "headerBtn": {
+    "label": "Agregar repuesto",
+    "action": "create",
+    "icon": "plus",
+    "size": 35,
+    "variant": "primary"
+  },
+  "filters": [
+    {
+      "name": "activo",
+      "type": "select",
+      "options": [
+        {
+          "label": "Activos",
+          "value": "true"
+        },
+        {
+          "label": "Inactivos",
+          "value": "false"
+        },
+        {
+          "label": "Todos",
+          "value": "todos"
+        }
+      ]
+    }
+  ],
+  "columns": [
+    {
+      "accessorKey": "codigo",
+      "header": "Código"
+    },
+    {
+      "accessorKey": "nombre",
+      "header": "Repuesto"
+    },
+    {
+      "accessorKey": "categoria",
+      "header": "Categoría"
+    },
+    {
+      "accessorKey": "marca.nombre",
+      "header": "Marca"
+    },
+    {
+      "accessorKey": "unidad",
+      "header": "Unidad"
+    },
+    {
+      "accessorKey": "precioReferencia",
+      "header": "Precio ref.",
+      "type": "money"
+    },
+    {
+      "accessorKey": "activo",
+      "header": "Estado",
+      "type": "badge"
+    }
+  ],
+  "actions": [
+    {
+      "estado": [
+        "ACTIVO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "view",
+          "icon": "eye",
+          "variant": "text-green-600",
+          "tamano": "icon"
+        },
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        },
+        {
+          "action": "delete",
+          "icon": "trash",
+          "variant": "text-red-600",
+          "tamano": "icon"
+        }
+      ]
+    },
+    {
+      "estado": [
+        "INACTIVO",
+        "BAJA",
+        "SUSPENDIDO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        }
+      ]
+    }
+  ]
+}

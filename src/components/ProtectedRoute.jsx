@@ -12,7 +12,7 @@ function ProtectedRoute({ children }) {
   const { user } = useContext(AuthContext)
   const [bloqueo, setBloqueo] = useState(null)
   useEffect(() => {
-    const alBloquear = (e) => setBloqueo(e.detail || 'Este equipo necesita una licencia de SPVI.')
+    const alBloquear = (e) => setBloqueo(e.detail || 'Este equipo necesita una licencia de ALEXUS Transportes.')
     window.addEventListener('spvi:licencia-requerida', alBloquear)
     return () => window.removeEventListener('spvi:licencia-requerida', alBloquear)
   }, [])

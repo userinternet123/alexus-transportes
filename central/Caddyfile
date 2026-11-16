@@ -1,5 +1,0 @@
-# HTTPS automático con Let's Encrypt para el dominio de Central
-{$DOMINIO} {
-	encode gzip
-	reverse_proxy central:3000
-}

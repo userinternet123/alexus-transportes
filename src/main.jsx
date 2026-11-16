@@ -12,7 +12,7 @@ import { aplicarMovimiento } from './utils/movimiento'
 
 aplicarMovimiento() // preferencia de animaciones guardada en este equipo
 
-// Errores del navegador → soporte y monitoreo (SPVI Central)
+// Errores del navegador → soporte y monitoreo (ALEXUS Central)
 instalarCapturaErrores()
 
 ReactDOM.createRoot(document.getElementById('root')).render(

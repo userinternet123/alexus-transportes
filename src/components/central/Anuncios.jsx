@@ -1,4 +1,4 @@
-// Avisos del proveedor y publicidad (desde SPVI Central). Nunca se muestran
+// Avisos del proveedor y publicidad (desde ALEXUS Central). Nunca se muestran
 // durante el cobro. La publicidad se identifica como tal. Cada anuncio se
 // puede cerrar y no vuelve a aparecer en este navegador.
 import { useEffect, useState } from 'react'

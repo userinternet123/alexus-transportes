@@ -20,6 +20,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:demo": "tsx prisma/demo.ts",
     "usuarios": "tsx prisma/usuarios.ts",
     "db:studio": "prisma studio",
     "humo": "node scripts/prueba-humo.mjs",

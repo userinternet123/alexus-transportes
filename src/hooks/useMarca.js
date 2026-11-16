@@ -2,7 +2,7 @@
 // Se obtiene del API sin sesión (/sistema/marca) y se guarda en caché local
 // para que el login y el menú la muestren al instante.
 // Lo que el negocio no haya configurado se completa con la marca de ALEXUS
-// (fabricante de SPVI): la marca del cliente siempre manda.
+// (fabricante de ALEXUS Transportes): la marca del cliente siempre manda.
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import simboloAlexus from '../assets/logo-cuadrado.svg'
@@ -17,9 +17,9 @@ export const ALEXUS = {
   sitio: 'https://alexus.com.gt',
 }
 
-const CACHE = 'spvi_marca'
+const CACHE = 'transportes_marca'
 const BASE = import.meta.env.VITE_API_URL
-const PREDETERMINADA = { nombre: 'SPVI', eslogan: 'Tu negocio, bajo control.', logoUrl: null, fondoLoginUrl: null, imagenInicioUrl: null }
+const PREDETERMINADA = { nombre: 'ALEXUS Transportes', eslogan: 'Tu flota, bajo control.', logoUrl: null, fondoLoginUrl: null, imagenInicioUrl: null }
 
 /** Convierte la ruta relativa del API en URL absoluta. */
 export const urlArchivo = (ruta) => (ruta ? `${BASE}${ruta}` : null)

@@ -1,0 +1,84 @@
+[
+  {
+    "subgrupo": "Información de pilotos",
+    "icon": "user",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "pilotos",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "empleadoId",
+        "label": "Empleado (créelo antes en Recursos humanos)",
+        "type": "select",
+        "size": "large",
+        "optionsUrl": "/rrhh/empleados",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombres"
+        },
+        "required": true
+      },
+      {
+        "name": "licenciaTipo",
+        "label": "Tipo de licencia",
+        "type": "text",
+        "size": "small",
+        "placeholder": "A, B, C…",
+        "required": true
+      },
+      {
+        "name": "licenciaNumero",
+        "label": "Número de licencia",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese número de licencia",
+        "required": true
+      },
+      {
+        "name": "licenciaVence",
+        "label": "Licencia vence",
+        "type": "date",
+        "size": "small",
+        "required": true
+      },
+      {
+        "name": "tipoSangre",
+        "label": "Tipo de sangre",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese tipo de sangre"
+      },
+      {
+        "name": "telefonoEmergencia",
+        "label": "Teléfono de emergencia",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese teléfono de emergencia",
+        "mask": "phone"
+      },
+      {
+        "name": "pagoPorViaje",
+        "label": "Pago (bono) por viaje",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      },
+      {
+        "name": "viaticoDiario",
+        "label": "Viático diario",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      }
+    ]
+  }
+]

@@ -20,7 +20,7 @@ export interface Licencia {
   maxUsuarios: number;
   emitida: string; // YYYY-MM-DD
   vence: string; // YYYY-MM-DD
-  // ── Versión 2 (emitidas por SPVI Central) ──
+  // ── Versión 2 (emitidas por ALEXUS Central) ──
   id?: string; // número de la licencia en Central
   equipo?: string | null; // código del equipo al que está atada (null = cualquiera)
   limites?: Limites; // null en un límite = sin límite

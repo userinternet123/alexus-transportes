@@ -9,7 +9,7 @@ import { Copy, Plus, Save, ShieldCheck } from 'lucide-react'
 import api from '../../services/api'
 import { usePermisos } from '../../hooks/usePermisos'
 import { showToast } from '../../utils/showToast'
-import { errorApi } from '../pos/formato'
+import { errorApi } from '../comun/formato'
 import { MENU_ITEMS } from '../layout/sidebar/config/sidebarMenu'
 import Modal from '../comun/Modal'
 

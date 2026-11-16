@@ -46,7 +46,7 @@ export class ErroresFilter implements ExceptionFilter {
 
     if (status >= 500) {
       this.log.error(`${req.method} ${req.url} -> ${codigo}: ${mensaje}`);
-      // Monitoreo: el error técnico (sin datos del cuerpo de la petición) se envía agrupado a SPVI Central
+      // Monitoreo: el error técnico (sin datos del cuerpo de la petición) se envía agrupado a ALEXUS Central
       const ruta = `${req.method} ${(req as Request & { route?: { path?: string } }).route?.path ?? req.path}`;
       this.central?.reportarError({
         origen: 'api',

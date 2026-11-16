@@ -1,0 +1,83 @@
+[
+  {
+    "subgrupo": "Información de planes de mantenimiento",
+    "icon": "wrench",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "planes-mantenimiento",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "large",
+        "placeholder": "Ingrese nombre",
+        "required": true
+      },
+      {
+        "name": "aplicaA",
+        "label": "Aplica a",
+        "type": "select",
+        "size": "small",
+        "options": [
+          {
+            "value": "CABEZAL",
+            "label": "Cabezales"
+          },
+          {
+            "value": "REMOLQUE",
+            "label": "Remolques"
+          },
+          {
+            "value": "AMBOS",
+            "label": "Ambos"
+          }
+        ]
+      },
+      {
+        "name": "cadaKm",
+        "label": "Cada cuántos km",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "cadaDias",
+        "label": "Cada cuántos días",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "avisoKm",
+        "label": "Avisar con km de anticipación",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "avisoDias",
+        "label": "Avisar con días de anticipación",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "descripcion",
+        "label": "Descripción",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ingrese descripción"
+      }
+    ]
+  }
+]

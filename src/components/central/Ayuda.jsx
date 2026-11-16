@@ -1,17 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// AYUDA: tickets de soporte al proveedor (SPVI Central) desde el portal.
+// AYUDA: tickets de soporte al proveedor (ALEXUS Central) desde el portal.
 // El usuario describe el problema y puede adjuntar una captura; se agregan
 // datos técnicos (pantalla, navegador, últimos errores) para resolver más rápido.
 // La respuesta del proveedor llega aquí mismo.
 // ─────────────────────────────────────────────────────────────────────────────
-import { Sugerencias } from '../comun/Experiencia'
 import { useEffect, useState } from 'react'
 import { ImagePlus, LifeBuoy, Send } from 'lucide-react'
 import api from '../../services/api'
 import { showToast } from '../../utils/showToast'
 import { prepararArchivo } from '../../utils/imagen'
 import { erroresRecientes } from '../../utils/erroresWeb'
-import { errorApi } from '../pos/formato'
+import { errorApi } from '../comun/formato'
 import Hoja, { Grupo } from '../comun/Hoja'
 
 const ESTADO = { ABIERTO: ['Recibido', 'bg-amber-50 text-amber-700'], EN_PROCESO: ['En atención', 'bg-sky-50 text-sky-700'], RESUELTO: ['Resuelto', 'bg-green-50 text-green-700'] }
@@ -63,7 +62,6 @@ export default function Ayuda({ onCerrar }) {
             : <MisTickets tickets={tickets} onActualizar={cargar} />}
         </>
       )}
-      <Sugerencias />
     </Hoja>
   )
 }

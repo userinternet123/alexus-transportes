@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// EQUIPO SIN LICENCIA: sin licencia válida (o vencida y pasada la gracia) SPVI no permite trabajar.
+// EQUIPO SIN LICENCIA: sin licencia válida (o vencida y pasada la gracia) ALEXUS Transportes no permite trabajar.
 // Aquí el administrador pega o elige su archivo .lic y lo activa; los demás usuarios ven a quién pedírselo.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useContext, useEffect, useState } from 'react'
@@ -9,7 +9,7 @@ import { AuthContext } from '../../context/AuthContext'
 import { useMarca } from '../../hooks/useMarca'
 import { usePermisos } from '../../hooks/usePermisos'
 import { showToast } from '../../utils/showToast'
-import { errorApi } from '../pos/formato'
+import { errorApi } from '../comun/formato'
 import FirmaAlexus from '../comun/FirmaAlexus'
 import CodigoEquipo from './CodigoEquipo'
 
@@ -26,7 +26,7 @@ export default function LicenciaRequerida({ motivo }) {
 
   const leerArchivo = (archivo) => {
     if (!archivo) return
-    if (archivo.size > 20_000) { setError('Ese archivo no parece una licencia de SPVI.'); return }
+    if (archivo.size > 20_000) { setError('Ese archivo no parece una licencia de ALEXUS Transportes.'); return }
     const r = new FileReader()
     r.onload = () => { setToken(String(r.result).trim()); setError(null) }
     r.readAsText(archivo)
@@ -45,9 +45,9 @@ export default function LicenciaRequerida({ motivo }) {
       <section className="mac-ventana w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg" aria-labelledby="lic-titulo">
         <div className="flex items-center gap-3">
           <img src={marca.logo} alt="" className="h-10 w-10 rounded-lg object-contain" />
-          <div><p className="text-sm text-gray-500">{marca.nombre}</p><h1 id="lic-titulo" className="text-xl font-semibold">Active la licencia de SPVI</h1></div>
+          <div><p className="text-sm text-gray-500">{marca.nombre}</p><h1 id="lic-titulo" className="text-xl font-semibold">Active la licencia de ALEXUS Transportes</h1></div>
         </div>
-        <p className="mt-4 rounded-control bg-amber-50 px-3 py-2 text-sm text-amber-900" role="alert">{motivo || 'Este equipo necesita una licencia de SPVI para empezar a trabajar.'}</p>
+        <p className="mt-4 rounded-control bg-amber-50 px-3 py-2 text-sm text-amber-900" role="alert">{motivo || 'Este equipo necesita una licencia de ALEXUS Transportes para empezar a trabajar.'}</p>
         {administra ? (
           <div className="mt-4 space-y-3">
             <CodigoEquipo codigo={codigo} />
@@ -62,7 +62,7 @@ export default function LicenciaRequerida({ motivo }) {
             <button type="button" disabled={!token.trim() || activando} onClick={activar} className="w-full rounded-control bg-green-600 px-4 py-2.5 font-medium text-white disabled:opacity-50">{activando ? 'Verificando…' : 'Activar licencia'}</button>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-700">Pida al administrador del sistema que active la licencia de este equipo. Mientras tanto no se puede trabajar en SPVI.</p>
+          <p className="mt-4 text-sm text-gray-700">Pida al administrador del sistema que active la licencia de este equipo. Mientras tanto no se puede trabajar en ALEXUS Transportes.</p>
         )}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm">
           <span className="text-gray-500">¿No tiene licencia? Escriba a <a className="underline" href="mailto:ventas@alexusgt.com">ventas@alexusgt.com</a></span>

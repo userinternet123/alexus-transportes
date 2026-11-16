@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Servicios de autenticación — SPVI 2.0
+// Servicios de autenticación — ALEXUS Transportes
 // Conserva la API que ya usa el portal (getUserInfo, hasPermission, isRoot,
 // leerToken) y la conecta al login nuevo (JWT + permisos por código).
 // ─────────────────────────────────────────────────────────────────────────────
@@ -10,7 +10,7 @@ import { moduloContratado } from '../config/modulos'
 export { leerToken }
 
 /**
- * Login contra SPVI 2.0. Guarda tokens y sucursal predeterminada.
+ * Login contra ALEXUS Transportes. Guarda tokens y sucursal predeterminada.
  * Devuelve el perfil: { id, username, nombre, sucursales, roles, permisos, debeCambiarPassword }
  */
 export async function login(username, password) {
@@ -39,7 +39,7 @@ export function getUserInfo() {
 
 /**
  * Permiso para mostrar un menú/botón.
- *  - Texto (SPVI 2.0): código de permiso, ej. 'ventas.crear'. '*' = superadmin.
+ *  - Texto (ALEXUS Transportes): código de permiso, ej. 'viajes.crear'. '*' = superadmin.
  *  - Número (menús heredados de la plantilla): solo superadmin o el comodín 777.
  */
 export function hasPermission(clave) {

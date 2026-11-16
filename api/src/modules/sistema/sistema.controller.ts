@@ -41,7 +41,7 @@ export class SistemaController {
     const url = (id?: string) => (id ? `/archivos/publico/${id}` : null);
     return {
       data: {
-        nombre: v['negocio.nombre'] ?? 'SPVI 2.0',
+        nombre: v['negocio.nombre'] ?? 'ALEXUS Transportes',
         eslogan: v['negocio.eslogan'] ?? 'Punto de venta e inventario',
         logoUrl: url(v['negocio.logo']),
         fondoLoginUrl: url(v['negocio.fondo_login']),

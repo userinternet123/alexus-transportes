@@ -1,0 +1,169 @@
+[
+  {
+    "subgrupo": "Información de cabezales",
+    "icon": "truck",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "cabezales",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "codigo",
+        "label": "Código interno",
+        "type": "text",
+        "size": "small",
+        "placeholder": "C-01",
+        "required": true
+      },
+      {
+        "name": "placa",
+        "label": "Placa",
+        "type": "text",
+        "size": "small",
+        "placeholder": "C123BCD",
+        "required": true
+      },
+      {
+        "name": "marca",
+        "label": "Marca",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Freightliner, Kenworth, International…",
+        "required": true
+      },
+      {
+        "name": "modelo",
+        "label": "Modelo",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese modelo"
+      },
+      {
+        "name": "anio",
+        "label": "Año",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "vin",
+        "label": "VIN / chasis",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese vin / chasis"
+      },
+      {
+        "name": "motor",
+        "label": "Motor",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese motor"
+      },
+      {
+        "name": "color",
+        "label": "Color",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese color"
+      },
+      {
+        "name": "ejes",
+        "label": "Ejes",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "odometro",
+        "label": "Odómetro actual (km)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "capacidadTanque",
+        "label": "Tanque (galones)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "rendimientoEsperado",
+        "label": "Rendimiento esperado (km/gal)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "fechaCompra",
+        "label": "Fecha de compra",
+        "type": "date",
+        "size": "small"
+      },
+      {
+        "name": "costoCompra",
+        "label": "Costo de compra",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      },
+      {
+        "name": "vidaUtilAnios",
+        "label": "Vida útil (años)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "pilotoAsignadoId",
+        "label": "Piloto asignado",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/pilotos",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "empleado.nombres"
+        }
+      },
+      {
+        "name": "estado",
+        "label": "Situación",
+        "type": "select",
+        "size": "small",
+        "options": [
+          {
+            "value": "ACTIVO",
+            "label": "Activo"
+          },
+          {
+            "value": "EN_TALLER",
+            "label": "En taller"
+          },
+          {
+            "value": "INACTIVO",
+            "label": "Inactivo"
+          },
+          {
+            "value": "VENDIDO",
+            "label": "Vendido"
+          }
+        ]
+      },
+      {
+        "name": "notas",
+        "label": "Notas",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ingrese notas"
+      }
+    ]
+  }
+]

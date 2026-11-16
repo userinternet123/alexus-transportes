@@ -6,7 +6,7 @@ import { usePermisos } from '../../hooks/usePermisos'
 import { useValidacion } from '../../hooks/useValidacion'
 import ResumenErrores from '../forms/ResumenErrores'
 import { showToast } from '../../utils/showToast'
-import { Q, errorApi } from '../pos/formato'
+import { Q, errorApi } from '../comun/formato'
 import Hoja, { Avatar, Fila, Grupo } from '../comun/Hoja'
 import SelectorMunicipio, { textoMunicipio } from '../comun/SelectorMunicipio'
 

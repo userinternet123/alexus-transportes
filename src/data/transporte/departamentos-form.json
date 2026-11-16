@@ -1,0 +1,28 @@
+[
+  {
+    "subgrupo": "Información de áreas de la empresa",
+    "icon": "usercog",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "departamentos",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ingrese nombre",
+        "required": true
+      }
+    ]
+  }
+]

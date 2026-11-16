@@ -1,5 +1,5 @@
 // Captura de errores del portal (navegador): se guardan los últimos para adjuntarlos
-// a un ticket de soporte y se informan al API, que los agrupa y envía a SPVI Central.
+// a un ticket de soporte y se informan al API, que los agrupa y envía a ALEXUS Central.
 import api, { leerToken } from '../services/api'
 
 const recientes = []

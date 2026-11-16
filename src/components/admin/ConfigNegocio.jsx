@@ -8,7 +8,7 @@ import api from '../../services/api'
 import { showToast } from '../../utils/showToast'
 import { subirArchivo } from '../../utils/imagen'
 import { invalidarMarca, urlArchivo } from '../../hooks/useMarca'
-import { errorApi } from '../pos/formato'
+import { errorApi } from '../comun/formato'
 import { MODOS, TEMAS } from '../../hooks/useTema'
 
 const IMAGENES = [

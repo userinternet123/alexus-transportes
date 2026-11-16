@@ -1,7 +1,7 @@
 /**
  * CÓDIGO DEL EQUIPO: identifica el servidor de la tienda para atarle la licencia (una licencia copiada a otra PC no sirve).
  * Sale del identificador que el sistema operativo asigna a la instalación (Windows: MachineGuid; Linux: machine-id), que no
- * cambia al cambiar disco, memoria o tarjeta de red; solo al reinstalar el sistema (ahí se transfiere desde SPVI Central).
+ * cambia al cambiar disco, memoria o tarjeta de red; solo al reinstalar el sistema (ahí se transfiere desde ALEXUS Central).
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';

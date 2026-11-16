@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Cliente HTTP del portal para SPVI 2.0 (reemplaza src/services/api.js).
+// Cliente HTTP del portal para ALEXUS Transportes (reemplaza src/services/api.js).
 //  - Bearer token + header X-Sucursal-Id (sucursal de trabajo)
 //  - Refresh token con ROTACIÓN y cola de peticiones (un solo refresh a la vez)
 //  - Errores normalizados: el API responde { ok:false, codigo, error, message }

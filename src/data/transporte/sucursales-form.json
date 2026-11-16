@@ -1,0 +1,51 @@
+[
+  {
+    "subgrupo": "Información de sedes",
+    "icon": "building",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "sucursales",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "codigo",
+        "label": "Código",
+        "type": "text",
+        "size": "small",
+        "placeholder": "S01",
+        "required": true
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese nombre",
+        "required": true
+      },
+      {
+        "name": "direccion",
+        "label": "Dirección",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ingrese dirección"
+      },
+      {
+        "name": "telefono",
+        "label": "Teléfono",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese teléfono",
+        "mask": "phone"
+      }
+    ]
+  }
+]

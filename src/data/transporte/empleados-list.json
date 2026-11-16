@@ -1,0 +1,96 @@
+{
+  "title": "",
+  "module": "Empleados",
+  "endpoint": "/rrhh/empleados",
+  "showSearch": true,
+  "showPagination": true,
+  "searchPlaceHolder": "Código, nombre o CUI",
+  "headerBtn": {
+    "label": "Agregar empleado",
+    "action": "create",
+    "icon": "plus",
+    "size": 35,
+    "variant": "primary"
+  },
+  "filters": [],
+  "columns": [
+    {
+      "accessorKey": "codigo",
+      "header": "Código"
+    },
+    {
+      "accessorKey": "nombres",
+      "header": "Nombres"
+    },
+    {
+      "accessorKey": "apellidos",
+      "header": "Apellidos"
+    },
+    {
+      "accessorKey": "puesto.nombre",
+      "header": "Puesto"
+    },
+    {
+      "accessorKey": "sucursal.nombre",
+      "header": "Sede"
+    },
+    {
+      "accessorKey": "telefono",
+      "header": "Teléfono"
+    },
+    {
+      "accessorKey": "salarioBase",
+      "header": "Salario",
+      "type": "money"
+    },
+    {
+      "accessorKey": "estado",
+      "header": "Estado",
+      "type": "badge"
+    }
+  ],
+  "actions": [
+    {
+      "estado": [
+        "ACTIVO"
+      ],
+      "columnaDb": "estado",
+      "options": [
+        {
+          "action": "view",
+          "icon": "eye",
+          "variant": "text-green-600",
+          "tamano": "icon"
+        },
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        },
+        {
+          "action": "delete",
+          "icon": "trash",
+          "variant": "text-red-600",
+          "tamano": "icon"
+        }
+      ]
+    },
+    {
+      "estado": [
+        "INACTIVO",
+        "BAJA",
+        "SUSPENDIDO"
+      ],
+      "columnaDb": "estado",
+      "options": [
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        }
+      ]
+    }
+  ]
+}

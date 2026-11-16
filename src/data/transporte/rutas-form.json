@@ -1,0 +1,73 @@
+[
+  {
+    "subgrupo": "Información de rutas",
+    "icon": "map",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "rutas",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre de la ruta",
+        "type": "text",
+        "size": "large",
+        "placeholder": "Guatemala - Puerto Quetzal",
+        "required": true
+      },
+      {
+        "name": "origen",
+        "label": "Origen",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese origen",
+        "required": true
+      },
+      {
+        "name": "destino",
+        "label": "Destino",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese destino",
+        "required": true
+      },
+      {
+        "name": "kmEstimados",
+        "label": "Km estimados",
+        "type": "number",
+        "size": "small",
+        "mask": "number",
+        "required": true
+      },
+      {
+        "name": "horasEstimadas",
+        "label": "Horas estimadas",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "peajesEstimados",
+        "label": "Peajes estimados",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      },
+      {
+        "name": "viaticoEstimado",
+        "label": "Viático estimado",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      }
+    ]
+  }
+]

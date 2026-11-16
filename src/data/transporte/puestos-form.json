@@ -1,0 +1,54 @@
+[
+  {
+    "subgrupo": "Información de puestos",
+    "icon": "usercog",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "puestos",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "departamentoId",
+        "label": "Área",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/rrhh/departamentos",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombre"
+        },
+        "required": true
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese nombre",
+        "required": true
+      },
+      {
+        "name": "salarioMinimo",
+        "label": "Salario mínimo",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      },
+      {
+        "name": "salarioMaximo",
+        "label": "Salario máximo",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      }
+    ]
+  }
+]

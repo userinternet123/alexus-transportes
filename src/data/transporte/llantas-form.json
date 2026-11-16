@@ -1,0 +1,110 @@
+[
+  {
+    "subgrupo": "Información de llantas",
+    "icon": "circle",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "llantas",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "codigo",
+        "label": "Serie / DOT / número interno",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese serie / dot / número interno",
+        "required": true
+      },
+      {
+        "name": "marcaId",
+        "label": "Marca",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/catalogos/marcas",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombre"
+        }
+      },
+      {
+        "name": "modelo",
+        "label": "Modelo",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese modelo"
+      },
+      {
+        "name": "medida",
+        "label": "Medida",
+        "type": "text",
+        "size": "small",
+        "placeholder": "11R22.5",
+        "required": true
+      },
+      {
+        "name": "precio",
+        "label": "Precio",
+        "type": "money",
+        "size": "small",
+        "mask": "money",
+        "required": true
+      },
+      {
+        "name": "fechaCompra",
+        "label": "Fecha de compra",
+        "type": "date",
+        "size": "small"
+      },
+      {
+        "name": "proveedorId",
+        "label": "Proveedor",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/terceros/proveedores",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "razonSocial"
+        }
+      },
+      {
+        "name": "reencauches",
+        "label": "Reencauches",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "estado",
+        "label": "Situación",
+        "type": "select",
+        "size": "small",
+        "options": [
+          {
+            "value": "EN_BODEGA",
+            "label": "En bodega"
+          },
+          {
+            "value": "MONTADA",
+            "label": "Montada"
+          },
+          {
+            "value": "EN_REENCAUCHE",
+            "label": "En reencauche"
+          },
+          {
+            "value": "DESECHADA",
+            "label": "Desechada"
+          }
+        ]
+      }
+    ]
+  }
+]

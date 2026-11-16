@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { BadgeCheck, Lock, Upload } from 'lucide-react'
 import api from '../../services/api'
 import { showToast } from '../../utils/showToast'
-import { errorApi } from '../pos/formato'
+import { errorApi } from '../comun/formato'
 import { Grupo } from '../comun/Hoja'
 
 const MODO = {

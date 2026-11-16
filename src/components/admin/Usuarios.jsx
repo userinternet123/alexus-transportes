@@ -11,7 +11,7 @@ import { usePermisos } from '../../hooks/usePermisos'
 import { useValidacion } from '../../hooks/useValidacion'
 import ResumenErrores from '../forms/ResumenErrores'
 import { showToast } from '../../utils/showToast'
-import { errorApi } from '../pos/formato'
+import { errorApi } from '../comun/formato'
 import Modal from '../comun/Modal'
 import Hoja, { Avatar, Fila, Grupo } from '../comun/Hoja'
 

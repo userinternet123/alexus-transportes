@@ -34,7 +34,7 @@ const schema = z.object({
     return h === 'localhost' || h === '::1' || /^127\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) || /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h);
   }, 'ANALITICA_URL debe estar en este equipo o en la red de la empresa: los datos del negocio no salen de ella'),
   ANALITICA_TOKEN: z.string().min(24, 'ANALITICA_TOKEN debe tener al menos 24 caracteres').optional(),
-  // SPVI Central (panel del proveedor). Sin estos valores, el agente queda inactivo.
+  // ALEXUS Central (panel del proveedor). Sin estos valores, el agente queda inactivo.
   CENTRAL_URL: z.string().url().optional(),
   CENTRAL_TOKEN: z.string().optional(),
   APP_VERSION: z.string().optional(), // lo escribe el instalador; si no, se lee del package.json

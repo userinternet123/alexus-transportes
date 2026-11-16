@@ -1,7 +1,7 @@
 {
-  "name": "SPVI · Punto de venta",
-  "short_name": "SPVI",
-  "description": "Punto de venta, inventario y administración. SPVI by ALEXUS.",
+  "name": "ALEXUS Transportes",
+  "short_name": "Transportes",
+  "description": "Control de cabezales, viajes, combustible, llantas y mantenimiento. Transportes by ALEXUS.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B2D6B",

@@ -51,7 +51,7 @@ export class CentralService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    if (!this.habilitado) { this.log.log('SPVI Central no configurado (CENTRAL_URL / CENTRAL_TOKEN): el agente está inactivo'); return; }
+    if (!this.habilitado) { this.log.log('ALEXUS Central no configurado (CENTRAL_URL / CENTRAL_TOKEN): el agente está inactivo'); return; }
     this.temporizadores.push(setTimeout(() => this.latido(), 15_000)); // al arrancar
     this.temporizadores.push(setInterval(() => this.latido(), 6 * 3_600_000)); // cada 6 h
     this.temporizadores.push(setInterval(() => this.enviarPendientes(), 60_000)); // errores y métricas
@@ -81,11 +81,11 @@ export class CentralService implements OnModuleInit, OnModuleDestroy {
       this.cache = estado;
       await this.prisma.parametroSistema.upsert({
         where: { clave: 'central.estado' },
-        create: { clave: 'central.estado', valor: JSON.stringify(estado), tipo: 'json', modulo: 'Central', descripcion: 'Último latido con SPVI Central' },
+        create: { clave: 'central.estado', valor: JSON.stringify(estado), tipo: 'json', modulo: 'Central', descripcion: 'Último latido con ALEXUS Central' },
         update: { valor: JSON.stringify(estado) },
       });
     } catch (e) {
-      this.log.warn(`Sin conexión con SPVI Central (${(e as Error).message}). Se reintentará más tarde.`);
+      this.log.warn(`Sin conexión con ALEXUS Central (${(e as Error).message}). Se reintentará más tarde.`);
     }
   }
 
@@ -99,14 +99,14 @@ export class CentralService implements OnModuleInit, OnModuleDestroy {
     const actual = guardada ? (JSON.parse(guardada.valor) as { pem: string; huella: string }) : null;
     if (!llave?.pem) return actual?.pem ?? null;
     let huella: string;
-    try { huella = huellaDe(llave.pem); } catch { this.log.warn('SPVI Central envió una llave de datos inválida: no se envía información'); return null; }
-    if (huella !== llave.huella) { this.log.warn('La huella de la llave de datos de SPVI Central no coincide: no se envía información'); return null; }
+    try { huella = huellaDe(llave.pem); } catch { this.log.warn('ALEXUS Central envió una llave de datos inválida: no se envía información'); return null; }
+    if (huella !== llave.huella) { this.log.warn('La huella de la llave de datos de ALEXUS Central no coincide: no se envía información'); return null; }
     if (!actual) {
-      await this.prisma.parametroSistema.create({ data: { clave: 'central.llave_datos', valor: JSON.stringify({ pem: llave.pem, huella }), tipo: 'json', modulo: 'Central', descripcion: 'Llave pública fijada de SPVI Central para cifrar la información que se le envía' } });
+      await this.prisma.parametroSistema.create({ data: { clave: 'central.llave_datos', valor: JSON.stringify({ pem: llave.pem, huella }), tipo: 'json', modulo: 'Central', descripcion: 'Llave pública fijada de ALEXUS Central para cifrar la información que se le envía' } });
       return llave.pem;
     }
     if (actual.huella !== huella) {
-      this.log.error(`La llave de datos de SPVI Central CAMBIÓ (antes ${actual.huella}, ahora ${huella}). Por seguridad no se envía información.`);
+      this.log.error(`La llave de datos de ALEXUS Central CAMBIÓ (antes ${actual.huella}, ahora ${huella}). Por seguridad no se envía información.`);
       return null;
     }
     return actual.pem;
@@ -122,9 +122,9 @@ export class CentralService implements OnModuleInit, OnModuleDestroy {
     if (actual?.valor === token.trim()) return;
     try {
       const estado = await this.licencia.guardarLicencia(token);
-      this.log.log(`Licencia actualizada desde SPVI Central: plan ${estado.plan}, módulos ${estado.modulos.join(', ')}`);
+      this.log.log(`Licencia actualizada desde ALEXUS Central: plan ${estado.plan}, módulos ${estado.modulos.join(', ')}`);
     } catch (e) {
-      this.log.warn(`Licencia recibida de SPVI Central rechazada: ${(e as Error).message}`);
+      this.log.warn(`Licencia recibida de ALEXUS Central rechazada: ${(e as Error).message}`);
     }
   }
 

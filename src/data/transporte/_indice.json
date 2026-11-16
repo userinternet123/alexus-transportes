@@ -1,0 +1,898 @@
+{
+  "clientes": {
+    "titulo": "Clientes",
+    "endpoint": "/terceros/clientes",
+    "botones": [
+      {
+        "name": "btnGuardarClientes",
+        "action": "create",
+        "url": "/terceros/clientes",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "tipo",
+          "nit"
+        ]
+      },
+      {
+        "name": "btnEditarClientes",
+        "action": "edit",
+        "url": "/terceros/clientes/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarClientes",
+        "action": "delete",
+        "url": "/terceros/clientes/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "proveedores": {
+    "titulo": "Proveedores",
+    "endpoint": "/terceros/proveedores",
+    "botones": [
+      {
+        "name": "btnGuardarProveedores",
+        "action": "create",
+        "url": "/terceros/proveedores",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "tipo",
+          "nit"
+        ]
+      },
+      {
+        "name": "btnEditarProveedores",
+        "action": "edit",
+        "url": "/terceros/proveedores/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarProveedores",
+        "action": "delete",
+        "url": "/terceros/proveedores/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "talleres": {
+    "titulo": "Talleres",
+    "endpoint": "/terceros/talleres",
+    "botones": [
+      {
+        "name": "btnGuardarTalleres",
+        "action": "create",
+        "url": "/terceros/talleres",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "tipo",
+          "nit"
+        ]
+      },
+      {
+        "name": "btnEditarTalleres",
+        "action": "edit",
+        "url": "/terceros/talleres/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarTalleres",
+        "action": "delete",
+        "url": "/terceros/talleres/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "rutas": {
+    "titulo": "Rutas",
+    "endpoint": "/catalogos/rutas",
+    "botones": [
+      {
+        "name": "btnGuardarRutas",
+        "action": "create",
+        "url": "/catalogos/rutas",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "nombre",
+          "origen",
+          "destino",
+          "kmEstimados"
+        ]
+      },
+      {
+        "name": "btnEditarRutas",
+        "action": "edit",
+        "url": "/catalogos/rutas/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarRutas",
+        "action": "delete",
+        "url": "/catalogos/rutas/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "tarifas": {
+    "titulo": "Tarifas por cliente",
+    "endpoint": "/tarifas",
+    "botones": [
+      {
+        "name": "btnGuardarTarifas",
+        "action": "create",
+        "url": "/tarifas",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "clienteId",
+          "tipo",
+          "monto"
+        ]
+      },
+      {
+        "name": "btnEditarTarifas",
+        "action": "edit",
+        "url": "/tarifas/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarTarifas",
+        "action": "delete",
+        "url": "/tarifas/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "cabezales": {
+    "titulo": "Cabezales",
+    "endpoint": "/flota/cabezales",
+    "botones": [
+      {
+        "name": "btnGuardarCabezales",
+        "action": "create",
+        "url": "/flota/cabezales",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "codigo",
+          "placa",
+          "marca"
+        ]
+      },
+      {
+        "name": "btnEditarCabezales",
+        "action": "edit",
+        "url": "/flota/cabezales/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarCabezales",
+        "action": "delete",
+        "url": "/flota/cabezales/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "remolques": {
+    "titulo": "Remolques",
+    "endpoint": "/flota/remolques",
+    "botones": [
+      {
+        "name": "btnGuardarRemolques",
+        "action": "create",
+        "url": "/flota/remolques",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "codigo",
+          "placa",
+          "tipo"
+        ]
+      },
+      {
+        "name": "btnEditarRemolques",
+        "action": "edit",
+        "url": "/flota/remolques/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarRemolques",
+        "action": "delete",
+        "url": "/flota/remolques/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "documentos-vehiculo": {
+    "titulo": "Documentos de vehículos",
+    "endpoint": "/flota/documentos",
+    "botones": [
+      {
+        "name": "btnGuardarDocumentosVehiculo",
+        "action": "create",
+        "url": "/flota/documentos",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "tipo",
+          "vence"
+        ]
+      },
+      {
+        "name": "btnEditarDocumentosVehiculo",
+        "action": "edit",
+        "url": "/flota/documentos/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarDocumentosVehiculo",
+        "action": "delete",
+        "url": "/flota/documentos/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "pilotos": {
+    "titulo": "Pilotos",
+    "endpoint": "/pilotos",
+    "botones": [
+      {
+        "name": "btnGuardarPilotos",
+        "action": "create",
+        "url": "/pilotos",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "empleadoId",
+          "licenciaTipo",
+          "licenciaNumero",
+          "licenciaVence"
+        ]
+      },
+      {
+        "name": "btnEditarPilotos",
+        "action": "edit",
+        "url": "/pilotos/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarPilotos",
+        "action": "delete",
+        "url": "/pilotos/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "llantas": {
+    "titulo": "Llantas",
+    "endpoint": "/llantas",
+    "botones": [
+      {
+        "name": "btnGuardarLlantas",
+        "action": "create",
+        "url": "/llantas",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "codigo",
+          "medida",
+          "precio"
+        ]
+      },
+      {
+        "name": "btnEditarLlantas",
+        "action": "edit",
+        "url": "/llantas/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarLlantas",
+        "action": "delete",
+        "url": "/llantas/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "planes-mantenimiento": {
+    "titulo": "Planes de mantenimiento",
+    "endpoint": "/mantenimiento/planes",
+    "botones": [
+      {
+        "name": "btnGuardarPlanesMantenimiento",
+        "action": "create",
+        "url": "/mantenimiento/planes",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "nombre"
+        ]
+      },
+      {
+        "name": "btnEditarPlanesMantenimiento",
+        "action": "edit",
+        "url": "/mantenimiento/planes/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarPlanesMantenimiento",
+        "action": "delete",
+        "url": "/mantenimiento/planes/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "repuestos": {
+    "titulo": "Repuestos",
+    "endpoint": "/mantenimiento/repuestos",
+    "botones": [
+      {
+        "name": "btnGuardarRepuestos",
+        "action": "create",
+        "url": "/mantenimiento/repuestos",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "codigo",
+          "nombre"
+        ]
+      },
+      {
+        "name": "btnEditarRepuestos",
+        "action": "edit",
+        "url": "/mantenimiento/repuestos/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarRepuestos",
+        "action": "delete",
+        "url": "/mantenimiento/repuestos/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "marcas": {
+    "titulo": "Marcas",
+    "endpoint": "/catalogos/marcas",
+    "botones": [
+      {
+        "name": "btnGuardarMarcas",
+        "action": "create",
+        "url": "/catalogos/marcas",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "nombre"
+        ]
+      },
+      {
+        "name": "btnEditarMarcas",
+        "action": "edit",
+        "url": "/catalogos/marcas/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarMarcas",
+        "action": "delete",
+        "url": "/catalogos/marcas/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "sucursales": {
+    "titulo": "Sedes",
+    "endpoint": "/catalogos/sucursales",
+    "botones": [
+      {
+        "name": "btnGuardarSucursales",
+        "action": "create",
+        "url": "/catalogos/sucursales",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "codigo",
+          "nombre"
+        ]
+      },
+      {
+        "name": "btnEditarSucursales",
+        "action": "edit",
+        "url": "/catalogos/sucursales/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarSucursales",
+        "action": "delete",
+        "url": "/catalogos/sucursales/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "departamentos": {
+    "titulo": "Áreas de la empresa",
+    "endpoint": "/rrhh/departamentos",
+    "botones": [
+      {
+        "name": "btnGuardarDepartamentos",
+        "action": "create",
+        "url": "/rrhh/departamentos",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "nombre"
+        ]
+      },
+      {
+        "name": "btnEditarDepartamentos",
+        "action": "edit",
+        "url": "/rrhh/departamentos/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarDepartamentos",
+        "action": "delete",
+        "url": "/rrhh/departamentos/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "puestos": {
+    "titulo": "Puestos",
+    "endpoint": "/rrhh/puestos",
+    "botones": [
+      {
+        "name": "btnGuardarPuestos",
+        "action": "create",
+        "url": "/rrhh/puestos",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "departamentoId",
+          "nombre"
+        ]
+      },
+      {
+        "name": "btnEditarPuestos",
+        "action": "edit",
+        "url": "/rrhh/puestos/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarPuestos",
+        "action": "delete",
+        "url": "/rrhh/puestos/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
+  "empleados": {
+    "titulo": "Empleados",
+    "endpoint": "/rrhh/empleados",
+    "botones": [
+      {
+        "name": "btnGuardarEmpleados",
+        "action": "create",
+        "url": "/rrhh/empleados",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "codigo",
+          "nombres",
+          "apellidos",
+          "cui",
+          "nit",
+          "sucursalId",
+          "puestoId",
+          "fechaIngreso",
+          "salarioBase"
+        ]
+      },
+      {
+        "name": "btnEditarEmpleados",
+        "action": "edit",
+        "url": "/rrhh/empleados/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarEmpleados",
+        "action": "delete",
+        "url": "/rrhh/empleados/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  }
+}

@@ -1,0 +1,109 @@
+[
+  {
+    "subgrupo": "Información de repuestos",
+    "icon": "wrench",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "repuestos",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "codigo",
+        "label": "Código",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese código",
+        "required": true
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "large",
+        "placeholder": "Ingrese nombre",
+        "required": true
+      },
+      {
+        "name": "categoria",
+        "label": "Categoría",
+        "type": "select",
+        "size": "medium",
+        "options": [
+          {
+            "value": "FILTROS",
+            "label": "Filtros"
+          },
+          {
+            "value": "LUBRICANTES",
+            "label": "Lubricantes"
+          },
+          {
+            "value": "FRENOS",
+            "label": "Frenos"
+          },
+          {
+            "value": "SUSPENSION",
+            "label": "Suspensión"
+          },
+          {
+            "value": "ELECTRICO",
+            "label": "Eléctrico"
+          },
+          {
+            "value": "MOTOR",
+            "label": "Motor"
+          },
+          {
+            "value": "TRANSMISION",
+            "label": "Transmisión"
+          },
+          {
+            "value": "LLANTAS",
+            "label": "Llantas"
+          },
+          {
+            "value": "CARROCERIA",
+            "label": "Carrocería"
+          },
+          {
+            "value": "OTRO",
+            "label": "Otro"
+          }
+        ]
+      },
+      {
+        "name": "marcaId",
+        "label": "Marca",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/catalogos/marcas",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombre"
+        }
+      },
+      {
+        "name": "unidad",
+        "label": "Unidad",
+        "type": "text",
+        "size": "small",
+        "placeholder": "UNIDAD, GALÓN, JUEGO"
+      },
+      {
+        "name": "precioReferencia",
+        "label": "Precio de referencia",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      }
+    ]
+  }
+]

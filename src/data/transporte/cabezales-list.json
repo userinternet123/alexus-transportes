@@ -1,0 +1,118 @@
+{
+  "title": "",
+  "module": "Cabezales",
+  "endpoint": "/flota/cabezales",
+  "showSearch": true,
+  "showPagination": true,
+  "searchPlaceHolder": "Código, placa, marca o modelo",
+  "headerBtn": {
+    "label": "Agregar cabezal",
+    "action": "create",
+    "icon": "plus",
+    "size": 35,
+    "variant": "primary"
+  },
+  "filters": [
+    {
+      "name": "activo",
+      "type": "select",
+      "options": [
+        {
+          "label": "Activos",
+          "value": "true"
+        },
+        {
+          "label": "Inactivos",
+          "value": "false"
+        },
+        {
+          "label": "Todos",
+          "value": "todos"
+        }
+      ]
+    }
+  ],
+  "columns": [
+    {
+      "accessorKey": "codigo",
+      "header": "Código"
+    },
+    {
+      "accessorKey": "placa",
+      "header": "Placa"
+    },
+    {
+      "accessorKey": "marca",
+      "header": "Marca"
+    },
+    {
+      "accessorKey": "modelo",
+      "header": "Modelo"
+    },
+    {
+      "accessorKey": "anio",
+      "header": "Año"
+    },
+    {
+      "accessorKey": "odometro",
+      "header": "Odómetro (km)"
+    },
+    {
+      "accessorKey": "pilotoAsignado.empleado.nombres",
+      "header": "Piloto"
+    },
+    {
+      "accessorKey": "estado",
+      "header": "Situación"
+    },
+    {
+      "accessorKey": "activo",
+      "header": "Estado",
+      "type": "badge"
+    }
+  ],
+  "actions": [
+    {
+      "estado": [
+        "ACTIVO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "view",
+          "icon": "eye",
+          "variant": "text-green-600",
+          "tamano": "icon"
+        },
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        },
+        {
+          "action": "delete",
+          "icon": "trash",
+          "variant": "text-red-600",
+          "tamano": "icon"
+        }
+      ]
+    },
+    {
+      "estado": [
+        "INACTIVO",
+        "BAJA",
+        "SUSPENDIDO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        }
+      ]
+    }
+  ]
+}

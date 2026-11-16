@@ -1,0 +1,91 @@
+[
+  {
+    "subgrupo": "Información de tarifas por cliente",
+    "icon": "money",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "tarifas",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "clienteId",
+        "label": "Cliente",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/terceros/clientes",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "razonSocial"
+        },
+        "required": true
+      },
+      {
+        "name": "rutaId",
+        "label": "Ruta (vacío = tarifa general del cliente)",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/catalogos/rutas",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombre"
+        }
+      },
+      {
+        "name": "tipo",
+        "label": "Tipo de tarifa",
+        "type": "select",
+        "size": "small",
+        "options": [
+          {
+            "value": "POR_VIAJE",
+            "label": "Por viaje"
+          },
+          {
+            "value": "POR_KM",
+            "label": "Por kilómetro"
+          },
+          {
+            "value": "POR_TONELADA",
+            "label": "Por tonelada"
+          }
+        ],
+        "required": true
+      },
+      {
+        "name": "monto",
+        "label": "Monto (Q)",
+        "type": "money",
+        "size": "small",
+        "mask": "money",
+        "required": true
+      },
+      {
+        "name": "vigenteDesde",
+        "label": "Vigente desde",
+        "type": "date",
+        "size": "small"
+      },
+      {
+        "name": "vigenteHasta",
+        "label": "Vigente hasta",
+        "type": "date",
+        "size": "small"
+      },
+      {
+        "name": "descripcion",
+        "label": "Descripción",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ingrese descripción"
+      }
+    ]
+  }
+]

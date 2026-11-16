@@ -1,7 +1,8 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// INICIO: imagen del negocio, saludo, resumen del día y accesos rápidos
-// (solo a lo que el usuario tiene permiso).
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * INICIO: saludo, avisos de Central y licencia, resumen de la flota y accesos rápidos.
+ * El resumen sale de los catálogos y reportes del API; cuando entren viajes y combustible
+ * (fase 1) se completa con viajes en ruta, ingresos del mes y alertas de mantenimiento.
+ */
 import FirmaAlexus from '../comun/FirmaAlexus'
 import { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -11,7 +12,6 @@ import { navigateToSubmenu } from '../../utils/NavigationData'
 import { hasPermission } from '../../services/authService'
 import { useMarca } from '../../hooks/useMarca'
 import api from '../../services/api'
-import { Q } from '../pos/formato'
 import Anuncios, { useEstadoCentral } from '../central/Anuncios'
 import AvisoActualizacion from '../central/AvisoActualizacion'
 
@@ -19,28 +19,26 @@ const saludo = () => {
   const h = Number(new Intl.DateTimeFormat('es-GT', { hour: 'numeric', hour12: false, timeZone: 'America/Guatemala' }).format(new Date()))
   return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches'
 }
-const hoy = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guatemala' }).format(new Date())
 
 export default function Inicio() {
   const navigate = useNavigate()
-  const [porRecibir, setPorRecibir] = useState(0)
   const { user } = useContext(AuthContext)
   const marca = useMarca()
-  const [resumen, setResumen] = useState(null)
-  const [caja, setCaja] = useState(undefined)
+  const [flota, setFlota] = useState(null)
+  const [porVencer, setPorVencer] = useState(null)
 
   useEffect(() => {
-    if (hasPermission('reportes.ventas')) {
-      api.get('/reportes/ventas-por-dia', { params: { desde: hoy(), hasta: hoy() } })
-        .then(({ data }) => setResumen(data.data[0] ?? { ventas: 0, total: 0, utilidad: 0 }))
-        .catch(() => {})
+    if (hasPermission('flota.ver')) {
+      Promise.all([
+        api.get('/flota/cabezales', { params: { limit: 0, activo: 'true' } }),
+        api.get('/pilotos', { params: { limit: 0, activo: 'true' } }),
+      ]).then(([c, p]) => {
+        const cabezales = c.data.data ?? []
+        setFlota({ cabezales: cabezales.length, enTaller: cabezales.filter((x) => x.estado === 'EN_TALLER').length, pilotos: (p.data.data ?? []).length })
+      }).catch(() => {})
     }
-    // Mercadería que otra sucursal envió y nadie ha recibido
-    if (hasPermission('inventario.trasladar')) {
-      api.get('/inventario/traslados/pendientes').then(({ data }) => setPorRecibir(data.data.porRecibir)).catch(() => {})
-    }
-    if (hasPermission('caja.operar')) {
-      api.get('/caja/mi-sesion').then(({ data }) => setCaja(data.data)).catch(() => setCaja(null))
+    if (hasPermission('reportes.flota')) {
+      api.get('/reportes/documentos-por-vencer', { params: { dias: 30 } }).then(({ data }) => setPorVencer(data.data ?? [])).catch(() => {})
     }
   }, [])
 
@@ -56,7 +54,7 @@ export default function Inicio() {
 
   return (
     <div className="space-y-4 p-4">
-      {/* Con la imagen de ALEXUS (el negocio aún no subió la suya) se usa su azul, sin mezclar con el verde */}
+      {/* Con la imagen de ALEXUS (la empresa aún no subió la suya) se usa su azul, sin mezclar con el verde */}
       <section className={`relative overflow-hidden rounded-2xl text-white ${marca.predeterminada?.imagenInicio ? '' : 'bg-green-900'}`}
         style={marca.predeterminada?.imagenInicio ? { backgroundColor: '#0B2D6B' } : undefined}>
         {marca.imagenInicio && <img src={marca.imagenInicio} alt="" className={`absolute inset-0 h-full w-full object-cover ${marca.predeterminada?.imagenInicio ? '' : 'opacity-60'}`} />}
@@ -68,13 +66,6 @@ export default function Inicio() {
       </section>
 
       {central?.actualizacion && <AvisoActualizacion actualizacion={central.actualizacion} versionActual={central.version} />}
-      {porRecibir > 0 && (
-        <button type="button" onClick={() => navigate('/home/traslados?vista=por-recibir')} className="flex w-full items-center justify-between gap-3 rounded-tarjeta border border-amber-300 bg-amber-50 p-4 text-left">
-          <span><span className="block font-semibold text-amber-900">{porRecibir === 1 ? 'Tiene 1 traslado por recibir' : `Tiene ${porRecibir} traslados por recibir`}</span>
-          <span className="text-sm text-amber-800">Otra sucursal le envió mercadería. Regístrela al llegar para que aparezca en sus existencias.</span></span>
-          <span className="shrink-0 font-medium text-amber-900">Ver →</span>
-        </button>
-      )}
       {central?.anuncios?.length > 0 && <Anuncios ubicacion="inicio" anuncios={central.anuncios} />}
 
       {avisoLicencia && (
@@ -84,21 +75,19 @@ export default function Inicio() {
         </div>
       )}
 
-      {(resumen || caja !== undefined) && (
+      {porVencer?.length > 0 && (
+        <button type="button" onClick={() => navigate('/home/reportes?clave=documentos-por-vencer')} className="flex w-full items-center justify-between gap-3 rounded-tarjeta border border-amber-300 bg-amber-50 p-4 text-left">
+          <span><span className="block font-semibold text-amber-900">{porVencer.length === 1 ? 'Un documento o licencia vence en los próximos 30 días' : `${porVencer.length} documentos o licencias vencen en los próximos 30 días`}</span>
+          <span className="text-sm text-amber-800">Seguros, tarjetas de circulación y licencias de pilotos. Renuévelos antes de que la unidad quede fuera de ruta.</span></span>
+          <span className="shrink-0 font-medium text-amber-900">Ver →</span>
+        </button>
+      )}
+
+      {flota && (
         <div className="grid gap-3 sm:grid-cols-3">
-          {resumen && (
-            <>
-              <div className="rounded-xl border bg-white p-4"><p className="text-sm text-gray-500">Ventas de hoy</p><p className="text-2xl font-semibold tabular-nums">{Q(resumen.total)}</p><p className="text-xs text-gray-500">{resumen.ventas} documentos</p></div>
-              {hasPermission('finanzas.costos') && <div className="rounded-xl border bg-white p-4"><p className="text-sm text-gray-500">Utilidad de hoy</p><p className="text-2xl font-semibold tabular-nums">{Q(resumen.utilidad)}</p></div>}
-            </>
-          )}
-          {caja !== undefined && (
-            <div className="rounded-xl border bg-white p-4">
-              <p className="text-sm text-gray-500">Mi caja</p>
-              <p className={`text-2xl font-semibold ${caja ? 'text-green-700' : 'text-gray-500'}`}>{caja ? 'Abierta' : 'Cerrada'}</p>
-              <p className="text-xs text-gray-500">{caja ? `${caja.caja?.nombre} · esperado ${Q(caja.resumen?.totalEsperado)}` : 'Ábrala desde Caja'}</p>
-            </div>
-          )}
+          <div className="rounded-xl border bg-white p-4"><p className="text-sm text-gray-500">Cabezales activos</p><p className="text-2xl font-semibold tabular-nums">{flota.cabezales}</p></div>
+          <div className="rounded-xl border bg-white p-4"><p className="text-sm text-gray-500">En taller</p><p className={`text-2xl font-semibold tabular-nums ${flota.enTaller ? 'text-amber-700' : ''}`}>{flota.enTaller}</p></div>
+          <div className="rounded-xl border bg-white p-4"><p className="text-sm text-gray-500">Pilotos</p><p className="text-2xl font-semibold tabular-nums">{flota.pilotos}</p></div>
         </div>
       )}
 

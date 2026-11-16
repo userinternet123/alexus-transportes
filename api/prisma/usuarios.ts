@@ -1,7 +1,7 @@
 /**
  * CONSOLA DE USUARIOS (sin entrar al sistema). Para el primer inicio, o si se perdió el acceso del administrador.
  *   Desarrollo:    npm run usuarios -- <comando> [opciones]
- *   En la tienda:  menú Inicio › SPVI › Consola de usuarios  (pide permisos de administrador de Windows)
+ *   En la empresa:  menú Inicio › ALEXUS Transportes › Consola de usuarios  (pide permisos de administrador de Windows)
  *
  * Comandos:
  *   roles                                   lista los roles disponibles

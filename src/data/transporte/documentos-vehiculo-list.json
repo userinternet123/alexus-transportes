@@ -1,0 +1,116 @@
+{
+  "title": "",
+  "module": "Documentos de vehículos",
+  "endpoint": "/flota/documentos",
+  "showSearch": true,
+  "showPagination": true,
+  "searchPlaceHolder": "Número o emisor",
+  "headerBtn": {
+    "label": "Agregar documento",
+    "action": "create",
+    "icon": "plus",
+    "size": 35,
+    "variant": "primary"
+  },
+  "filters": [
+    {
+      "name": "activo",
+      "type": "select",
+      "options": [
+        {
+          "label": "Activos",
+          "value": "true"
+        },
+        {
+          "label": "Inactivos",
+          "value": "false"
+        },
+        {
+          "label": "Todos",
+          "value": "todos"
+        }
+      ]
+    }
+  ],
+  "columns": [
+    {
+      "accessorKey": "tipo",
+      "header": "Documento"
+    },
+    {
+      "accessorKey": "cabezal.codigo",
+      "header": "Cabezal"
+    },
+    {
+      "accessorKey": "remolque.codigo",
+      "header": "Remolque"
+    },
+    {
+      "accessorKey": "numero",
+      "header": "Número"
+    },
+    {
+      "accessorKey": "emisor",
+      "header": "Emisor"
+    },
+    {
+      "accessorKey": "vence",
+      "header": "Vence",
+      "type": "date"
+    },
+    {
+      "accessorKey": "costo",
+      "header": "Costo",
+      "type": "money"
+    },
+    {
+      "accessorKey": "activo",
+      "header": "Estado",
+      "type": "badge"
+    }
+  ],
+  "actions": [
+    {
+      "estado": [
+        "ACTIVO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "view",
+          "icon": "eye",
+          "variant": "text-green-600",
+          "tamano": "icon"
+        },
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        },
+        {
+          "action": "delete",
+          "icon": "trash",
+          "variant": "text-red-600",
+          "tamano": "icon"
+        }
+      ]
+    },
+    {
+      "estado": [
+        "INACTIVO",
+        "BAJA",
+        "SUSPENDIDO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        }
+      ]
+    }
+  ]
+}

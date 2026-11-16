@@ -63,7 +63,7 @@ function Login() {
     }
 
     try {
-      // Login real contra SPVI 2.0 (JWT). El perfil trae permisos y sucursales.
+      // Login real contra ALEXUS Transportes (JWT). El perfil trae permisos y sucursales.
       const usuario = await loginApi(codigo.trim(), password)
       login({ usuario, roles: [], permisos: usuario.permisos })
       navigate(usuario.debeCambiarPassword ? '/cambiar-password' : '/home')

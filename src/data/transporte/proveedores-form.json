@@ -1,0 +1,102 @@
+[
+  {
+    "subgrupo": "Información de proveedores",
+    "icon": "building",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "proveedores",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "tipo",
+        "label": "Tipo",
+        "type": "select",
+        "size": "small",
+        "options": [
+          {
+            "value": "EMPRESA",
+            "label": "Empresa"
+          },
+          {
+            "value": "PERSONA",
+            "label": "Persona"
+          }
+        ],
+        "required": true
+      },
+      {
+        "name": "nit",
+        "label": "NIT",
+        "type": "text",
+        "size": "small",
+        "placeholder": "CF si no tiene",
+        "required": true
+      },
+      {
+        "name": "razonSocial",
+        "label": "Razón social",
+        "type": "text",
+        "size": "large",
+        "placeholder": "Ingrese razón social"
+      },
+      {
+        "name": "nombreComercial",
+        "label": "Nombre comercial",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese nombre comercial"
+      },
+      {
+        "name": "nombres",
+        "label": "Nombres",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese nombres"
+      },
+      {
+        "name": "apellidos",
+        "label": "Apellidos",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese apellidos"
+      },
+      {
+        "name": "contacto",
+        "label": "Persona de contacto",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese persona de contacto"
+      },
+      {
+        "name": "telefono",
+        "label": "Teléfono",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese teléfono",
+        "mask": "phone"
+      },
+      {
+        "name": "email",
+        "label": "Correo",
+        "type": "email",
+        "size": "medium",
+        "placeholder": "Ingrese correo"
+      },
+      {
+        "name": "direccion",
+        "label": "Dirección",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ingrese dirección"
+      }
+    ]
+  }
+]

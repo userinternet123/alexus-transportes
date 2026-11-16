@@ -1,5 +1,5 @@
 /**
- * SOBRE CIFRADO (tienda → SPVI Central). Lo cierra la tienda con la llave PÚBLICA de Central y solo lo abre Central con
+ * SOBRE CIFRADO (instalación → ALEXUS Central). Lo cierra la tienda con la llave PÚBLICA de Central y solo lo abre Central con
  * su llave privada: ni Cloudflare ni nadie en el camino puede leerlo ni alterarlo (AES-256-GCM autentica).
  * Esquema: gzip → AES-256-GCM con una llave al azar por envío → esa llave cifrada con RSA-4096 OAEP-SHA256.
  */

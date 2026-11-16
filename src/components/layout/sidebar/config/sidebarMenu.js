@@ -1,12 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// MENÚ SPVI 2.0 — organizado por área de trabajo.
+// MENÚ ALEXUS Transportes — organizado por área de trabajo.
 // `tag` = código de permiso del API (ver Administración › Roles y permisos).
-// Los catálogos toman sus botones de src/data/spvi/_indice.json (generado).
+// Los catálogos toman sus botones de src/data/transporte/_indice.json (generado
+// con scripts/generar-configs.mjs).
 // ─────────────────────────────────────────────────────────────────────────────
 import {
-  Home, ShoppingCart, Wallet, Boxes, Tags, Users, TrendingUp, UserCog, Settings, LogOut,
+  Home, Route, Truck, Fuel, Wrench, CircleDot, Users, Building2, TrendingUp, UserCog, Settings, LogOut,
 } from 'lucide-react'
-import indice from '../../../../data/spvi/_indice.json'
+import indice from '../../../../data/transporte/_indice.json'
 
 /** Opción de catálogo (lista + formulario JSON) */
 const catalogo = (clave, label, tag) => ({
@@ -17,70 +18,68 @@ const catalogo = (clave, label, tag) => ({
 const pantalla = (name, label, path, tag) => ({ name, label, component: name, action: 'path', path, tag, button: [] })
 
 export const MENU_ITEMS = {
-  nombreEmpresa: 'SPVI 2.0',
-  nombreSistema: 'Punto de venta e inventario',
+  nombreEmpresa: 'ALEXUS Transportes',
+  nombreSistema: 'Control de flota y viajes',
   menu: [
     { label: 'Inicio', name: 'inicio', icon: Home, tag: 777, action: 'path', path: '/home' },
 
     {
-      label: 'Punto de venta', name: 'mod-ventas', icon: ShoppingCart, tag: 'ventas.ver',
+      label: 'Viajes', name: 'mod-viajes', icon: Route, tag: 'viajes.ver',
       submenu: [
-        pantalla('pos', 'Vender', 'pos', 'ventas.crear'),
-        pantalla('cotizar', 'Cotizar', 'pos?modo=cotizacion', 'ventas.cotizar'),
-        pantalla('ventas', 'Ventas y cotizaciones', 'ventas', 'ventas.ver'),
+        // Fase 1: pantallas de viajes (programar, en ruta, liquidar) y cotizador
+        catalogo('rutas', 'Rutas', 'catalogos.ver'),
+        catalogo('tarifas', 'Tarifas por cliente', 'tarifas.ver'),
       ],
     },
     {
-      label: 'Caja', name: 'mod-caja', icon: Wallet, tag: 'caja.operar',
+      label: 'Flota', name: 'mod-flota', icon: Truck, tag: 'flota.ver',
       submenu: [
-        pantalla('caja', 'Apertura y cuadre de caja', 'caja', 'caja.operar'),
-        pantalla('cobros', 'Vouchers, transferencias y cheques', 'cobros', 'caja.conciliar'),
-        pantalla('gastos', 'Gastos (fuera de caja)', 'gastos', 'gastos.ver'),
-        pantalla('cierre', 'Cierre del día', 'cierre', 'cierre.ver'),
+        catalogo('cabezales', 'Cabezales', 'flota.ver'),
+        catalogo('remolques', 'Remolques', 'flota.ver'),
+        catalogo('documentos-vehiculo', 'Documentos y seguros', 'flota.ver'),
       ],
     },
     {
-      label: 'Inventario', name: 'mod-inventario', icon: Boxes, tag: 'inventario.ver',
+      label: 'Combustible', name: 'mod-combustible', icon: Fuel, tag: 'combustible.ver',
       submenu: [
-        pantalla('existencias', 'Existencias y kardex', 'existencias', 'inventario.ver'),
-        pantalla('ubicaciones', 'Ubicaciones de bodega', 'ubicaciones', 'inventario.ver'),
-        pantalla('traslados', 'Traslados', 'traslados', 'inventario.trasladar'),
-        pantalla('conteos', 'Conteo físico', 'conteos', 'inventario.contar'),
-        pantalla('compras-importar', 'Importar factura de compra', 'compras?importar=1', 'compras.crear'),
-        pantalla('que-comprar', 'Qué comprar y pedidos', 'que-comprar', 'compras.ver'),
-        pantalla('compras', 'Ingreso de compras', 'compras', 'compras.crear'),
+        // Fase 1: registro de cargas y rendimiento por cabezal
       ],
     },
     {
-      label: 'Productos', name: 'mod-productos', icon: Tags, tag: 'productos.ver',
+      label: 'Taller', name: 'mod-taller', icon: Wrench, tag: 'mantenimiento.ver',
       submenu: [
-        pantalla('productos', 'Productos', 'productos', 'productos.ver'),
-        pantalla('clasificacion', 'Clasificación de productos', 'clasificacion', 'productos.ver'),
-        pantalla('campos-producto', 'Campos por giro', 'campos-producto', 'giros.configurar'),
-        catalogo('categorias', 'Categorías', 'catalogos.ver'),
-        catalogo('grupos', 'Grupos', 'catalogos.ver'),
-        catalogo('subgrupos', 'Sub-agrupaciones', 'catalogos.ver'),
+        // Fase 2: órdenes de trabajo y alertas de mantenimiento
+        catalogo('planes-mantenimiento', 'Planes de mantenimiento', 'catalogos.ver'),
+        catalogo('repuestos', 'Repuestos', 'catalogos.ver'),
         catalogo('marcas', 'Marcas', 'catalogos.ver'),
-        catalogo('presentaciones', 'Presentaciones', 'catalogos.ver'),
-        catalogo('politicas-descuento', 'Políticas de descuento', 'descuentos.ver'),
+        catalogo('talleres', 'Talleres', 'terceros.ver'),
       ],
     },
     {
-      label: 'Clientes y proveedores', name: 'mod-terceros', icon: Users, tag: 'terceros.ver',
+      label: 'Llantas', name: 'mod-llantas', icon: CircleDot, tag: 'llantas.ver',
       submenu: [
-        pantalla('clientes', 'Clientes', 'clientes', 'terceros.ver'),
+        catalogo('llantas', 'Llantas', 'llantas.ver'),
+        // Fase 3: montajes, rotaciones y costo por km
+      ],
+    },
+    {
+      label: 'Pilotos', name: 'mod-pilotos', icon: Users, tag: 'pilotos.ver',
+      submenu: [
+        catalogo('pilotos', 'Pilotos y licencias', 'pilotos.ver'),
+      ],
+    },
+    {
+      label: 'Clientes y proveedores', name: 'mod-terceros', icon: Building2, tag: 'terceros.ver',
+      submenu: [
+        catalogo('clientes', 'Clientes', 'terceros.ver'),
         catalogo('proveedores', 'Proveedores', 'terceros.ver'),
       ],
     },
     {
-      label: 'Reportes y análisis', name: 'mod-reportes', icon: TrendingUp, tag: 'reportes.ventas',
+      label: 'Finanzas y reportes', name: 'mod-reportes', icon: TrendingUp, tag: 'reportes.viajes',
       submenu: [
-        pantalla('dashboard', 'Dashboard analítico', 'dashboard', 'reportes.analitica'),
-        pantalla('asistente-datos', 'Pregunta a tus datos', 'asistente-datos', 'reportes.analitica.agente'),
-        pantalla('analisis', 'Mis análisis y tableros', 'analisis', 'reportes.analitica'),
-        pantalla('temporadas', 'Temporadas', 'temporadas', 'reportes.analitica.temporadas'),
-        pantalla('salud-financiera', 'Salud financiera', 'salud-financiera', 'reportes.analitica.finanzas'),
-        pantalla('reportes', 'Centro de reportes', 'reportes', 'reportes.ventas'),
+        pantalla('gastos', 'Gastos de operación', 'gastos', 'gastos.ver'),
+        pantalla('reportes', 'Centro de reportes', 'reportes', 'reportes.viajes'),
       ],
     },
     {
@@ -96,13 +95,10 @@ export const MENU_ITEMS = {
       submenu: [
         pantalla('usuarios', 'Usuarios', 'usuarios', 'seguridad.usuarios.ver'),
         pantalla('roles', 'Roles y permisos', 'roles', 'seguridad.roles.ver'),
-        pantalla('negocio', 'Configuración del negocio', 'negocio', 'config.parametros'),
-        pantalla('formato-documentos', 'Formato de documentos', 'formato-documentos', 'documentos.configurar'),
+        pantalla('negocio', 'Configuración de la empresa', 'negocio', 'config.parametros'),
         pantalla('licencia', 'Licencia y módulos', 'licencia', 'config.parametros'),
         pantalla('parametros', 'Parámetros del sistema', 'parametros', 'config.parametros'),
-        catalogo('sucursales', 'Sucursales', 'catalogos.ver'),
-        catalogo('bodegas', 'Bodegas', 'catalogos.ver'),
-        catalogo('cajas', 'Cajas', 'catalogos.ver'),
+        catalogo('sucursales', 'Sedes', 'catalogos.ver'),
       ],
     },
 

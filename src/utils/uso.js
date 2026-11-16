@@ -1,4 +1,4 @@
-// Registro del uso del sistema para mejorar SPVI: solo si el negocio lo aceptó (si no, no hace NADA).
+// Registro del uso del sistema para mejorar ALEXUS Transportes: solo si el negocio lo aceptó (si no, no hace NADA).
 // Se acumula en el navegador y se envía en lotes cada minuto. Solo nombres de pantallas y funciones:
 // nunca montos, nombres ni datos de clientes (el servidor además normaliza y descarta lo que no cumpla).
 import api from '../services/api'

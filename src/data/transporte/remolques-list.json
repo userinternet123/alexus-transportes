@@ -1,0 +1,118 @@
+{
+  "title": "",
+  "module": "Remolques",
+  "endpoint": "/flota/remolques",
+  "showSearch": true,
+  "showPagination": true,
+  "searchPlaceHolder": "Código, placa o tipo",
+  "headerBtn": {
+    "label": "Agregar remolque",
+    "action": "create",
+    "icon": "plus",
+    "size": 35,
+    "variant": "primary"
+  },
+  "filters": [
+    {
+      "name": "activo",
+      "type": "select",
+      "options": [
+        {
+          "label": "Activos",
+          "value": "true"
+        },
+        {
+          "label": "Inactivos",
+          "value": "false"
+        },
+        {
+          "label": "Todos",
+          "value": "todos"
+        }
+      ]
+    }
+  ],
+  "columns": [
+    {
+      "accessorKey": "codigo",
+      "header": "Código"
+    },
+    {
+      "accessorKey": "placa",
+      "header": "Placa"
+    },
+    {
+      "accessorKey": "tipo",
+      "header": "Tipo"
+    },
+    {
+      "accessorKey": "marca",
+      "header": "Marca"
+    },
+    {
+      "accessorKey": "anio",
+      "header": "Año"
+    },
+    {
+      "accessorKey": "ejes",
+      "header": "Ejes"
+    },
+    {
+      "accessorKey": "capacidadToneladas",
+      "header": "Capacidad (t)"
+    },
+    {
+      "accessorKey": "estado",
+      "header": "Situación"
+    },
+    {
+      "accessorKey": "activo",
+      "header": "Estado",
+      "type": "badge"
+    }
+  ],
+  "actions": [
+    {
+      "estado": [
+        "ACTIVO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "view",
+          "icon": "eye",
+          "variant": "text-green-600",
+          "tamano": "icon"
+        },
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        },
+        {
+          "action": "delete",
+          "icon": "trash",
+          "variant": "text-red-600",
+          "tamano": "icon"
+        }
+      ]
+    },
+    {
+      "estado": [
+        "INACTIVO",
+        "BAJA",
+        "SUSPENDIDO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        }
+      ]
+    }
+  ]
+}

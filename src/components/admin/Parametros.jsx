@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Save } from 'lucide-react'
 import api from '../../services/api'
 import { showToast } from '../../utils/showToast'
-import { errorApi } from '../pos/formato'
+import { errorApi } from '../comun/formato'
 
 export default function Parametros() {
   const [lista, setLista] = useState([])

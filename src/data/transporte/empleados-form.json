@@ -1,0 +1,156 @@
+[
+  {
+    "subgrupo": "Información de empleados",
+    "icon": "user",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "empleados",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "codigo",
+        "label": "Código",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese código",
+        "required": true
+      },
+      {
+        "name": "nombres",
+        "label": "Nombres",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese nombres",
+        "required": true
+      },
+      {
+        "name": "apellidos",
+        "label": "Apellidos",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese apellidos",
+        "required": true
+      },
+      {
+        "name": "cui",
+        "label": "CUI (DPI)",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese cui (dpi)",
+        "required": true,
+        "mask": "number"
+      },
+      {
+        "name": "nit",
+        "label": "NIT",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese nit",
+        "required": true
+      },
+      {
+        "name": "afiliacionIgss",
+        "label": "Afiliación IGSS",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese afiliación igss"
+      },
+      {
+        "name": "fechaNacimiento",
+        "label": "Fecha de nacimiento",
+        "type": "date",
+        "size": "small"
+      },
+      {
+        "name": "telefono",
+        "label": "Teléfono",
+        "type": "text",
+        "size": "small",
+        "placeholder": "Ingrese teléfono",
+        "mask": "phone"
+      },
+      {
+        "name": "email",
+        "label": "Correo",
+        "type": "email",
+        "size": "medium",
+        "placeholder": "Ingrese correo"
+      },
+      {
+        "name": "direccion",
+        "label": "Dirección",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ingrese dirección"
+      },
+      {
+        "name": "sucursalId",
+        "label": "Sede",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/catalogos/sucursales",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombre"
+        },
+        "required": true
+      },
+      {
+        "name": "puestoId",
+        "label": "Puesto",
+        "type": "select",
+        "size": "medium",
+        "optionsUrl": "/rrhh/puestos",
+        "columnaDb": {
+          "codigo": "id",
+          "nombre": "nombre"
+        },
+        "required": true
+      },
+      {
+        "name": "fechaIngreso",
+        "label": "Fecha de ingreso",
+        "type": "date",
+        "size": "small",
+        "required": true
+      },
+      {
+        "name": "salarioBase",
+        "label": "Salario base mensual",
+        "type": "money",
+        "size": "small",
+        "mask": "money",
+        "required": true
+      },
+      {
+        "name": "bonificacionIncentivo",
+        "label": "Bonificación incentivo",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      },
+      {
+        "name": "banco",
+        "label": "Banco",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese banco"
+      },
+      {
+        "name": "cuentaBancaria",
+        "label": "Cuenta bancaria",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Ingrese cuenta bancaria"
+      }
+    ]
+  }
+]
