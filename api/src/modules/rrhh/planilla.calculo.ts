@@ -27,6 +27,7 @@ export interface EntradaPlanilla {
   horasExtra: Num;
   porcentajeComision: Num;
   ventasNetasPeriodo: Num;
+  pagoPorViajes?: Num; // bono fijo por viaje realizado (pilotos)
   otrosIngresos?: Num; // afectos
   isr?: Num;
   otrosDescuentos?: Num;
@@ -62,7 +63,7 @@ export function calcularLineaPlanilla(e: EntradaPlanilla, t: TasasPlanilla): Lin
   const salarioDevengado = r2(D(e.salarioBaseMensual).times(D(e.fraccionPeriodo)).times(proporcion));
   const valorHora = D(e.salarioBaseMensual).div(30).div(D(t.horasJornada));
   const horasExtraMonto = r2(D(e.horasExtra).times(valorHora).times(D(t.factorHoraExtra)));
-  const comisiones = r2(D(e.ventasNetasPeriodo).times(D(e.porcentajeComision)).div(100));
+  const comisiones = r2(D(e.ventasNetasPeriodo).times(D(e.porcentajeComision)).div(100).plus(D(e.pagoPorViajes ?? 0)));
   const bonificacionIncentivo = r2(D(e.bonificacionIncentivoMensual).times(D(e.fraccionPeriodo)).times(proporcion));
   const otrosIngresos = r2(e.otrosIngresos ?? 0);
 

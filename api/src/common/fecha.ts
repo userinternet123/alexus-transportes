@@ -30,3 +30,6 @@ export function sumarDias(d: Date, dias: number): Date {
   r.setUTCDate(r.getUTCDate() + dias);
   return r;
 }
+
+/** Fecha de hoy en Guatemala como 'YYYY-MM-DD'. */
+export const hoyGuatemala = (): string => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guatemala' }).format(new Date());

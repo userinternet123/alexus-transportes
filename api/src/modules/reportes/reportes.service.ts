@@ -74,7 +74,7 @@ export class ReportesService {
   async excel(ctx: Ctx, clave: string, query: Record<string, string>): Promise<{ nombre: string; buffer: Buffer }> {
     const r = await this.ejecutar(ctx, clave, query);
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'SPVI 2.0';
+    wb.creator = 'ALEXUS Transportes';
     const ws = wb.addWorksheet(r.titulo.slice(0, 31));
 
     ws.addRow([r.titulo]).font = { bold: true, size: 14 };

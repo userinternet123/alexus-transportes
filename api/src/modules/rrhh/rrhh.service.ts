@@ -134,15 +134,11 @@ export class RrhhService {
 
       const lineas = [];
       for (const e of empleados) {
-        const [horas, ausencias, ventas, devoluciones] = await Promise.all([
+        // Pago por viaje: bono fijo por cada viaje FINALIZADO o LIQUIDADO del piloto en el período (comisiones de la planilla)
+        const [horas, ausencias, viajes] = await Promise.all([
           tx.asistencia.aggregate({ where: { empleadoId: e.id, fecha: { gte: inicio, lte: fin } }, _sum: { horasExtra: true } }),
           tx.ausencia.findMany({ where: { empleadoId: e.id, estado: 'APROBADA', tipo: { in: AUSENCIAS_NO_PAGADAS }, desde: { lte: fin }, hasta: { gte: inicio } } }),
-          e.usuario
-            ? tx.venta.aggregate({ where: { vendedorId: e.usuario.id, tipo: 'VENTA', estado: 'CONFIRMADA', fechaContable: { gte: inicio, lte: fin } }, _sum: { total: true } })
-            : Promise.resolve({ _sum: { total: null } }),
-          e.usuario
-            ? tx.devolucion.aggregate({ where: { venta: { vendedorId: e.usuario.id }, fechaContable: { gte: inicio, lte: fin } }, _sum: { total: true } })
-            : Promise.resolve({ _sum: { total: null } }),
+          tx.viaje.aggregate({ where: { piloto: { empleadoId: e.id }, estado: { in: ['FINALIZADO', 'LIQUIDADO'] }, fechaSalida: { gte: inicio, lte: fin } }, _sum: { pagoPiloto: true } }),
         ]);
         // Días de ausencia no pagada dentro del período
         const diasNoPagados = ausencias.reduce((acc, a) => {
@@ -160,7 +156,8 @@ export class RrhhService {
             diasLaborados: Math.max(0, diasBase - diasNoPagados),
             horasExtra: horas._sum.horasExtra ?? 0,
             porcentajeComision: e.porcentajeComision,
-            ventasNetasPeriodo: D(ventas._sum.total).minus(D(devoluciones._sum.total)),
+            ventasNetasPeriodo: D(0),
+            pagoPorViajes: D(viajes._sum.pagoPiloto),
           },
           tasas,
         );

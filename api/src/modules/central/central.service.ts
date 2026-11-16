@@ -1,15 +1,13 @@
 /**
- * AGENTE DE SPVI CENTRAL (dentro de cada tienda)
+ * AGENTE DE ALEXUS CENTRAL (dentro de cada instalación)
  * - Latido cada 6 h (y al arrancar): informa versión y plan; recibe anuncios,
  *   versión nueva y novedades de soporte. Lo recibido se guarda: sin internet
  *   el portal sigue mostrando lo último y la tienda opera con normalidad.
  * - Errores 500 del API y del portal: se acumulan y se envían agrupados.
  * - Soporte: crea y consulta tickets en nombre del usuario en sesión.
- * Solo conexiones salientes. Nunca se envían ventas, clientes ni precios.
+ * Solo conexiones salientes. Nunca se envían viajes, clientes ni tarifas.
  */
 import { huellaEquipo } from '../licencia/equipo';
-import { hoyGuatemala } from '../agente/agente.contexto';
-import { armarPaquete } from '../experiencia/experiencia.envio';
 import { cerrarSobre, huellaDe } from './sobre';
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
@@ -78,8 +76,7 @@ export class CentralService implements OnModuleInit, OnModuleDestroy {
       const plan = (await this.licencia.estado()).plan;
       const r = await this.llamar<Omit<EstadoCentral, 'recibido'> & { licencia?: string | null; llaveDatos?: { pem: string; huella: string } | null }>('POST', '/agente/latido', { version: this.version, plan, sistema: `${type()} ${release()}`, equipo: huellaEquipo() });
       await this.aplicarLicencia(r.licencia);
-      // Uso y opiniones: cifrados con la llave pública de Central (un fallo aquí no afecta el latido)
-      try { await this.enviarExperiencia(await this.fijarLlaveDatos(r.llaveDatos)); } catch (e) { this.log.warn(`Experiencia no enviada (se reintentará): ${(e as Error).message}`); }
+      try { await this.fijarLlaveDatos(r.llaveDatos); } catch (e) { this.log.warn(`Llave de datos no fijada: ${(e as Error).message}`); }
       const estado: EstadoCentral = { ...r, recibido: new Date().toISOString() };
       this.cache = estado;
       await this.prisma.parametroSistema.upsert({
@@ -113,15 +110,6 @@ export class CentralService implements OnModuleInit, OnModuleDestroy {
       return null;
     }
     return actual.pem;
-  }
-
-  /** Uso (si hay consentimiento), opiniones y perfil del negocio, en un sobre que solo Central puede abrir. */
-  private async enviarExperiencia(llavePem: string | null): Promise<void> {
-    if (!llavePem) return;
-    const { hayAlgo, paquete, marcar } = await armarPaquete(this.prisma, hoyGuatemala());
-    if (!hayAlgo) return;
-    await this.llamar('POST', '/agente/experiencia', { sobre: cerrarSobre({ ...paquete, version: this.version }, llavePem) });
-    await marcar(); // solo después de que Central confirmó
   }
 
   /**

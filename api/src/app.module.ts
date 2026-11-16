@@ -16,34 +16,22 @@ import { ArchivosModule } from './modules/archivos/archivos.module';
 import { LicenciaModule } from './modules/licencia/licencia.module';
 import { CentralModule } from './modules/central/central.module';
 import { NotificacionesModule } from './modules/notificaciones/notificaciones.module';
-import { UbicacionesModule } from './modules/ubicaciones/ubicaciones.module';
-import { CobrosModule } from './modules/cobros/cobros.module';
-import { AgenteModule } from './modules/agente/agente.module';
-import { ListaModule } from './modules/listas/lista.module';
-import { DocumentosModule } from './modules/documentos/documentos.module';
-import { TemporadasModule } from './modules/temporadas/temporadas.module';
-import { FinanzasModule } from './modules/finanzas/finanzas.module';
-import { ExperienciaModule } from './modules/experiencia/experiencia.module';
-import { PedidosModule } from './modules/pedidos/pedidos.module';
 import { GastosModule } from './modules/gastos/gastos.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { CajaModule } from './modules/caja/caja.module';
 import { CatalogosModule } from './modules/catalogos/catalogos.module';
-import { CierreModule } from './modules/cierre/cierre.module';
-import { ComprasModule } from './modules/compras/compras.module';
-import { FelModule } from './modules/fel/fel.module';
-import { InventarioModule } from './modules/inventario/inventario.module';
-import { ProductosModule } from './modules/productos/productos.module';
 import { ReportesModule } from './modules/reportes/reportes.module';
 import { RrhhModule } from './modules/rrhh/rrhh.module';
 import { SeguridadModule } from './modules/seguridad/seguridad.module';
 import { SistemaModule } from './modules/sistema/sistema.module';
-import { VentasModule } from './modules/ventas/ventas.module';
 
 /**
  * MONOLITO MODULAR: cada módulo = un bounded context con fronteras claras.
- * Si mañana "Ventas/POS" necesita escalar aparte, se extrae a un servicio
- * sin reescribir el dominio (ver docs/02-arquitectura-objetivo.md).
+ * Plataforma heredada de SPVI 2.0 (seguridad, licencias, Central, RRHH, gastos,
+ * reportes) + dominio de transporte: flota, pilotos, viajes, combustible,
+ * llantas y mantenimiento. Los catálogos (cabezales, remolques, rutas, tarifas,
+ * pilotos, llantas, repuestos, planes) nacen del CRUD genérico; las operaciones
+ * con reglas propias (viajes, cargas, órdenes de trabajo, montajes) tendrán su
+ * módulo en las fases siguientes.
  */
 @Module({
   imports: [
@@ -69,30 +57,13 @@ import { VentasModule } from './modules/ventas/ventas.module';
     LicenciaModule,
     CentralModule,
     NotificacionesModule,
-    UbicacionesModule,
-    CobrosModule,
-    AgenteModule,
-    ListaModule,
-    DocumentosModule,
-    TemporadasModule,
-    FinanzasModule,
-    ExperienciaModule,
-    PedidosModule,
-    GastosModule,
     // Plataforma
     AuthModule,
     SeguridadModule,
     SistemaModule,
     CatalogosModule,
-    // Operación
-    InventarioModule,
-    CierreModule,
-    FelModule,
-    ProductosModule,
-    ComprasModule,
-    VentasModule,
-    CajaModule,
     // Gestión
+    GastosModule,
     ReportesModule,
     RrhhModule,
   ],

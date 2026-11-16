@@ -29,11 +29,11 @@ export interface Licencia {
   revocada?: boolean; // ALEXUS la revocó: el sistema se bloquea
 }
 
-export interface Limites { sucursales: number | null; bodegas: number | null; cajas: number | null; usuarios: number | null }
+export interface Limites { sucursales: number | null; cabezales: number | null; pilotos: number | null; usuarios: number | null }
 export type TipoLimite = keyof Limites;
-const NOMBRE_LIMITE: Record<TipoLimite, [string, string]> = { sucursales: ['sucursal', 'sucursales'], bodegas: ['bodega', 'bodegas'], cajas: ['caja', 'cajas'], usuarios: ['usuario activo', 'usuarios activos'] };
+const NOMBRE_LIMITE: Record<TipoLimite, [string, string]> = { sucursales: ['sede', 'sedes'], cabezales: ['cabezal', 'cabezales'], pilotos: ['piloto', 'pilotos'], usuarios: ['usuario activo', 'usuarios activos'] };
 /** Límites de cualquier versión: la v1 solo traía sucursales y usuarios. */
-export const limitesDe = (l: Licencia): Limites => l.limites ?? { sucursales: l.maxSucursales, bodegas: null, cajas: null, usuarios: l.maxUsuarios };
+export const limitesDe = (l: Licencia): Limites => l.limites ?? { sucursales: l.maxSucursales, cabezales: null, pilotos: null, usuarios: l.maxUsuarios };
 
 /** Días que el sistema sigue funcionando (con aviso) después de que la licencia vence. */
 export const DIAS_GRACIA = 7;
@@ -88,7 +88,7 @@ export class LicenciaService {
     };
     let estado: EstadoLicencia;
     if (!CLAVE_PUBLICA_LICENCIAS) {
-      estado = con({ ...ABIERTA, limites: { sucursales: null, bodegas: null, cajas: null, usuarios: null } }, { modo: 'abierto', diasRestantes: null, bloqueado: false, motivo: null });
+      estado = con({ ...ABIERTA, limites: { sucursales: null, cabezales: null, pilotos: null, usuarios: null } }, { modo: 'abierto', diasRestantes: null, bloqueado: false, motivo: null });
     } else {
       const p = await this.prisma.parametroSistema.findUnique({ where: { clave: 'licencia.token' } });
       let lic: Licencia | null = null;
@@ -97,7 +97,7 @@ export class LicenciaService {
       if (!lic) {
         estado = invalida
           ? con(SIN_LICENCIA, { modo: 'invalida', diasRestantes: null, bloqueado: true, motivo: 'La licencia guardada no es válida (fue modificada o no corresponde a este sistema). Active una licencia nueva.' })
-          : con(SIN_LICENCIA, { modo: 'sin-licencia', diasRestantes: null, bloqueado: true, motivo: 'Este equipo no tiene licencia de SPVI. Actívela para empezar a trabajar.' });
+          : con(SIN_LICENCIA, { modo: 'sin-licencia', diasRestantes: null, bloqueado: true, motivo: 'Este equipo no tiene licencia de ALEXUS Transportes. Actívela para empezar a trabajar.' });
       } else if (lic.revocada) {
         estado = con({ ...SIN_LICENCIA, empresa: lic.empresa, id: lic.id }, { modo: 'invalida', diasRestantes: null, bloqueado: true, motivo: 'ALEXUS revocó esta licencia. Comuníquese con ALEXUS para regularizarla.' });
       } else if (lic.equipo && lic.equipo.trim().toUpperCase() !== codigoEquipo) {
@@ -184,7 +184,7 @@ export class LicenciaService {
     return (await this.estado()).modulos.includes(modulo);
   }
 
-  /** Respeta un límite de la licencia (sucursales, bodegas, cajas o usuarios). Sin límite = no hace nada. */
+  /** Respeta un límite de la licencia (sedes, cabezales, pilotos o usuarios). Sin límite = no hace nada. */
   async validarLimite(tipo: TipoLimite, actuales: number): Promise<void> {
     const max = (await this.estado()).limites[tipo];
     if (max === null || max === undefined || actuales < max) return;

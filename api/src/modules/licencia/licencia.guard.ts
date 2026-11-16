@@ -19,6 +19,6 @@ export class LicenciaGuard implements CanActivate {
     if (this.reflector.getAllAndOverride<boolean>(META_PUBLICO, destinos) || this.reflector.getAllAndOverride<boolean>(META_SIN_LICENCIA, destinos)) return true;
     const e = await this.licencia.estado();
     if (!e.bloqueado) return true;
-    throw new ErrorDominio('LICENCIA_REQUERIDA', e.motivo ?? 'Este equipo necesita una licencia de SPVI.', HttpStatus.FORBIDDEN);
+    throw new ErrorDominio('LICENCIA_REQUERIDA', e.motivo ?? 'Este equipo necesita una licencia de ALEXUS Transportes.', HttpStatus.FORBIDDEN);
   }
 }

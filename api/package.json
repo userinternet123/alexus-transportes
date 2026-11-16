@@ -1,8 +1,8 @@
 {
-  "name": "@spvi/api",
+  "name": "@alexus-transportes/api",
   "version": "2.0.0",
   "private": true,
-  "description": "SPVI 2.0 — API REST (NestJS + Prisma + PostgreSQL)",
+  "description": "ALEXUS Transportes — API REST (NestJS + Prisma + PostgreSQL)",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=22"
@@ -22,10 +22,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "usuarios": "tsx prisma/usuarios.ts",
     "db:studio": "prisma studio",
-    "etl:sucursal": "tsx scripts/etl/migrar-sucursal.ts",
     "humo": "node scripts/prueba-humo.mjs",
     "build:seed": "tsc -p tsconfig.seed.json",
-    "build:release": "prisma generate && nest build && tsc -p tsconfig.seed.json && tsc -p tsconfig.etl.json",
+    "build:release": "prisma generate && nest build && tsc -p tsconfig.seed.json",
     "licencia:claves": "tsx scripts/licencia/claves.ts",
     "licencia:emitir": "tsx scripts/licencia/emitir.ts"
   },

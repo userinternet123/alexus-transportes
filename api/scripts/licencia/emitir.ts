@@ -4,7 +4,7 @@
  * Opcionales:
  *   --modulos pos,inventario,reportes        (a la medida; reemplaza los del plan)
  *   --agregar giros,ia                       (paquetes adicionales sobre los del plan)
- *   --reportes ventas-por-dia,cuadre-cajas   (solo esos reportes; por defecto todos los del plan)
+ *   --reportes viajes-por-periodo,combustible-por-cabezal   (solo esos reportes; por defecto todos los del plan)
  *   --usuarios 10 --sucursales 1
  * Escribe <nit>-<plan>.lic: el cliente lo pega en Administración › Licencia y módulos.
  */
@@ -15,9 +15,9 @@ import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 
 const PLANES: Record<string, { modulos: string[]; reportesConfigurables: boolean; usuarios: number; sucursales: number }> = {
-  BASICO: { modulos: ['pos', 'inventario'], reportesConfigurables: false, usuarios: 3, sucursales: 1 },
-  PROFESIONAL: { modulos: ['pos', 'inventario', 'reportes'], reportesConfigurables: true, usuarios: 10, sucursales: 1 },
-  EMPRESARIAL: { modulos: ['pos', 'inventario', 'reportes', 'analitica', 'rrhh', 'multisucursal', 'ia', 'giros'], reportesConfigurables: true, usuarios: 50, sucursales: 10 },
+  BASICO: { modulos: ['viajes', 'combustible', 'pilotos'], reportesConfigurables: false, usuarios: 3, sucursales: 1 },
+  PROFESIONAL: { modulos: ['viajes', 'combustible', 'pilotos', 'mantenimiento', 'llantas', 'reportes', 'finanzas'], reportesConfigurables: true, usuarios: 10, sucursales: 1 },
+  EMPRESARIAL: { modulos: ['viajes', 'combustible', 'pilotos', 'mantenimiento', 'llantas', 'reportes', 'finanzas', 'rrhh', 'tablero', 'multisede'], reportesConfigurables: true, usuarios: 50, sucursales: 10 },
 };
 const MODULOS = new Set([...PLANES.EMPRESARIAL.modulos, 'sinmarca']); // sinmarca solo se agrega a medida: --agregar sinmarca
 
@@ -30,7 +30,7 @@ const { values: a } = parseArgs({
 });
 const plan = (a.plan ?? '').toUpperCase();
 if (!a.empresa || !a.nit || !PLANES[plan] || !/^\d{4}-\d{2}-\d{2}$/.test(a.vence ?? '')) {
-  console.error('Uso: --empresa "Nombre" --nit 1234567K --plan BASICO|PROFESIONAL|EMPRESARIAL --vence AAAA-MM-DD [--modulos a,b] [--agregar giros,sinmarca] [--reportes x,y] [--usuarios N] [--sucursales N]');
+  console.error('Uso: --empresa "Nombre" --nit 1234567K --plan BASICO|PROFESIONAL|EMPRESARIAL --vence AAAA-MM-DD [--modulos a,b] [--agregar sinmarca] [--reportes x,y] [--usuarios N] [--sucursales N]');
   process.exit(1);
 }
 const base = a.modulos ? a.modulos.split(',').map((m) => m.trim()) : PLANES[plan].modulos;

@@ -1,8 +1,8 @@
-/** GASTOS FUERA DE CAJA (lógica pura): reglas y categorías de inicio. */
+/** GASTOS DE OPERACIÓN (lógica pura): reglas y categorías de inicio. */
 import { z } from 'zod';
 
-export const CATEGORIAS_BASICAS = ['Alquiler', 'Energía eléctrica', 'Agua', 'Internet y teléfono', 'Transporte y combustible', 'Publicidad', 'Mantenimiento y reparaciones', 'Impuestos y trámites', 'Servicios profesionales (contador, abogado)', 'Papelería y oficina', 'Comisiones bancarias', 'Otros gastos'];
-export const MEDIOS = ['TRANSFERENCIA', 'TARJETA', 'CHEQUE', 'DEBITO', 'EFECTIVO_FUERA_CAJA'] as const;
+export const CATEGORIAS_BASICAS = ['Alquiler del predio', 'Seguros de flota', 'Salarios administrativos', 'Energía eléctrica y agua', 'Internet y teléfono', 'Rastreo GPS', 'Impuestos y trámites', 'Multas', 'Servicios profesionales (contador, abogado)', 'Papelería y oficina', 'Comisiones bancarias', 'Depreciación', 'Otros gastos'];
+export const MEDIOS = ['TRANSFERENCIA', 'TARJETA', 'CHEQUE', 'DEBITO', 'EFECTIVO'] as const;
 
 const ymd = /^\d{4}-\d{2}-\d{2}$/;
 export const gastoZ = (hoy: string) => z.object({

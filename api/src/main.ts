@@ -52,7 +52,7 @@ async function bootstrap() {
 
   if (env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('SPVI 2.0 API')
+      .setTitle('ALEXUS Transportes API')
       .setDescription('Punto de venta, inventario, caja, cierre, reportería y RRHH — multi-sucursal')
       .setVersion('2.0')
       .addBearerAuth()
@@ -62,7 +62,7 @@ async function bootstrap() {
   }
 
   await app.listen(env.PORT);
-  app.get(Logger).log(`SPVI API escuchando en :${env.PORT} (docs: /api/docs)`);
+  app.get(Logger).log(`ALEXUS Transportes API escuchando en :${env.PORT} (docs: /api/docs)`);
 }
 
 void bootstrap();

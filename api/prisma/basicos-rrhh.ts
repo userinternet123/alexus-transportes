@@ -7,9 +7,9 @@
 import type { PrismaClient } from '@prisma/client';
 
 export const BASICOS_RRHH: { nombre: string; puestos: string[] }[] = [
-  { nombre: 'Ventas', puestos: ['Cajero', 'Vendedor'] },
-  { nombre: 'Bodega', puestos: ['Bodeguero'] },
-  { nombre: 'Administración', puestos: ['Administrador', 'Auxiliar administrativo'] },
+  { nombre: 'Operaciones', puestos: ['Piloto', 'Despachador', 'Ayudante'] },
+  { nombre: 'Taller', puestos: ['Mecánico', 'Jefe de taller'] },
+  { nombre: 'Administración', puestos: ['Administrador', 'Contador', 'Auxiliar administrativo'] },
   { nombre: 'Gerencia', puestos: ['Gerente'] },
 ];
 

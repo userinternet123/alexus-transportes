@@ -2,8 +2,8 @@ import { crearBasicosRrhh } from './basicos-rrhh';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 /**
- * Seed idempotente: permisos, roles base, parámetros, empresa/sucursal demo,
- * secuencias, cliente CF y usuario administrador inicial.
+ * Seed idempotente: permisos, roles base, parámetros, empresa/sede demo,
+ * planes de mantenimiento básicos, categorías de gasto y usuario administrador inicial.
  *   npm run db:seed
  * La contraseña del admin se toma de SEED_ADMIN_PASSWORD (obligatoria).
  */
@@ -11,6 +11,18 @@ import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { PERMISOS, ROLES_BASE } from '../src/common/auth/permisos.catalogo';
 import { PARAMETROS_DEFECTO } from '../src/common/parametros/parametros.service';
+import { CATEGORIAS_BASICAS } from '../src/modules/gastos/gastos.logica';
+
+/** Planes preventivos de inicio: cada X km o Y días, lo que ocurra primero. */
+const PLANES_BASICOS = [
+  { nombre: 'Cambio de aceite y filtros de motor', cadaKm: 15000, cadaDias: 90, avisoKm: 1000, avisoDias: 10 },
+  { nombre: 'Filtros de combustible y aire', cadaKm: 30000, cadaDias: 180, avisoKm: 1500, avisoDias: 15 },
+  { nombre: 'Revisión de frenos', cadaKm: 30000, cadaDias: 180, avisoKm: 2000, avisoDias: 15 },
+  { nombre: 'Engrase general', cadaKm: 10000, cadaDias: 30, avisoKm: 500, avisoDias: 5 },
+  { nombre: 'Aceite de transmisión y diferencial', cadaKm: 80000, cadaDias: 365, avisoKm: 3000, avisoDias: 30 },
+  { nombre: 'Rotación de llantas', cadaKm: 20000, cadaDias: null, avisoKm: 1000, avisoDias: 0 },
+  { nombre: 'Servicio mayor', cadaKm: 150000, cadaDias: 730, avisoKm: 5000, avisoDias: 30 },
+];
 
 const prisma = new PrismaClient();
 
@@ -80,48 +92,23 @@ async function main() {
     console.warn('⚠ No se encontró prisma/datos/guatemala.json: se omiten departamentos y municipios');
   }
 
-  // 5) Empresa, sucursal, bodega, caja y secuencias demo
+  // 5) Empresa y sede demo
   const empresa = await prisma.empresa.upsert({
     where: { nit: process.env.SEED_EMPRESA_NIT ?? '0000000' },
-    create: { nombre: process.env.SEED_EMPRESA_NOMBRE ?? 'Mi Empresa, S.A.', nit: process.env.SEED_EMPRESA_NIT ?? '0000000' },
+    create: { nombre: process.env.SEED_EMPRESA_NOMBRE ?? 'Mi Transportes, S.A.', nit: process.env.SEED_EMPRESA_NIT ?? '0000000' },
     update: {},
   });
   const sucursal = await prisma.sucursal.upsert({
     where: { codigo: 'S01' },
-    create: { empresaId: empresa.id, codigo: 'S01', nombre: 'Sucursal Central', establecimientoFel: 1 },
+    create: { empresaId: empresa.id, codigo: 'S01', nombre: 'Sede central' },
     update: {},
   });
-  await prisma.bodega.upsert({
-    where: { sucursalId_nombre: { sucursalId: sucursal.id, nombre: 'Principal' } },
-    create: { sucursalId: sucursal.id, nombre: 'Principal', esPrincipal: true },
-    update: {},
-  });
-  await prisma.caja.upsert({
-    where: { sucursalId_nombre: { sucursalId: sucursal.id, nombre: 'Caja 1' } },
-    create: { sucursalId: sucursal.id, nombre: 'Caja 1' },
-    update: {},
-  });
-  for (const [tipo, serie] of [['VENTA', 'V-S01'], ['COTIZACION', 'C-S01'], ['DEVOLUCION', 'D-S01']] as const) {
-    await prisma.secuenciaDocumento.upsert({
-      where: { sucursalId_tipo_serie: { sucursalId: sucursal.id, tipo, serie } },
-      create: { sucursalId: sucursal.id, tipo, serie },
-      update: {},
-    });
-  }
 
-  // 6) Consumidor Final
-  const cf = await prisma.tercero.findFirst({ where: { nit: 'CF' } });
-  if (!cf) await prisma.tercero.create({ data: { nit: 'CF', nombres: 'CONSUMIDOR FINAL', esCliente: true } });
+  // 6) Planes de mantenimiento típicos de un cabezal (el taller los ajusta a su flota)
+  for (const p of PLANES_BASICOS) await prisma.planMantenimiento.upsert({ where: { nombre: p.nombre }, create: p, update: {} });
 
-  // 7) Catálogo base de producto (para poder crear productos de inmediato)
-  const cat = await prisma.categoria.upsert({ where: { nombre: 'GENERAL' }, create: { nombre: 'GENERAL' }, update: {} });
-  const grupo = await prisma.grupo.upsert({
-    where: { categoriaId_nombre: { categoriaId: cat.id, nombre: 'GENERAL' } },
-    create: { categoriaId: cat.id, nombre: 'GENERAL' },
-    update: {},
-  });
-  await prisma.subgrupo.upsert({ where: { grupoId_nombre: { grupoId: grupo.id, nombre: 'GENERAL' } }, create: { grupoId: grupo.id, nombre: 'GENERAL' }, update: {} });
-  await prisma.presentacion.upsert({ where: { nombre: 'Unidad' }, create: { nombre: 'Unidad', abreviatura: 'UNI' }, update: {} });
+  // 7) Categorías de gasto de operación
+  await prisma.categoriaGasto.createMany({ data: CATEGORIAS_BASICAS.map((nombre) => ({ nombre })), skipDuplicates: true });
 
   // 8) Administrador
   const superadmin = await prisma.rol.findUniqueOrThrow({ where: { nombre: 'SUPERADMIN' } });
@@ -142,7 +129,7 @@ async function main() {
   const rrhh = await crearBasicosRrhh(prisma);
   if (rrhh.creados) console.log(`✔ RRHH: ${rrhh.departamentos} departamentos y ${rrhh.puestos} puestos básicos (edítelos en Recursos humanos).`);
 
-  console.log(`✔ Seed completo. País ${gt.nombre}, sucursal ${sucursal.codigo}, usuario "${admin.username}" (debe cambiar contraseña al ingresar).`);
+  console.log(`✔ Seed completo. País ${gt.nombre}, sede ${sucursal.codigo}, usuario "${admin.username}" (debe cambiar contraseña al ingresar).`);
 }
 
 main()

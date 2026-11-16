@@ -13,90 +13,85 @@ export const PERMISOS: Record<string, { modulo: string; descripcion: string }> =
   'seguridad.roles.ver': { modulo: 'Seguridad', descripcion: 'Ver roles y permisos' },
   'seguridad.roles.gestionar': { modulo: 'Seguridad', descripcion: 'Crear/editar roles y asignar permisos' },
   'config.parametros': { modulo: 'Configuración', descripcion: 'Modificar parámetros del sistema' },
-  'sucursales.todas': { modulo: 'Configuración', descripcion: 'Operar y consultar TODAS las sucursales (consolidado)' },
+  'sucursales.todas': { modulo: 'Configuración', descripcion: 'Operar y consultar TODAS las sedes (consolidado)' },
   'auditoria.ver': { modulo: 'Configuración', descripcion: 'Consultar bitácora de auditoría' },
+  'operacion.autorizar': { modulo: 'Configuración', descripcion: 'Autorizar con sus credenciales acciones de otros (anular, reabrir)' },
 
-  // Catálogos generales (geografía, marcas, presentaciones, categorías, bodegas, cajas...)
+  // Catálogos generales (geografía, marcas, sedes, rutas, planes de mantenimiento, repuestos...)
   'catalogos.ver': { modulo: 'Catálogos', descripcion: 'Ver catálogos' },
   'catalogos.crear': { modulo: 'Catálogos', descripcion: 'Crear registros de catálogos' },
   'catalogos.editar': { modulo: 'Catálogos', descripcion: 'Editar registros de catálogos' },
   'catalogos.eliminar': { modulo: 'Catálogos', descripcion: 'Desactivar registros de catálogos' },
 
-  // Terceros
-  'terceros.ver': { modulo: 'Clientes y Proveedores', descripcion: 'Ver clientes y proveedores' },
-  'terceros.crear': { modulo: 'Clientes y Proveedores', descripcion: 'Crear clientes y proveedores' },
-  'terceros.editar': { modulo: 'Clientes y Proveedores', descripcion: 'Editar clientes y proveedores' },
-  'terceros.eliminar': { modulo: 'Clientes y Proveedores', descripcion: 'Desactivar clientes y proveedores' },
+  // Terceros: clientes (empresas que nos contratan), proveedores y talleres
+  'terceros.ver': { modulo: 'Clientes y proveedores', descripcion: 'Ver clientes, proveedores y talleres' },
+  'terceros.crear': { modulo: 'Clientes y proveedores', descripcion: 'Crear clientes, proveedores y talleres' },
+  'terceros.editar': { modulo: 'Clientes y proveedores', descripcion: 'Editar clientes, proveedores y talleres' },
+  'terceros.eliminar': { modulo: 'Clientes y proveedores', descripcion: 'Desactivar clientes, proveedores y talleres' },
+  'tarifas.ver': { modulo: 'Clientes y proveedores', descripcion: 'Ver tarifas por cliente y ruta' },
+  'tarifas.crear': { modulo: 'Clientes y proveedores', descripcion: 'Crear tarifas' },
+  'tarifas.editar': { modulo: 'Clientes y proveedores', descripcion: 'Editar tarifas' },
+  'tarifas.eliminar': { modulo: 'Clientes y proveedores', descripcion: 'Desactivar tarifas' },
 
-  // Productos
-  'productos.ver': { modulo: 'Productos', descripcion: 'Ver productos' },
-  'productos.crear': { modulo: 'Productos', descripcion: 'Crear productos' },
-  'productos.editar': { modulo: 'Productos', descripcion: 'Editar productos' },
-  'productos.eliminar': { modulo: 'Productos', descripcion: 'Desactivar productos' },
-  'productos.precios': { modulo: 'Productos', descripcion: 'Cambiar precio de venta' },
-  'descuentos.ver': { modulo: 'Productos', descripcion: 'Ver políticas de descuento' },
-  'descuentos.crear': { modulo: 'Productos', descripcion: 'Crear políticas de descuento' },
-  'descuentos.editar': { modulo: 'Productos', descripcion: 'Editar políticas de descuento' },
-  'descuentos.eliminar': { modulo: 'Productos', descripcion: 'Desactivar políticas de descuento' },
+  // Flota
+  'flota.ver': { modulo: 'Flota', descripcion: 'Ver cabezales, remolques y sus documentos' },
+  'flota.crear': { modulo: 'Flota', descripcion: 'Registrar cabezales, remolques y documentos' },
+  'flota.editar': { modulo: 'Flota', descripcion: 'Editar cabezales, remolques y documentos' },
+  'flota.eliminar': { modulo: 'Flota', descripcion: 'Dar de baja cabezales, remolques y documentos' },
 
-  // Inventario
-  'inventario.ver': { modulo: 'Inventario', descripcion: 'Ver existencias' },
-  'inventario.kardex': { modulo: 'Inventario', descripcion: 'Ver kardex (movimientos y costos)' },
-  'inventario.contar': { modulo: 'Inventario', descripcion: 'Contar mercadería en un conteo físico abierto' },
-  'inventario.ubicaciones': { modulo: 'Inventario', descripcion: 'Administrar ubicaciones de bodega (pasillo, estante…) y asignarlas' },
-  'inventario.cuadre': { modulo: 'Inventario', descripcion: 'Conteo físico: ver con cuánto debe cuadrar y marcar que cuadra (gerencia y dueño)' },
-  'inventario.ajustar': { modulo: 'Inventario', descripcion: 'Abrir y aprobar conteos físicos, ajustes e inventario inicial' },
-  'inventario.trasladar': { modulo: 'Inventario', descripcion: 'Enviar/recibir traslados entre sucursales' },
+  // Pilotos
+  'pilotos.ver': { modulo: 'Pilotos', descripcion: 'Ver pilotos y sus licencias' },
+  'pilotos.crear': { modulo: 'Pilotos', descripcion: 'Registrar pilotos' },
+  'pilotos.editar': { modulo: 'Pilotos', descripcion: 'Editar pilotos, licencias y pago por viaje' },
+  'pilotos.eliminar': { modulo: 'Pilotos', descripcion: 'Dar de baja pilotos' },
 
-  // Compras
-  'compras.ver': { modulo: 'Compras', descripcion: 'Ver compras / ingresos' },
-  'compras.crear': { modulo: 'Compras', descripcion: 'Registrar compras' },
-  'compras.anular': { modulo: 'Compras', descripcion: 'Anular compras' },
+  // Viajes
+  'viajes.ver': { modulo: 'Viajes', descripcion: 'Ver viajes' },
+  'viajes.crear': { modulo: 'Viajes', descripcion: 'Programar e iniciar viajes' },
+  'viajes.editar': { modulo: 'Viajes', descripcion: 'Editar viajes y registrar sus costos' },
+  'viajes.cerrar': { modulo: 'Viajes', descripcion: 'Finalizar viajes (km de llegada)' },
+  'viajes.liquidar': { modulo: 'Viajes', descripcion: 'Liquidar viajes: anticipos, costos y pago al piloto' },
+  'viajes.anular': { modulo: 'Viajes', descripcion: 'Cancelar viajes' },
+  'viajes.cotizar': { modulo: 'Viajes', descripcion: 'Usar el cotizador de viajes' },
 
-  // Ventas
-  'ventas.ver': { modulo: 'Ventas', descripcion: 'Ver ventas y cotizaciones' },
-  'ventas.crear': { modulo: 'Ventas', descripcion: 'Realizar ventas (POS)' },
-  'ventas.cotizar': { modulo: 'Ventas', descripcion: 'Crear cotizaciones' },
-  'ventas.anular': { modulo: 'Ventas', descripcion: 'Anular ventas del día' },
-  'ventas.devolver': { modulo: 'Ventas', descripcion: 'Registrar devoluciones / notas de crédito' },
-  'ventas.descuento_libre': { modulo: 'Ventas', descripcion: 'Aplicar descuentos sin tope de política' },
-  'ventas.quitar_linea': { modulo: 'Ventas', descripcion: 'Quitar o reducir productos del carrito del POS sin autorización' },
-  'ventas.autorizar': { modulo: 'Ventas', descripcion: 'Autorizar con sus credenciales acciones de otros (anular, devolver, quitar productos)' },
+  // Combustible
+  'combustible.ver': { modulo: 'Combustible', descripcion: 'Ver cargas y rendimiento' },
+  'combustible.registrar': { modulo: 'Combustible', descripcion: 'Registrar cargas de combustible' },
+  'combustible.anular': { modulo: 'Combustible', descripcion: 'Anular cargas de combustible' },
 
-  // Caja
-  'caja.operar': { modulo: 'Caja', descripcion: 'Abrir/cerrar SU caja y registrar movimientos' },
-  'caja.conciliar': { modulo: 'Caja', descripcion: 'Verificar vouchers de tarjeta, transferencias y cheques' },
-  'caja.supervisar': { modulo: 'Caja', descripcion: 'Ver y cerrar cajas de otros usuarios' },
-  'caja.validar_deposito': { modulo: 'Caja', descripcion: 'Validar boletas de depósito bancario (encargado de tienda)' },
+  // Llantas
+  'llantas.ver': { modulo: 'Llantas', descripcion: 'Ver llantas, montajes y vida útil' },
+  'llantas.crear': { modulo: 'Llantas', descripcion: 'Registrar llantas' },
+  'llantas.editar': { modulo: 'Llantas', descripcion: 'Montar, rotar, retirar y reencauchar llantas' },
+  'llantas.eliminar': { modulo: 'Llantas', descripcion: 'Desechar llantas' },
 
-  // Cierre
-  'cierre.ver': { modulo: 'Cierre', descripcion: 'Ver cierres diarios' },
-  'cierre.ejecutar': { modulo: 'Cierre', descripcion: 'Ejecutar el cierre del día' },
-  'cierre.reabrir': { modulo: 'Cierre', descripcion: 'Reabrir un día cerrado (excepcional, auditado)' },
+  // Mantenimiento
+  'mantenimiento.ver': { modulo: 'Mantenimiento', descripcion: 'Ver órdenes de trabajo y alertas' },
+  'mantenimiento.crear': { modulo: 'Mantenimiento', descripcion: 'Abrir órdenes de trabajo' },
+  'mantenimiento.editar': { modulo: 'Mantenimiento', descripcion: 'Registrar mano de obra y repuestos' },
+  'mantenimiento.cerrar': { modulo: 'Mantenimiento', descripcion: 'Cerrar órdenes de trabajo' },
+  'mantenimiento.anular': { modulo: 'Mantenimiento', descripcion: 'Anular órdenes de trabajo' },
 
-  // Reportería
-  'giros.configurar': { modulo: 'Productos', descripcion: 'Configurar los campos por giro (paquete adicional)' },
-  'reportes.analitica.finanzas': { modulo: 'Reportes', descripcion: 'Salud financiera: estado de resultados, márgenes, punto de equilibrio, inventario e IVA estimado (requiere ver costos)' },
-  'reportes.analitica.temporadas': { modulo: 'Reportes', descripcion: 'Temporadas de venta: definirlas, confirmar las detectadas y ver qué comprar con anticipación' },
-  'documentos.configurar': { modulo: 'Configuración', descripcion: 'Diseñar el formato de las cotizaciones y facturas (logo, columnas, textos, papel)' },
-  'gastos.ver': { modulo: 'Finanzas', descripcion: 'Ver los gastos pagados fuera de caja (alquiler, luz, servicios…)' },
-  'gastos.registrar': { modulo: 'Finanzas', descripcion: 'Registrar gastos pagados fuera de caja' },
+  // Finanzas y gastos
+  'gastos.ver': { modulo: 'Finanzas', descripcion: 'Ver los gastos de operación (alquiler, seguros, servicios…)' },
+  'gastos.registrar': { modulo: 'Finanzas', descripcion: 'Registrar gastos de operación' },
   'gastos.anular': { modulo: 'Finanzas', descripcion: 'Anular gastos (con motivo)' },
   'finanzas.costos': { modulo: 'Finanzas', descripcion: 'Ver costos, utilidades y márgenes (gerencia y dueño)' },
-  'reportes.ventas': { modulo: 'Reportes', descripcion: 'Reportes de ventas' },
-  'reportes.inventario': { modulo: 'Reportes', descripcion: 'Reportes de inventario' },
-  'reportes.financieros': { modulo: 'Reportes', descripcion: 'Utilidad, márgenes y costos' },
-  'reportes.caja': { modulo: 'Reportes', descripcion: 'Reportes de cuadre de caja' },
-  'reportes.rrhh': { modulo: 'Reportes', descripcion: 'Reportes de RRHH y comisiones' },
-  'reportes.analitica.agente': { modulo: 'Reportes', descripcion: 'Preguntar a los datos con IA: gráficas, proyecciones y explicación (envía cifras a un servicio de IA)' },
-  'reportes.analitica': { modulo: 'Reportes', descripcion: 'Dashboard analítico: estacionalidad, rotación, márgenes, sugerido de compra' },
+
+  // Reportería
+  'reportes.viajes': { modulo: 'Reportes', descripcion: 'Reportes de viajes e ingresos' },
+  'reportes.flota': { modulo: 'Reportes', descripcion: 'Reportes de flota, combustible y llantas' },
+  'reportes.mantenimiento': { modulo: 'Reportes', descripcion: 'Reportes de mantenimiento y repuestos' },
+  'reportes.financieros': { modulo: 'Reportes', descripcion: 'Utilidad, costo por km y márgenes' },
+  'reportes.rrhh': { modulo: 'Reportes', descripcion: 'Reportes de RRHH y pago a pilotos' },
+  'reportes.tablero': { modulo: 'Reportes', descripcion: 'Tablero de gerencia: indicadores de la flota' },
 
   // RRHH
   'rrhh.empleados.ver': { modulo: 'RRHH', descripcion: 'Ver empleados' },
   'rrhh.empleados.crear': { modulo: 'RRHH', descripcion: 'Crear empleados' },
   'rrhh.empleados.editar': { modulo: 'RRHH', descripcion: 'Editar empleados' },
   'rrhh.empleados.eliminar': { modulo: 'RRHH', descripcion: 'Dar de baja empleados' },
-  'rrhh.asistencia': { modulo: 'RRHH', descripcion: 'Registrar asistencia' },
+  'rrhh.asistencia': { modulo: 'RRHH', descripcion: 'Registrar asistencia y horas extra' },
   'rrhh.ausencias': { modulo: 'RRHH', descripcion: 'Registrar/aprobar ausencias y vacaciones' },
   'rrhh.planilla.ver': { modulo: 'RRHH', descripcion: 'Ver planillas' },
   'rrhh.planilla.generar': { modulo: 'RRHH', descripcion: 'Generar/recalcular planillas' },
@@ -107,31 +102,38 @@ export const PERMISOS: Record<string, { modulo: string; descripcion: string }> =
 export const ROLES_BASE: Record<string, { descripcion: string; permisos: string[] }> = {
   SUPERADMIN: { descripcion: 'Acceso total', permisos: ['*'] },
   GERENTE: {
-    descripcion: 'Gerencia y dueño del negocio: todo lo operativo, reportes, cierres, costos y ganancias',
+    descripcion: 'Gerencia y dueño: toda la operación, reportes, costos y ganancias',
     permisos: Object.keys(PERMISOS).filter((p) => !p.startsWith('seguridad.') && p !== 'config.parametros'),
   },
-  SUPERVISOR: {
-    descripcion: 'Supervisor de sucursal',
+  DESPACHADOR: {
+    descripcion: 'Despacho: programa viajes, asigna cabezal y piloto, registra costos y combustible',
     permisos: [
-      'catalogos.ver', 'terceros.ver', 'terceros.crear', 'terceros.editar', 'productos.ver',
-      'inventario.ver', 'inventario.kardex', 'inventario.contar', 'inventario.ajustar', 'inventario.trasladar',
-      'compras.ver', 'compras.crear', 'ventas.ver', 'ventas.crear', 'ventas.cotizar', 'ventas.anular',
-      'ventas.devolver', 'ventas.quitar_linea', 'ventas.autorizar', 'caja.operar', 'caja.supervisar', 'caja.validar_deposito', 'caja.conciliar', 'inventario.ubicaciones', 'cierre.ver', 'cierre.ejecutar',
-      'reportes.ventas', 'reportes.inventario', 'reportes.caja', 'reportes.analitica', 'rrhh.asistencia',
+      'catalogos.ver', 'terceros.ver', 'terceros.crear', 'terceros.editar', 'tarifas.ver', 'flota.ver', 'pilotos.ver',
+      'viajes.ver', 'viajes.crear', 'viajes.editar', 'viajes.cerrar', 'viajes.cotizar',
+      'combustible.ver', 'combustible.registrar', 'mantenimiento.ver', 'reportes.viajes', 'reportes.flota',
     ],
   },
-  CAJERO: {
-    descripcion: 'Vendedor / cajero',
-    permisos: ['productos.ver', 'terceros.ver', 'terceros.crear', 'inventario.ver', 'ventas.ver', 'ventas.crear', 'ventas.cotizar', 'caja.operar'],
+  PILOTO: {
+    descripcion: 'Piloto: ve sus viajes, registra combustible y gastos del viaje desde el celular',
+    permisos: ['viajes.ver', 'viajes.editar', 'combustible.registrar', 'flota.ver'],
   },
-  BODEGUERO: {
-    descripcion: 'Bodega: compras e inventario',
-    permisos: ['productos.ver', 'terceros.ver', 'inventario.ver', 'inventario.kardex', 'inventario.contar', 'inventario.trasladar', 'inventario.ubicaciones', 'compras.ver', 'compras.crear'],
+  TALLER: {
+    descripcion: 'Taller: órdenes de trabajo, repuestos y llantas',
+    permisos: ['catalogos.ver', 'flota.ver', 'flota.editar', 'llantas.ver', 'llantas.crear', 'llantas.editar', 'llantas.eliminar', 'mantenimiento.ver', 'mantenimiento.crear', 'mantenimiento.editar', 'mantenimiento.cerrar', 'reportes.mantenimiento'],
+  },
+  CONTADOR: {
+    descripcion: 'Contabilidad: gastos, liquidaciones, planilla y reportes financieros',
+    permisos: [
+      'catalogos.ver', 'terceros.ver', 'viajes.ver', 'viajes.liquidar', 'gastos.ver', 'gastos.registrar', 'gastos.anular', 'finanzas.costos',
+      'reportes.viajes', 'reportes.flota', 'reportes.mantenimiento', 'reportes.financieros', 'reportes.rrhh', 'reportes.tablero',
+      'rrhh.empleados.ver', 'rrhh.asistencia', 'rrhh.ausencias', 'rrhh.planilla.ver', 'rrhh.planilla.generar',
+    ],
   },
   RRHH: {
     descripcion: 'Recursos Humanos',
     permisos: [
       'catalogos.ver', 'rrhh.empleados.ver', 'rrhh.empleados.crear', 'rrhh.empleados.editar', 'rrhh.empleados.eliminar',
+      'pilotos.ver', 'pilotos.crear', 'pilotos.editar', 'pilotos.eliminar',
       'rrhh.asistencia', 'rrhh.ausencias', 'rrhh.planilla.ver', 'rrhh.planilla.generar', 'reportes.rrhh',
     ],
   },

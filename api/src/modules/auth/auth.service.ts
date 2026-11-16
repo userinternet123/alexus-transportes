@@ -155,7 +155,6 @@ export class AuthService {
         minutos: await this.parametros.numero('seguridad.sesion_minutos'),
         avisoSegundos: await this.parametros.numero('seguridad.aviso_segundos'),
       },
-      felPorDefecto: await this.parametros.booleano('ventas.fel_por_defecto'),
       licencia: await this.licencia.estado().then((l) => ({ plan: l.plan, modo: l.modo, modulos: l.modulos, vence: l.vence, diasRestantes: l.diasRestantes, bloqueado: l.bloqueado, motivo: l.motivo })),
     };
   }
@@ -181,7 +180,7 @@ export class AuthService {
       throw invalido();
     }
     const sup = await this.construirToken(u.id);
-    if (!tienePermiso(sup, 'ventas.autorizar') || !tienePermiso(sup, permiso)) {
+    if (!tienePermiso(sup, 'operacion.autorizar') || !tienePermiso(sup, permiso)) {
       throw prohibido(`${sup.nombre} no tiene facultad para autorizar esta acción (${permiso})`);
     }
     if (ctx.sucursalId && !sup.sucursales.includes(ctx.sucursalId) && !tienePermiso(sup, 'sucursales.todas')) {
