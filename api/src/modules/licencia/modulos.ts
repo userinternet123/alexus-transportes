@@ -28,6 +28,7 @@ const PREFIJOS: [string, string][] = [
   ['sucursales.todas', 'multisede'],
   ['viajes.', 'viajes'],
   ['tarifas.', 'viajes'],
+  ['inspecciones.', 'viajes'],
   ['combustible.', 'combustible'],
   ['mantenimiento.', 'mantenimiento'],
   ['llantas.', 'llantas'],

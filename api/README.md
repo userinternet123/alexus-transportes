@@ -16,7 +16,10 @@ NestJS 11 · Prisma 6 · PostgreSQL 16 · Zod · Argon2 · Pino.  Prefijo: `/api
 | Seguridad | `/seguridad/usuarios` · `/seguridad/roles` · `PUT /seguridad/roles/:id/permisos` · `/seguridad/permisos` · `/seguridad/auditoria` |
 | Catálogos (CRUD genérico) | `/catalogos/{paises,departamentos,municipios,marcas,sucursales,rutas}` · `/terceros/{clientes,proveedores,talleres}` · `/tarifas` · `/flota/{cabezales,remolques,documentos}` · `/pilotos` · `/llantas` · `/mantenimiento/{planes,repuestos}` · `/rrhh/{departamentos,puestos,empleados}` |
 | Gastos | `GET /gastos` · `POST /gastos` · `POST /gastos/:id/anular` · `/gastos/categorias` |
-| Viajes, combustible, taller | Fase 1 y 2 (modelos ya en `schema.prisma`: `Viaje`, `CostoViaje`, `CargaCombustible`, `OrdenTrabajo`, `MontajeLlanta`) |
+| Viajes | `GET /viajes` (abiertos + mes) · `GET /viajes/:id` · `POST /viajes` · `PUT /viajes/:id` · `PUT /viajes/:id/{iniciar,finalizar,liquidar,cancelar}` · `POST /viajes/:id/costos` · `DELETE /viajes/:id/costos/:costoId` · `GET /viajes/opciones` · `POST /viajes/cotizar` |
+| Combustible | `GET /combustible/cargas` (con km/gal tanque lleno a tanque lleno) · `POST /combustible/cargas` · `PUT /combustible/cargas/:id/anular` · `GET /combustible/rendimiento` |
+| Inspecciones | `GET /inspecciones/checklist` · `GET /inspecciones` · `GET /inspecciones/:id` · `POST /inspecciones` (falla crítica → `OrdenTrabajo` CORRECTIVO automática) |
+| Taller, llantas | Fases 2 y 3 (modelos ya en `schema.prisma`: `OrdenTrabajo`, `MontajeLlanta`) |
 | Reportes | `GET /reportes` · `GET /reportes/:clave` · `GET /reportes/:clave/excel` |
 | RRHH | `/rrhh/asistencias` · `/rrhh/ausencias` (+ `aprobar`/`rechazar`) · `POST /rrhh/planillas/generar` · `PUT /rrhh/planillas/:id/empleados/:empleadoId` · `POST /rrhh/planillas/:id/aprobar` |
 | Sistema | `GET /health` · `/config/parametros` |
