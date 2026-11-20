@@ -85,6 +85,13 @@ export class EventosViajeService {
       }
     }
     const plazos = d.caso ? await this.casos.todosLosPlazos() : null;
+    // «Salida» de un viaje programado lo inicia, con las mismas reglas que el despacho (inspección, casos, documentos).
+    // Si no puede salir, el reporte se rechaza con el motivo y el piloto lo ve en el celular.
+    let inicio: string | null = null;
+    const previo = await this.viajes.cargar(ctx, viajeId);
+    if (d.tipo === 'SALIDA' && previo.estado === 'PROGRAMADO') {
+      inicio = (await this.viajes.iniciar(ctx, viajeId, { kmSalida: d.odometro ?? null, fecha: ocurridoEn })).message;
+    }
     const r = await this.prisma.enTransaccion(async (tx) => {
       const v = await this.viajes.cargar(ctx, viajeId, tx);
       if (v.estado === 'CANCELADO' || v.estado === 'LIQUIDADO') throw reglaNegocio('ESTADO_VIAJE', `El viaje ${v.numero} ya está ${v.estado === 'CANCELADO' ? 'cancelado' : 'liquidado'}: no admite reportes`);
@@ -114,7 +121,7 @@ export class EventosViajeService {
       });
     }
     const e = await this.prisma.eventoViaje.findUniqueOrThrow({ where: { id: r.e.id }, include: INCLUIR });
-    return { data: this.salida(e), message: `${ETIQUETA_EVENTO[d.tipo]} reportado${d.evidencias.length ? ` con ${d.evidencias.length} foto(s)` : ''}${r.caso ? ` · caso ${r.caso.numero}` : ''}` };
+    return { data: this.salida(e), message: `${ETIQUETA_EVENTO[d.tipo]} reportado${d.evidencias.length ? ` con ${d.evidencias.length} foto(s)` : ''}${r.caso ? ` · caso ${r.caso.numero}` : ''}${inicio ? ` · ${inicio}` : ''}` };
   }
 
   /** Viajes en ruta con su último reporte: qué está pasando y desde cuándo no se sabe de cada uno. */

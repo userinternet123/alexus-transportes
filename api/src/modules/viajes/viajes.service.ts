@@ -362,12 +362,20 @@ export class ViajesService {
 
   async agregarCosto(ctx: Ctx, id: number, body: unknown) {
     const d = validar(costoZ, body);
+    if (d.uuidCliente) {
+      const ya = await this.prisma.costoViaje.findUnique({ where: { uuidCliente: d.uuidCliente } });
+      if (ya) {
+        if (ya.viajeId !== id) throw reglaNegocio('UUID_REPETIDO', 'Ese identificador ya se usó en otro viaje');
+        return { data: { id: ya.id }, message: 'Gasto ya recibido' };
+      }
+    }
+    if (d.archivoId && !(await this.prisma.archivo.count({ where: { id: d.archivoId, creadoPorId: ctx.usuario.sub } }))) throw reglaNegocio('EVIDENCIA_AJENA', 'Solo puede adjuntar fotos que usted subió');
     if (d.tipo === 'COMBUSTIBLE') throw reglaNegocio('COMBUSTIBLE_COMO_CARGA', 'El combustible se registra como carga (con galones y odómetro) en Combustible; así se calcula el rendimiento');
     const r = await this.prisma.enTransaccion(async (tx) => {
       await this.bloquear(tx, id);
       const v = await this.cargar(ctx, id, tx);
       if (!admiteCostos(v.estado)) throw reglaNegocio('ESTADO_VIAJE', `El viaje ${v.numero} está ${ETIQUETA_ESTADO[v.estado]}: ya no admite costos`);
-      const c = await tx.costoViaje.create({ data: { viajeId: id, tipo: d.tipo, monto: r2(d.monto), descripcion: d.descripcion, documento: d.documento, pagadoPorPiloto: d.pagadoPorPiloto, fecha: d.fecha ?? new Date(), archivoId: d.archivoId ?? null, registradoPorId: ctx.usuario.sub } });
+      const c = await tx.costoViaje.create({ data: { viajeId: id, tipo: d.tipo, monto: r2(d.monto), descripcion: d.descripcion, documento: d.documento, pagadoPorPiloto: d.pagadoPorPiloto, fecha: d.fecha ?? new Date(), archivoId: d.archivoId ?? null, registradoPorId: ctx.usuario.sub, uuidCliente: d.uuidCliente ?? null } });
       await this.recalcularCostos(tx, id);
       await this.audit.registrar(ctx, { accion: 'CREAR', entidad: 'CostoViaje', entidadId: c.id, despues: { viajeId: id, ...d } }, tx);
       return c;
@@ -488,6 +496,54 @@ export class ViajesService {
       viajes: [...viajes].sort((a, b) => D(b.ganancia).cmp(D(a.ganancia))),
       mejorPagados: [...viajes].filter((v) => v.ingresoKm).sort((a, b) => b.ingresoKm!.cmp(a.ingresoKm!)).slice(0, 10),
       porCliente: agrupar((v) => v.cliente), porRuta: agrupar((v) => v.ruta ?? `${v.origen} → ${v.destino}`), porCabezal: agrupar((v) => v.cabezal), porPiloto: agrupar((v) => v.piloto),
+    } };
+  }
+
+  // ─────────────────────────────── app del piloto ──────────────────────────
+
+  /**
+   * «Mi día» para la app del piloto: sus viajes abiertos, su cabezal, si ya hizo la inspección de hoy, sus casos
+   * abiertos y la lista de revisión. La app lo guarda (cifrado) para trabajar sin señal.
+   * Un usuario sin piloto ligado (supervisor) ve los viajes abiertos de la sede.
+   */
+  async miDia(ctx: Ctx) {
+    const sucursalId = this.sucursal(ctx);
+    const u = await this.prisma.usuario.findUnique({ where: { id: ctx.usuario.sub }, select: { empleado: { select: { nombres: true, apellidos: true, telefono: true, piloto: { select: { id: true, licenciaTipo: true, licenciaVence: true, cabezales: { where: { activo: true }, select: { id: true } } } } } } } });
+    const piloto = u?.empleado?.piloto ?? null;
+    const viajes = await this.prisma.viaje.findMany({
+      where: { sucursalId, estado: { in: ['PROGRAMADO', 'EN_RUTA', 'FINALIZADO'] }, ...(piloto ? { pilotoId: piloto.id } : {}) },
+      orderBy: [{ estado: 'asc' }, { fechaSalida: 'asc' }], take: piloto ? 20 : 40,
+      include: {
+        ...INCLUIR_LISTA,
+        cabezal: { select: { id: true, codigo: true, placa: true, odometro: true, capacidadTanque: true, rendimientoEsperado: true } },
+        remolque: { select: { id: true, codigo: true, placa: true } },
+        eventos: { orderBy: { ocurridoEn: 'desc' }, take: 1, select: { tipo: true, ocurridoEn: true } },
+        anticipos: { select: { monto: true } },
+      },
+    });
+    const cabezalIds = [...new Set([...viajes.map((v) => v.cabezalId), ...(piloto?.cabezales.map((c) => c.id) ?? [])])];
+    const [cabezales, inspecciones, casos] = await Promise.all([
+      this.prisma.cabezal.findMany({ where: { id: { in: cabezalIds } }, select: { id: true, codigo: true, placa: true, odometro: true, capacidadTanque: true, rendimientoEsperado: true, estado: true } }),
+      this.prisma.inspeccion.findMany({ where: { cabezalId: { in: cabezalIds } }, orderBy: { fecha: 'desc' }, distinct: ['cabezalId'], select: { cabezalId: true, remolqueId: true, fecha: true, resultado: true } }),
+      this.prisma.caso.findMany({ where: { sucursalId, estado: { in: ['ABIERTO', 'EN_PROCESO'] }, OR: [{ creadoPorId: ctx.usuario.sub }, { cabezalId: { in: cabezalIds } }] }, orderBy: { venceEn: 'asc' }, take: 30, select: { id: true, numero: true, titulo: true, prioridad: true, estado: true, impideSalir: true, cabezalId: true, venceEn: true } }),
+    ]);
+    const vigencia = Date.now() - VIGENCIA_HORAS * 3_600_000;
+    const ultimaDe = new Map(inspecciones.map((i) => [i.cabezalId, i]));
+    return { data: {
+      generado: new Date(),
+      piloto: piloto ? { id: piloto.id, nombre: nombreEmpleado(u!.empleado!), licenciaTipo: piloto.licenciaTipo, licenciaVence: aYmd(piloto.licenciaVence), diasLicencia: Math.floor((piloto.licenciaVence.getTime() - Date.now()) / 86_400_000) } : null,
+      cabezales: cabezales.map((c) => {
+        const i = ultimaDe.get(c.id);
+        return { ...c, asignado: piloto?.cabezales.some((x) => x.id === c.id) ?? false, inspeccion: i ? { fecha: i.fecha, resultado: i.resultado, remolqueId: i.remolqueId, vigente: i.fecha.getTime() >= vigencia && i.resultado !== 'RECHAZADA', fueraDeServicio: i.resultado === 'RECHAZADA' } : null };
+      }),
+      viajes: viajes.map((v) => ({
+        id: v.id, numero: v.numero, estado: v.estado, cliente: nombreTercero(v.cliente), ruta: v.ruta?.nombre ?? null, origen: v.origen, destino: v.destino,
+        carga: v.carga, referencia: v.referencia, fechaSalida: v.fechaSalida, fechaCompromiso: v.fechaCompromiso, observaciones: v.observaciones,
+        cabezalId: v.cabezalId, cabezal: v.cabezal.codigo, placa: v.cabezal.placa, remolqueId: v.remolqueId, remolque: v.remolque?.codigo ?? null,
+        kmSalida: v.kmSalida, anticipos: r2(suma(v.anticipos.map((a) => a.monto))), ultimoReporte: v.eventos[0] ?? null,
+        piloto: piloto ? null : nombreEmpleado(v.piloto.empleado),
+      })),
+      casos,
     } };
   }
 

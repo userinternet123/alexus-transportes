@@ -836,6 +836,7 @@ model CostoViaje {
   pagadoPorPiloto Boolean        @default(true) @map("pagado_por_piloto") // true: salió del anticipo; false: lo pagó la empresa (crédito, tarjeta)
   documento       String? // factura o recibo
   cargaId         Int?           @unique @map("carga_id") // si nace de una carga de combustible
+  uuidCliente     String?        @unique @map("uuid_cliente") // reenvío desde el móvil sin duplicar
   archivoId       String?        @map("archivo_id") // foto del recibo
   registradoPorId Int            @map("registrado_por_id")
   creadoEn        DateTime       @default(now()) @map("creado_en")
@@ -888,6 +889,7 @@ model CargaCombustible {
   documento       String? // número de factura o vale
   archivoId       String?  @map("archivo_id") // foto del vale
   pagadoPorPiloto Boolean  @default(false) @map("pagado_por_piloto") // con el anticipo del viaje
+  uuidCliente     String?  @unique @map("uuid_cliente") // reenvío desde el móvil sin duplicar
   // Rendimiento tanque lleno a tanque lleno (se calcula al registrar)
   kmRecorridos    Decimal? @map("km_recorridos") @db.Decimal(12, 1)
   galonesTramo    Decimal? @map("galones_tramo") @db.Decimal(10, 3)
@@ -941,6 +943,7 @@ model Inspeccion {
   fallasCriticas  Int                 @default(0) @map("fallas_criticas")
   observaciones   String?
   ordenTrabajoId  Int?                @unique @map("orden_trabajo_id")
+  uuidCliente     String?             @unique @map("uuid_cliente") // reenvío desde el móvil sin duplicar
   registradoPorId Int                 @map("registrado_por_id")
   creadoEn        DateTime            @default(now()) @map("creado_en")
 

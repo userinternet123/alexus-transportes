@@ -43,6 +43,10 @@ export class InspeccionesService {
   async registrar(ctx: Ctx, body: unknown) {
     const d = validar(inspeccionZ, body);
     const sucursalId = this.sucursal(ctx);
+    if (d.uuidCliente) {
+      const ya = await this.prisma.inspeccion.findUnique({ where: { uuidCliente: d.uuidCliente }, include: { ordenTrabajo: { select: { numero: true } }, casos: { select: { id: true, numero: true, prioridad: true, titulo: true, tipo: true, impideSalir: true } } } });
+      if (ya) return { data: { id: ya.id, resultado: ya.resultado, fallas: ya.fallas, fallasCriticas: ya.fallasCriticas, ordenTrabajo: ya.ordenTrabajo?.numero ?? null, casos: ya.casos, resueltos: [] }, message: 'Inspección ya recibida' };
+    }
     const falta = faltantes(!!d.remolqueId, d.puntos);
     if (falta.length) throw reglaNegocio('LISTA_INCOMPLETA', `Faltan ${falta.length} puntos por revisar: ${falta.slice(0, 3).join(', ')}${falta.length > 3 ? '…' : ''}`, { faltantes: falta });
     if (!d.remolqueId && d.puntos.some((p) => punto(p.codigo)?.aplicaA === 'REMOLQUE')) throw reglaNegocio('SIN_REMOLQUE', 'Marcó puntos del remolque sin elegir el remolque');
@@ -87,7 +91,7 @@ export class InspeccionesService {
       const insp = await tx.inspeccion.create({ data: {
         sucursalId, cabezalId: d.cabezalId, remolqueId: d.remolqueId ?? null, pilotoId: propio ?? d.pilotoId ?? null, viajeId,
         odometro: d.odometro ?? null, resultado: res.resultado, fallas: res.fallas, fallasCriticas: res.fallasCriticas, observaciones: d.observaciones,
-        ordenTrabajoId: orden?.id ?? null, registradoPorId: ctx.usuario.sub,
+        ordenTrabajoId: orden?.id ?? null, registradoPorId: ctx.usuario.sub, uuidCliente: d.uuidCliente ?? null,
         puntos: { create: d.puntos.map((p) => ({ codigo: p.codigo, estado: p.estado, critico: punto(p.codigo)!.critico, nota: p.nota, archivoId: p.archivoId ?? null })) },
       } });
       const casos = await this.casos.crearEn(tx, ctx, nuevos.map((c) => ({

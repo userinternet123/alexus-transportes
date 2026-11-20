@@ -6,7 +6,7 @@ Sistema de control para empresas de transporte pesado: **cabezales, remolques, p
 |---|---|---|
 | `api/` | API REST | NestJS 11 · Prisma 6 · PostgreSQL · Zod · Argon2 |
 | `src/` (raíz) | Portal web | React 19 · Vite · Tailwind · pantallas por JSON |
-| `movil/` | App del piloto (Android) | Expo · React Native (pendiente de adaptar, fase 3) |
+| `movil/` | App del piloto (Android) | Expo · React Native, funciona sin señal ([detalle](movil/README.md)) |
 | `instalador/` | Instalador de Windows con servicio | Inno Setup · PowerShell (pendiente de renombrar) |
 | `docs/base-spvi/` | Documentación heredada de SPVI, solo como referencia | |
 
@@ -59,8 +59,8 @@ Entre con `admin` y la contraseña del seed (pide cambiarla). El API trae la cla
   - **Reporte en vivo**: bitácora del viaje (salida, colas, aduana, entrega, incidentes) con hora, ubicación y fotos; un incidente abre un caso. Panel «En ruta ahora» con el último reporte de cada unidad. Fotos de evidencia también en casos e inspecciones. Preparado para el móvil sin señal: cada reporte lleva su hora y un identificador, y al reenviarse no se duplica.
   - **Cargas laborales opcionales**: IGSS patronal, IRTRA, INTECAP y prestaciones, cada una con «se paga hoy» (planilla) e «incluir en costos» (costo por km, cotizador y ganancia). Sin planillas, los sueldos se estiman con los empleados activos.
 - **Siguiente, fase 2:** órdenes de taller y servicios mayores, repuestos por marca, alertas de mantenimiento, **cuentas por cobrar con recordatorios a 30/60/90 días** (o los días de crédito de cada cliente), incidentes y multas.
-- **App del piloto (Android):** reportar en vivo con cámara y GPS, inspección pre viaje, cargas de combustible y gastos con foto del recibo, todo funcionando sin señal y sincronizando al reconectar. El API ya está listo.
-- **Fase 3:** llantas con **km por cada vida** (nueva y cada reencauche), scorecard del piloto, presupuesto de mantenimiento, costo total por cabezal, tablero de gerencia y app del piloto.
+- **App del piloto (Android)** ✅: «Mi día», reportar en vivo con cámara y GPS (*Salí* inicia el viaje), inspección pre viaje, combustible y gastos con foto, problemas con prioridad, todo cifrado en el teléfono, sin señal y sin duplicar al reenviar.
+- **Fase 3:** llantas con **km por cada vida** (nueva y cada reencauche), scorecard del piloto, presupuesto de mantenimiento, costo total por cabezal, tablero de gerencia.
 
 ## Agregar un catálogo nuevo
 1. Modelo en `api/prisma/schema.prisma` con campo `activo` → `npx prisma migrate dev`.

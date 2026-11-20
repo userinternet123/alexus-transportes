@@ -1,53 +1,53 @@
-# SPVI móvil (Android)
+# ALEXUS Piloto (Android)
 
-App nativa con **React Native + Expo** para consultar y operar SPVI desde el celular: resumen del día, existencias con **escáner de código de barras por cámara**, ventas del día, estado de la caja y cambio de sucursal. Usa el mismo API, los mismos usuarios y los mismos permisos y plan contratado que el portal.
+App del piloto de ALEXUS Transportes. Hecha para usarse en el camino, **con o sin señal**.
 
-## 1. Crear el proyecto (una sola vez)
+## Qué hace
 
-En una PC con Node.js 22 (Windows, Linux o Mac; también funciona en Termux):
+| Pantalla | Para qué |
+|---|---|
+| **Mi día** | El viaje de ahora (cliente, ruta, cabezal, remolque, anticipo), lo que falta antes de salir (inspección vigente, licencia, casos que impiden salir) y botones grandes: *Salí*, *En cola*, *Llegué*, *Entregué*, *Reportar incidente*. |
+| **Reportar** | Evento del viaje con hora, ubicación GPS, odómetro opcional y hasta 10 fotos. *Salí* inicia el viaje en el sistema. Un incidente abre un caso. |
+| **Inspección** | Lista de revisión pre viaje (cabezal y remolque). Lo que falla pide foto; un punto crítico deja la unidad fuera de servicio y abre un caso con prioridad. |
+| **Combustible** | Carga con odómetro, galones, precio, estación y foto del vale. Si el odómetro salta más de lo que rinde un tanque, queda *por revisar* y el piloto confirma. |
+| **Gasto** | Peaje, comida, hospedaje, reparación… con foto del recibo y si lo pagó el piloto (entra a su liquidación). |
+| **Problema** | Reporta una falla del cabezal o remolque con prioridad (urgente, alta, moderada, baja) y fotos. |
+| **Envíos** | Todo lo reportado y en qué quedó: *por enviar*, *enviado* o *por revisar* con el motivo, para corregir, reintentar o descartar. |
+| **Más** | Cuenta, sede, servidor, sincronizar, cerrar sesión, borrar los datos del teléfono. |
+
+## Cómo funciona sin señal
+
+- Cada reporte se guarda primero en el teléfono, **cifrado** (XChaCha20-Poly1305, llave en el almacén seguro de Android), con la **hora en que ocurrió** y un identificador único.
+- Las fotos se toman solo con la cámara (no se leen ni se guardan en la galería), se reducen a 1600 px y se guardan cifradas hasta que se suben; luego se borran.
+- Cada 45 s y al volver a la app se intenta enviar, en el orden en que se capturó (la inspección antes de la salida). Primero se suben las fotos una por una y se recuerda cuáles ya subieron; si la señal se cae a medias, sigue donde se quedó.
+- Si el servidor rechaza un reporte (por ejemplo, odómetro dudoso), queda *por revisar* con el motivo; lo demás sigue enviándose.
+- Un reenvío nunca duplica: el servidor reconoce el identificador y responde «ya recibido».
+- «Mi día» y la lista de inspección quedan guardados para consultarse sin señal.
+- Al cerrar sesión se borra lo de consulta; lo que falta por enviar se conserva cifrado y se envía cuando el mismo usuario vuelve a entrar.
+
+## Conexión con el servidor
+
+El piloto ingresa la dirección del servidor de la empresa: por **Tailscale** (`http://100.x.x.x:4000`) o por **HTTPS**. La app avisa si la dirección no es segura ni de Tailscale.
+
+El usuario del piloto se crea en el portal (**Administración → Usuarios**) con el rol **Piloto** y su campo **Empleado** apuntando al empleado que es ese piloto. Sin ese vínculo la app no sabe qué viajes son suyos.
+
+## Desarrollo
 
 ```bash
-npx create-expo-app@latest spvi-movil --template blank-typescript
-cd spvi-movil
-npx expo install expo-router expo-secure-store expo-camera expo-build-properties expo-linking expo-constants expo-status-bar react-native-safe-area-context react-native-screens @expo/vector-icons
-npm install axios
-```
-`npx expo install` elige las versiones compatibles con la versión de Expo instalada.
-
-Copie sobre el proyecto las carpetas `app/` y `src/` y los archivos `app.json` y `eas.json` de esta carpeta. Borre el `App.tsx` que trae la plantilla. En `package.json` cambie la entrada principal:
-```json
-"main": "expo-router/entry"
+npm install
+npm run typecheck
+npm test                       # lógica de la cola, cifrado y almacén (SQLite real de Node)
+npx expo start                 # Expo Go / emulador
+npx expo export --platform android   # valida que el paquete compile
 ```
 
-## 2. Probar en el teléfono (sin compilar)
+Datos de prueba: `DEMO_CLAVE_PILOTOS='...' npm run db:demo` (en `api/`) crea los usuarios `piloto1`…`piloto5` vinculados a los pilotos de ejemplo.
 
-1. Instale **Expo Go** desde Google Play.
-2. En la PC ejecute `npx expo start` y escanee el código QR con Expo Go.
-3. En la app, escriba la dirección del servidor y toque **Probar conexión**:
-   - En la tienda: `http://IP-del-servidor:8080` (el teléfono en el mismo Wi-Fi).
-   - Desde fuera: `http://100.x.x.x:8080`, con Tailscale activo en el teléfono (ver `docs/09-acceso-remoto-tailscale.md`).
+## Generar el APK
 
-## 3. Generar el APK
-
-Con el servicio de compilación de Expo (no requiere Android Studio):
 ```bash
-npm install -g eas-cli
-eas login                 # cuenta gratuita en expo.dev
-eas build -p android --profile apk
+npx eas build -p android --profile apk          # APK para instalar directo
+npx eas build -p android --profile produccion   # AAB para Play Store
 ```
-Al terminar, EAS entrega un enlace para descargar `SPVI.apk`. Instálelo en los teléfonos: Android pedirá permitir "instalar apps de origen desconocido".
 
-Para Google Play use `--profile produccion`, que genera un `.aab`.
-
-**Cada versión nueva:** suba `version` y `android.versionCode` en `app.json` y repita `eas build`.
-
-## Seguridad
-
-- Los tokens se guardan en el almacén cifrado del teléfono (Android Keystore), no en texto plano.
-- La app permite `http` porque los servidores de tienda no tienen certificado. **Úsela solo en la red de la tienda o a través de Tailscale**, que cifra toda la conexión. Nunca publique el puerto 8080 directamente en internet.
-- Si un usuario debe cambiar su contraseña, la app le pide hacerlo primero en el portal web.
-
-## Siguientes pasos sugeridos
-- Vender desde el teléfono (POS móvil con escáner).
-- Recibir mercadería escaneando la factura del proveedor.
-- Notificaciones: caja con diferencia, existencia baja, licencia por vencer.
+Paquete: `com.alexusgt.transportes.piloto`. Permisos: cámara y ubicación mientras se usa la app (sin ubicación en segundo plano, sin micrófono, sin galería). Copia de seguridad de Android desactivada.

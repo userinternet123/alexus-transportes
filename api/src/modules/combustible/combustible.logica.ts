@@ -69,6 +69,7 @@ export const cargaZ = z.object({
   documento: z.string().trim().max(60).nullish().transform((v) => v || null),
   archivoId: z.string().uuid().nullish(),
   confirmarSalto: zBool, // el usuario confirma un salto de odómetro fuera de lo normal
+  uuidCliente: z.string().uuid().nullish(), // reenvío desde el móvil sin duplicar
 });
 
 export const filtroCargasZ = z.object({

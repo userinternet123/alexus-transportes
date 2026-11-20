@@ -103,10 +103,15 @@ export class CombustibleService {
   async registrar(ctx: Ctx, body: unknown) {
     const d = validar(cargaZ, body);
     const sucursalId = this.sucursal(ctx);
+    if (d.uuidCliente) {
+      const ya = await this.prisma.cargaCombustible.findUnique({ where: { uuidCliente: d.uuidCliente }, include: { viaje: { select: { numero: true } } } });
+      if (ya) return { data: { id: ya.id, total: ya.total, viaje: ya.viaje?.numero ?? null, rendimiento: ya.rendimiento, kmRecorridos: ya.kmRecorridos, alerta: ya.alerta }, message: 'Carga ya recibida' };
+    }
     const caida = await this.parametros.numero('combustible.alerta_rendimiento');
     const total = totalCarga(d.galones, d.precioGalon);
     if (d.total != null && D(d.total).minus(total).abs().gt(1)) throw reglaNegocio('TOTAL_NO_CUADRA', `El total (Q${D(d.total).toFixed(2)}) no cuadra con galones × precio (Q${total.toFixed(2)})`);
     const propio = await this.pilotoPropio(ctx);
+    if (d.archivoId && !(await this.prisma.archivo.count({ where: { id: d.archivoId, creadoPorId: ctx.usuario.sub } }))) throw reglaNegocio('EVIDENCIA_AJENA', 'Solo puede adjuntar fotos que usted subió');
 
     const r = await this.prisma.enTransaccion(async (tx) => {
       await tx.$queryRaw`SELECT id FROM cabezales WHERE id = ${d.cabezalId} FOR UPDATE`;
@@ -141,7 +146,7 @@ export class CombustibleService {
       const carga = await tx.cargaCombustible.create({ data: {
         sucursalId, cabezalId: d.cabezalId, pilotoId, viajeId: viaje?.id ?? null, fecha: d.fecha ?? new Date(),
         odometro: odo, galones: d.galones, precioGalon: d.precioGalon, total, tanqueLleno: d.tanqueLleno, pagadoPorPiloto: d.pagadoPorPiloto,
-        estacion: d.estacion, documento: d.documento, archivoId: d.archivoId ?? null, registradoPorId: ctx.usuario.sub,
+        estacion: d.estacion, documento: d.documento, archivoId: d.archivoId ?? null, registradoPorId: ctx.usuario.sub, uuidCliente: d.uuidCliente ?? null,
         kmRecorridos: t?.km ?? null, galonesTramo: t?.galones ?? null, rendimiento: t?.rendimiento ?? null, alerta,
       } });
       if (viaje) {

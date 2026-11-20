@@ -111,6 +111,7 @@ export const inspeccionZ = z.object({
     impideSalir: zBool.transform((v) => v ?? false),
   })).max(20).default([]),
   evidencias: evidenciasZ, // fotos generales de la unidad
+  uuidCliente: z.string().uuid().nullish(), // reenvío desde el móvil sin duplicar
 }).superRefine((d, ctx) => {
   const vistos = new Set<string>();
   for (const p of d.puntos) {

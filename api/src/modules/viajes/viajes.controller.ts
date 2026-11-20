@@ -14,6 +14,7 @@ export class ViajesController {
   @Post('cotizar') @Permisos('viajes.cotizar') cotizar(@Body() b: unknown) { return this.cotizador.cotizar(b); }
   @Get('costo-km') @Permisos('finanzas.costos') costoKm() { return this.viajes.costoPorKm(); }
   @Get('rentabilidad') @Permisos('finanzas.costos') rentabilidad(@Contexto() ctx: Ctx, @Query() q: unknown) { return this.viajes.rentabilidad(ctx, q); }
+  @Get('mi-dia') @Permisos('viajes.ver') miDia(@Contexto() ctx: Ctx) { return this.viajes.miDia(ctx); }
   @Get('en-vivo') @Permisos('viajes.ver') enVivo(@Contexto() ctx: Ctx) { return this.eventos.enVivo(ctx); }
   @Get(':id/eventos') @Permisos('viajes.ver') eventosViaje(@Contexto() ctx: Ctx, @Param('id', ParseIntPipe) id: number) { return this.eventos.listar(ctx, id); }
   @Post(':id/eventos') @Permisos('viajes.reportar') reportar(@Contexto() ctx: Ctx, @Param('id', ParseIntPipe) id: number, @Body() b: unknown) { return this.eventos.reportar(ctx, id, b); }

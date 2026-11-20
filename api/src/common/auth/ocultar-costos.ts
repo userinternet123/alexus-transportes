@@ -1,6 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
 import { Ctx, tienePermiso } from './tipos';
+import { Decimal } from '../money';
 
 /**
  * COSTOS Y GANANCIAS SOLO PARA GERENCIA
@@ -18,8 +19,10 @@ export const CAMPOS_SENSIBLES = new Set([
   'prorrateo', 'costoKm', 'costoKmFijo', 'costoPorKm', 'costoKmIndirecto', 'periodoCostoKm', 'margenTarifaActual',
 ]);
 
+/** Decimal de Prisma o decimal.js: se reconoce por su forma, no por el nombre de la clase (cambia según la compilación). */
+const esDecimal = (v: object) => Decimal.isDecimal(v) || (typeof (v as { toFixed?: unknown }).toFixed === 'function' && 'd' in v && 'e' in v && 's' in v);
 const esHoja = (v: unknown) =>
-  v === null || typeof v !== 'object' || v instanceof Date || Buffer.isBuffer(v) || (v as object).constructor?.name === 'Decimal';
+  v === null || typeof v !== 'object' || v instanceof Date || Buffer.isBuffer(v) || esDecimal(v as object);
 
 /** Copia sin campos sensibles. Las definiciones de columna ({ accessorKey }) sensibles se quitan de los arreglos. */
 export function sinCostos<T>(valor: T, profundidad = 0): T {

@@ -10,6 +10,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { liquidar } from '../src/modules/viajes/viajes.logica';
 import { PUNTOS } from '../src/modules/inspecciones/inspecciones.logica';
+import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 const D = (n: number | string) => new Prisma.Decimal(n);
@@ -68,6 +69,19 @@ async function main() {
       empleadoId: empleado.id, licenciaTipo: 'A', licenciaNumero: `${3000000 + i * 777}`, licenciaVence: i === 2 ? ymd(-20) : ymd(-(200 + i * 100)),
       pagoPorViaje: D(150), viaticoDiario: D(125), telefonoEmergencia: `4${i}00-111${i}`, tipoSangre: 'O+',
     } }));
+  }
+
+  // Usuarios de la app del piloto (piloto1…piloto5), solo si se da la clave: DEMO_CLAVE_PILOTOS='…' npm run db:demo
+  const claveDemo = process.env.DEMO_CLAVE_PILOTOS;
+  const rolPiloto = await prisma.rol.findUnique({ where: { nombre: 'PILOTO' } });
+  if (claveDemo && rolPiloto) {
+    const hash = await argon2.hash(claveDemo, { type: argon2.argon2id });
+    for (let i = 0; i < pilotos.length; i += 1) {
+      await prisma.usuario.create({ data: {
+        username: `piloto${i + 1}`, nombre: `${nombres[i][0]} ${nombres[i][1]}`, passwordHash: hash, empleadoId: pilotos[i].empleadoId,
+        roles: { create: { rolId: rolPiloto.id } }, sucursales: { create: { sucursalId: sucursal.id, predeterminada: true } },
+      } });
+    }
   }
 
   // Cabezales y remolques
@@ -201,7 +215,7 @@ async function main() {
     { sucursalId: sucursal.id, categoriaId: await cat('Salarios'), fecha: ymd(10), concepto: 'Planilla administrativa', monto: D(12000), medioPago: 'TRANSFERENCIA', usuarioId: admin.id },
   ] });
 
-  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 3 órdenes de taller, 2 inspecciones y 2 casos.`);
+  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 3 órdenes de taller, 2 inspecciones y 2 casos${claveDemo ? ' · usuarios piloto1 a piloto5 para la app' : ' (sin usuarios de la app: defina DEMO_CLAVE_PILOTOS)'}.`);
 }
 
 main()

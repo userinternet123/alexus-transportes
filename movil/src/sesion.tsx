@@ -1,6 +1,8 @@
-// Estado de sesión de la app: perfil del usuario y sucursal de trabajo.
+// Estado de sesión de la app: perfil del usuario y sede de trabajo.
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 import { alCerrarSesion, almacen, api } from './api'
+import { borrarConsultas } from './offline/almacen'
+import { clasificarServidor, servidorPermitido } from './seguridad/servidor'
 import type { Perfil } from './permisos'
 
 interface Sesion {
@@ -27,18 +29,31 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     setPerfil(data)
   }, [])
 
-  // Al abrir la app: si hay sesión guardada, se recupera (renueva el token si hace falta)
+  // Al abrir la app: si hay sesión guardada, se recupera. Sin señal se sigue trabajando con el último perfil conocido.
   useEffect(() => {
     alCerrarSesion(() => setPerfil(null))
     ;(async () => {
-      try { if (await almacen.access()) await cargarPerfil() } catch { await almacen.limpiar() }
+      try {
+        if (await almacen.access()) await cargarPerfil()
+      } catch (e) {
+        const sinRed = !(e as { response?: unknown })?.response
+        if (sinRed) {
+          const copia = await almacen.perfilGuardado()
+          if (copia) { setPerfil(copia); setSucursalId(Number(await almacen.sucursal()) || copia.sucursales[0]?.id || null) }
+        } else {
+          await almacen.limpiar()
+        }
+      }
       setCargando(false)
     })()
   }, [cargarPerfil])
 
+  useEffect(() => { if (perfil) almacen.guardarPerfil(perfil).catch(() => {}) }, [perfil])
+
   const ingresar = async (servidor: string, usuario: string, clave: string) => {
+    if (!servidorPermitido(servidor)) throw new Error(clasificarServidor(servidor).mensaje)
     await almacen.setServidor(servidor)
-    const { data } = await api.post('/auth/login', { username: usuario.trim(), password: clave })
+    const { data } = await api.post('/auth/login', { username: usuario.trim().toLowerCase(), password: clave })
     await almacen.guardarTokens(data)
     await cargarPerfil()
     return { debeCambiar: Boolean(data.usuario?.cp) }
@@ -48,6 +63,8 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     const refreshToken = await almacen.refresh()
     if (refreshToken) await api.post('/auth/logout', { refreshToken }).catch(() => {})
     await almacen.limpiar()
+    // Fuera «mi día». Lo que falta por enviar se conserva cifrado para no perderlo.
+    await borrarConsultas().catch(() => {})
     setPerfil(null)
   }
 

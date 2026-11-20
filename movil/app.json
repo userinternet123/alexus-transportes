@@ -1,45 +1,28 @@
 {
   "expo": {
-    "name": "SPVI",
-    "slug": "spvi-movil",
-    "scheme": "spvi",
+    "name": "ALEXUS Piloto",
+    "slug": "alexus-piloto",
+    "scheme": "alexuspiloto",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "android": {
-      "package": "com.spvi.movil",
+      "package": "com.alexusgt.transportes.piloto",
       "versionCode": 1,
-      "permissions": [
-        "CAMERA"
-      ],
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0B2D6B"
-      }
+      "permissions": ["CAMERA", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "blockedPermissions": ["android.permission.READ_MEDIA_IMAGES", "android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.RECORD_AUDIO", "android.permission.ACCESS_BACKGROUND_LOCATION"],
+      "allowBackup": false,
+      "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0B2D6B" }
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "SPVI usa la cámara para leer códigos de barras."
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "usesCleartextTraffic": true
-          }
-        }
-      ]
+      "expo-sqlite",
+      ["expo-image-picker", { "cameraPermission": "ALEXUS Piloto usa la cámara para las fotos de evidencia de inspecciones, incidentes, vales y recibos.", "photosPermission": false, "microphonePermission": false }],
+      ["expo-location", { "locationWhenInUsePermission": "ALEXUS Piloto guarda dónde se hizo cada reporte (solo mientras usa la app)." }],
+      ["expo-build-properties", { "android": { "usesCleartextTraffic": true } }]
     ],
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0B2D6B"
-    }
+    "splash": { "image": "./assets/splash.png", "resizeMode": "contain", "backgroundColor": "#0B2D6B" }
   }
 }

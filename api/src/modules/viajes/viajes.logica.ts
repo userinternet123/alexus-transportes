@@ -237,6 +237,7 @@ export const costoZ = z.object({
   pagadoPorPiloto: zBool.transform((v) => v ?? true),
   fecha: zFechaHora.optional(),
   archivoId: z.string().uuid().nullish(),
+  uuidCliente: z.string().uuid().nullish(), // reenvío desde el móvil sin duplicar
 });
 
 export const anticipoZ = z.object({

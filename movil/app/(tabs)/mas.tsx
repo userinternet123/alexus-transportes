@@ -1,61 +1,65 @@
-// Más: sucursal de trabajo, servidor, plan y cerrar sesión.
+// Más: cuenta, sede, servidor, sincronizar y salir o borrar los datos del teléfono.
 import { useEffect, useState } from 'react'
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { almacen } from '../../src/api'
+import { Alert, Pressable, StyleSheet, Text } from 'react-native'
+import { almacen, mensajeError } from '../../src/api'
+import { Boton, Pantalla, Tarjeta } from '../../src/componentes/ui'
+import { borrarTodoLocal } from '../../src/offline/almacen'
+import { useConexion } from '../../src/offline/conexion'
+import { haceCuanto } from '../../src/offline/logica'
 import { useSesion } from '../../src/sesion'
-import { color, radio } from '../../src/tema'
+import { color } from '../../src/tema'
 
 export default function Mas() {
   const { perfil, sucursalId, cambiarSucursal, salir } = useSesion()
+  const { pendientes, rechazadas, sincronizar, sincronizando, miDiaActualizado, miDia } = useConexion()
   const [servidor, setServidor] = useState('')
-  useEffect(() => { almacen.servidor().then((s) => setServidor(s ?? '')) }, [])
+  useEffect(() => { almacen.servidor().then((x) => setServidor(x ?? '')) }, [])
+  const porEnviar = pendientes + rechazadas
 
-  const confirmarSalida = () => Alert.alert('Cerrar sesión', '¿Desea salir de SPVI en este teléfono?', [
+  const confirmarSalida = () => Alert.alert('Cerrar sesión', `¿Salir en este teléfono?${porEnviar ? `\n\nTiene ${porEnviar} reporte(s) sin enviar: se guardan cifrados y se envían cuando vuelva a entrar con su usuario.` : ''}`, [
+    { text: 'Cancelar', style: 'cancel' }, { text: 'Cerrar sesión', style: 'destructive', onPress: () => { salir() } },
+  ])
+  const borrar = () => Alert.alert('Borrar los datos de este teléfono', `Se borra TODO lo guardado aquí, incluidas las fotos, y se destruye la llave de cifrado.${porEnviar ? `\n\n⚠ ${porEnviar} reporte(s) sin enviar SE PERDERÁN.` : ''}\n\nNo afecta nada en el servidor.`, [
     { text: 'Cancelar', style: 'cancel' },
-    { text: 'Cerrar sesión', style: 'destructive', onPress: () => { salir() } },
+    { text: 'Borrar todo', style: 'destructive', onPress: async () => {
+      try { await borrarTodoLocal(); await salir(); Alert.alert('Datos borrados', 'Este teléfono ya no guarda información de ALEXUS Transportes.') }
+      catch (e) { Alert.alert('No se pudo borrar', mensajeError(e)) }
+    } },
   ])
 
   return (
-    <ScrollView style={{ backgroundColor: color.fondo }} contentContainerStyle={{ padding: 16, gap: 20 }}>
-      <View>
-        <Text style={s.titulo}>Cuenta</Text>
-        <View style={s.grupo}>
-          <Text style={s.fila}>{perfil?.nombre}</Text>
-          <Text style={[s.fila, s.sub]}>Usuario {perfil?.username}{perfil?.licencia ? `, plan ${perfil.licencia.plan}` : ''}</Text>
-        </View>
-      </View>
-
+    <Pantalla>
+      <Tarjeta titulo="Cuenta">
+        <Text style={s.fuerte}>{perfil?.nombre}</Text>
+        <Text style={s.sub}>Usuario {perfil?.username}{miDia?.piloto ? ` · licencia ${miDia.piloto.licenciaTipo}, vence ${miDia.piloto.licenciaVence}` : ''}</Text>
+      </Tarjeta>
       {(perfil?.sucursales.length ?? 0) > 1 && (
-        <View>
-          <Text style={s.titulo}>Sucursal de trabajo</Text>
-          <View style={s.grupo}>
-            {perfil!.sucursales.map((suc, i) => (
-              <Pressable key={suc.id} onPress={() => cambiarSucursal(suc.id)} style={[s.opcion, i > 0 && s.separada]} accessibilityRole="radio" accessibilityState={{ checked: suc.id === sucursalId }}>
-                <Text style={s.fila}>{suc.nombre}</Text>
-                {suc.id === sucursalId && <Text style={{ color: color.acento, fontSize: 17 }}>✓</Text>}
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        <Tarjeta titulo="Sede">
+          {perfil!.sucursales.map((x) => (
+            <Pressable key={x.id} onPress={() => cambiarSucursal(x.id)} accessibilityRole="radio" accessibilityState={{ checked: x.id === sucursalId }} style={s.opcion}>
+              <Text style={[s.texto, x.id === sucursalId && { color: color.acento, fontWeight: '700' }]}>{x.id === sucursalId ? '● ' : '○ '}{x.nombre}</Text>
+            </Pressable>
+          ))}
+        </Tarjeta>
       )}
-
-      <View>
-        <Text style={s.titulo}>Servidor</Text>
-        <View style={s.grupo}><Text style={[s.fila, s.sub]}>{servidor}</Text></View>
-      </View>
-
-      <Pressable onPress={confirmarSalida} style={[s.grupo, { alignItems: 'center', paddingVertical: 14 }]}>
-        <Text style={{ color: color.peligro, fontSize: 17 }}>Cerrar sesión</Text>
-      </Pressable>
-    </ScrollView>
+      <Tarjeta titulo="Conexión">
+        <Text style={s.texto}>{servidor}</Text>
+        <Text style={s.sub}>{miDiaActualizado ? `Datos del ${haceCuanto(miDiaActualizado)}` : 'Sin datos descargados'}{porEnviar ? ` · ${porEnviar} por enviar` : ''}</Text>
+        <Boton texto="Sincronizar ahora" icono="sync" variante="secundario" onPress={sincronizar} cargando={sincronizando} />
+      </Tarjeta>
+      <Tarjeta titulo="Seguridad">
+        <Text style={s.sub}>Sus reportes, fotos y viajes se guardan cifrados en el teléfono. Las fotos no pasan por la galería y se borran al enviarse.</Text>
+        <Boton texto="Cerrar sesión" variante="secundario" onPress={confirmarSalida} />
+        <Boton texto="Borrar los datos de este teléfono" variante="peligro" onPress={borrar} />
+      </Tarjeta>
+      <Text style={[s.sub, { textAlign: 'center' }]}>ALEXUS Piloto · ALEXUS Transportes</Text>
+    </Pantalla>
   )
 }
 
 const s = StyleSheet.create({
-  titulo: { fontSize: 13, color: color.secundario, marginBottom: 6, marginLeft: 4 },
-  grupo: { backgroundColor: color.superficie, borderRadius: radio.tarjeta, paddingHorizontal: 16, paddingVertical: 4 },
-  fila: { fontSize: 17, color: color.texto, paddingVertical: 8 },
-  sub: { fontSize: 15, color: color.secundario },
-  opcion: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  separada: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.separador },
+  fuerte: { fontSize: 18, fontWeight: '600', color: color.texto },
+  texto: { fontSize: 16, color: color.texto },
+  sub: { fontSize: 14, color: color.secundario },
+  opcion: { minHeight: 44, justifyContent: 'center' },
 })

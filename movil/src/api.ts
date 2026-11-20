@@ -1,11 +1,12 @@
-// Cliente del API de SPVI para la app móvil.
-// - Servidor configurable (IP de la tienda en la red local o de Tailscale).
+// Cliente del API de ALEXUS Transportes para la app del piloto.
+// - Servidor configurable (dirección de Tailscale o HTTPS de la empresa).
 // - Tokens en el almacén seguro del teléfono (Android Keystore).
 // - Renovación automática del token, compartida entre peticiones simultáneas.
 import axios, { AxiosError, AxiosRequestConfig } from 'axios'
 import * as SecureStore from 'expo-secure-store'
+import type { Perfil } from './permisos'
 
-const K = { servidor: 'spvi_servidor', access: 'spvi_access', refresh: 'spvi_refresh', sucursal: 'spvi_sucursal' }
+const K = { servidor: 'alexus_piloto_servidor', access: 'alexus_piloto_access', refresh: 'alexus_piloto_refresh', sucursal: 'alexus_piloto_sucursal', perfil: 'alexus_piloto_perfil' }
 
 export const almacen = {
   servidor: () => SecureStore.getItemAsync(K.servidor),
@@ -17,10 +18,16 @@ export const almacen = {
     await SecureStore.setItemAsync(K.refresh, t.refreshToken)
   },
   async limpiar() {
-    await Promise.all([K.access, K.refresh, K.sucursal].map((k) => SecureStore.deleteItemAsync(k)))
+    await Promise.all([K.access, K.refresh, K.sucursal, K.perfil].map((k) => SecureStore.deleteItemAsync(k)))
   },
   access: () => SecureStore.getItemAsync(K.access),
   refresh: () => SecureStore.getItemAsync(K.refresh),
+  /** Último perfil conocido (nombre, permisos, sedes): permite abrir la app sin señal. */
+  guardarPerfil: (p: Perfil) => SecureStore.setItemAsync(K.perfil, JSON.stringify(p)),
+  async perfilGuardado(): Promise<Perfil | null> {
+    const t = await SecureStore.getItemAsync(K.perfil)
+    try { return t ? (JSON.parse(t) as Perfil) : null } catch { return null }
+  },
 }
 
 export const api = axios.create({ timeout: 15000 })
@@ -33,7 +40,8 @@ api.interceptors.request.use(async (cfg) => {
   const token = await almacen.access()
   const suc = await almacen.sucursal()
   if (token) cfg.headers.set('Authorization', `Bearer ${token}`)
-  if (suc) cfg.headers.set('X-Sucursal-Id', suc)
+  // Lo capturado sin conexión se envía a la sede donde se capturó (aunque el usuario ya haya cambiado de sede)
+  if (suc && !cfg.headers.has('X-Sucursal-Id')) cfg.headers.set('X-Sucursal-Id', suc)
   return cfg
 })
 
@@ -69,7 +77,7 @@ export function mensajeError(e: unknown): string {
   const ax = e as AxiosError<{ message?: string }>
   if (ax?.response?.data?.message) return ax.response.data.message
   if (ax?.code === 'ECONNABORTED' || ax?.message === 'Network Error') {
-    return 'No hay conexión con el servidor. Revise la dirección, el Wi-Fi o que Tailscale esté activo.'
+    return 'No hay conexión con el servidor. Lo que capture se guarda en el teléfono y se envía cuando haya señal.'
   }
   return 'Ocurrió un error inesperado'
 }

@@ -1,4 +1,4 @@
-// Colores y medidas de SPVI móvil (mismos tokens del portal: tema "Tienda").
+// Colores y medidas de la app del piloto (mismos tokens del portal ALEXUS Transportes).
 export const color = {
   acento: '#1E7B4F',
   acentoOscuro: '#17442F',
@@ -9,9 +9,12 @@ export const color = {
   secundario: '#6E6E73',
   separador: '#D1D1D6',
   peligro: '#D70015',
+  peligroSuave: '#FDECEE',
   alerta: '#B25000',
+  alertaSuave: '#FFF4E5',
 }
-export const radio = { control: 8, tarjeta: 12, superficie: 16 }
+export const radio = { control: 10, tarjeta: 14, superficie: 18 }
 export const Q = (n: number | string | null | undefined) =>
   'Q' + Number(n ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-export const hoyGT = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guatemala' }).format(new Date())
+export const fechaHora = (v: string | number | Date | null | undefined) =>
+  v ? new Date(v).toLocaleString('es-GT', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'America/Guatemala' }) : '—'
