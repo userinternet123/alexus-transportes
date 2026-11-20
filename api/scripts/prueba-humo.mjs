@@ -1,17 +1,15 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// PRUEBA DE HUMO de SPVI 2.0 — recorre el flujo completo contra el API en marcha:
-//   salud → login → (cambio de contraseña) → perfil → productos → reportes
-//   → abrir caja → vender → FEL → cuadre → cerrar caja → pre-cierre del día
+// PRUEBA DE HUMO de ALEXUS Transportes: recorre el flujo de un viaje contra el API en marcha.
+//   salud → login → cotizar → programar → iniciar sin inspección (debe fallar) → inspección con falla
+//   crítica (rechazada + caso + orden) → nueva inspección aprobada → iniciar → anticipo → peaje
+//   → carga de combustible → finalizar → liquidar → cotización guardada → ranking de rentabilidad
 //
-// Uso (con el API corriendo en otra terminal: npm run dev):
-//   node scripts/prueba-humo.mjs --password "Admin-Spvi-2026" --nueva "MiClaveNueva2026"
-//   node scripts/prueba-humo.mjs --password "MiClaveNueva2026"          (siguientes veces)
-//
-// Opciones: --usuario admin  --sucursal DEN  --api http://localhost:4000/api/v1
-//           --cerrar-dia   (además ejecuta el cierre del día; bloquea ventas de hoy)
-//
-// ⚠ Crea una venta REAL de 1 unidad en la base de desarrollo (descuenta existencia).
+// Uso (con el API corriendo: npm run dev, y datos de prueba: npm run db:demo):
+//   node scripts/prueba-humo.mjs --password "CambiarAhora2026" --nueva "MiClaveNueva2026"   (primera vez)
+//   node scripts/prueba-humo.mjs --password "MiClaveNueva2026"
+// Opciones: --usuario admin  --api http://localhost:4000/api/v1
+// ⚠ Crea un viaje, inspecciones, casos, una orden de taller y una carga REALES en la base de desarrollo.
 // ─────────────────────────────────────────────────────────────────────────────
 import { parseArgs } from 'node:util';
 
@@ -21,12 +19,10 @@ const { values: o } = parseArgs({
     usuario: { type: 'string', default: 'admin' },
     password: { type: 'string' },
     nueva: { type: 'string' },
-    sucursal: { type: 'string', default: 'DEN' },
-    'cerrar-dia': { type: 'boolean', default: false },
   },
 });
 if (!o.password) {
-  console.error('Falta --password.  Ej: node scripts/prueba-humo.mjs --password "Admin-Spvi-2026" --nueva "MiClaveNueva2026"');
+  console.error('Falta --password.  Ej: node scripts/prueba-humo.mjs --password "CambiarAhora2026" --nueva "MiClaveNueva2026"');
   process.exit(1);
 }
 
@@ -34,182 +30,155 @@ const verde = (s) => `\x1b[32m${s}\x1b[0m`;
 const rojo = (s) => `\x1b[31m${s}\x1b[0m`;
 const gris = (s) => `\x1b[90m${s}\x1b[0m`;
 const Q = (n) => `Q${Number(n ?? 0).toFixed(2)}`;
-const resultados = [];
 let token = null;
 let sucursalId = null;
+let fallos = 0;
 
-async function api(metodo, ruta, cuerpo) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (sucursalId) headers['X-Sucursal-Id'] = String(sucursalId);
-  let res;
-  try {
-    res = await fetch(`${o.api}${ruta}`, { method: metodo, headers, body: cuerpo ? JSON.stringify(cuerpo) : undefined });
-  } catch (e) {
-    throw new Error(`No hay conexión con ${o.api} — ¿está corriendo "npm run dev"? (${e.cause?.code ?? e.message})`);
-  }
-  const texto = await res.text();
-  const json = texto ? JSON.parse(texto) : {};
-  if (!res.ok) {
-    const err = new Error(`${res.status} ${json.codigo ?? ''}: ${json.message ?? texto}`);
-    err.codigo = json.codigo;
-    throw err;
-  }
-  return json;
+async function http(metodo, ruta, cuerpo) {
+  const r = await fetch(`${o.api}${ruta}`, {
+    method: metodo,
+    headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}), ...(sucursalId ? { 'x-sucursal-id': String(sucursalId) } : {}) },
+    body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+  });
+  const json = await r.json().catch(() => ({}));
+  return { status: r.status, json };
 }
 
 async function paso(nombre, fn) {
-  process.stdout.write(`• ${nombre}… `);
   try {
     const detalle = await fn();
-    console.log(verde('✔') + (detalle ? ` ${gris(detalle)}` : ''));
-    resultados.push({ paso: nombre, resultado: 'OK' });
-    return true;
+    console.log(`${verde('✔')} ${nombre}${detalle ? gris(` — ${detalle}`) : ''}`);
   } catch (e) {
-    console.log(rojo(`✗ ${e.message}`));
-    resultados.push({ paso: nombre, resultado: 'FALLÓ' });
-    return false;
+    fallos += 1;
+    console.log(`${rojo('✘')} ${nombre}: ${e.message}`);
   }
 }
 
-const fin = () => {
-  console.log('');
-  console.table(resultados);
-  const fallos = resultados.filter((r) => r.resultado !== 'OK').length;
-  console.log(fallos ? rojo(`${fallos} paso(s) fallaron.`) : verde('✔ Prueba de humo completa: el API funciona de punta a punta.'));
-  process.exit(fallos ? 1 : 0);
+const ok = (r, msg) => {
+  if (r.status >= 300) throw new Error(`${r.status} ${r.json.codigo ?? ''} ${r.json.message ?? r.json.mensaje ?? JSON.stringify(r.json)}`);
+  return r.json;
+};
+const espera = (r, codigo) => {
+  if (r.status < 300) throw new Error(`se esperaba el error ${codigo} y respondió ${r.status}`);
+  if (r.json.codigo !== codigo) throw new Error(`se esperaba ${codigo} y llegó ${r.json.codigo}: ${r.json.message}`);
+  return r.json.message;
 };
 
-// ── 1. Salud ────────────────────────────────────────────────────────────────
-if (!(await paso('API y base de datos en línea', async () => {
-  const h = await api('GET', '/health');
-  return `BD ${h.db}, ${h.latenciaDbMs} ms`;
-}))) fin();
+const contexto = {};
 
-// ── 2. Login (+ cambio de contraseña obligatorio) ───────────────────────────
-let debeCambiar = false;
-if (!(await paso(`Login como "${o.usuario}"`, async () => {
-  const r = await api('POST', '/auth/login', { username: o.usuario, password: o.password });
+await paso('API en línea', async () => { ok(await http('GET', '/health')); });
+
+await paso('Iniciar sesión', async () => {
+  let r = ok(await http('POST', '/auth/login', { username: o.usuario, password: o.password }));
   token = r.accessToken;
-  debeCambiar = Boolean(r.usuario.cp);
-  return debeCambiar ? 'debe cambiar contraseña' : `${r.usuario.permisos.includes('*') ? 'superadmin' : r.usuario.permisos.length + ' permisos'}`;
-}))) fin();
-
-if (debeCambiar) {
-  if (!o.nueva) {
-    console.log(rojo('\nEl usuario debe cambiar su contraseña. Repita agregando --nueva "UnaClaveNueva2026" (mín. 10 caracteres, letras y números).'));
-    resultados.push({ paso: 'Cambio de contraseña obligatorio', resultado: 'PENDIENTE (use --nueva)' });
-    fin();
-  }
-  if (!(await paso('Cambio de contraseña obligatorio', async () => {
-    const r = await api('POST', '/auth/cambiar-password', { actual: o.password, nueva: o.nueva });
+  if (r.usuario.cp) {
+    if (!o.nueva) throw new Error('El usuario debe cambiar su contraseña: agregue --nueva');
+    ok(await http('POST', '/auth/cambiar-password', { actual: o.password, nueva: o.nueva }));
+    r = ok(await http('POST', '/auth/login', { username: o.usuario, password: o.nueva }));
     token = r.accessToken;
-    return `use --password "${o.nueva}" la próxima vez`;
-  }))) fin();
-}
-
-// ── 3. Perfil y sucursal ────────────────────────────────────────────────────
-if (!(await paso(`Perfil y sucursal ${o.sucursal}`, async () => {
-  const me = await api('GET', '/auth/me');
-  const s = me.sucursales.find((x) => x.codigo === o.sucursal.toUpperCase()) ?? me.sucursales.find((x) => x.predeterminada) ?? me.sucursales[0];
-  if (!s) throw new Error('El usuario no tiene sucursales asignadas (ver paso de usuarios_sucursales)');
-  sucursalId = s.id;
-  return `${me.nombre} → ${s.codigo} "${s.nombre}" (id ${s.id})`;
-}))) fin();
-
-// ── 4. Catálogo, existencias e histórico ────────────────────────────────────
-let producto = null;
-await paso('Productos con existencia', async () => {
-  const r = await api('GET', '/productos?limit=200');
-  producto = r.data.find((p) => p.activo && Number(p.existencia) >= 1 && Number(p.precioVenta) > 0);
-  if (!producto) throw new Error('No hay productos activos con existencia ≥ 1 y precio > 0 en esta sucursal');
-  return `${r.meta.total} productos; usaré "${producto.nombre}" (${Q(producto.precioVenta)}, exist. ${Number(producto.existencia)})`;
-});
-
-let hoy = null;
-await paso('Fecha contable del servidor', async () => {
-  hoy = (await api('GET', '/cierres/hoy')).data.fechaContable;
-  return hoy;
-});
-
-await paso('Reporte de ventas históricas', async () => {
-  const r = await api('GET', `/reportes/ventas-por-dia?desde=2000-01-01&hasta=${hoy}`);
-  return `${r.data.length} días con ventas, total ${Q(r.totales.total)}, utilidad ${Q(r.totales.utilidad)}`;
-});
-
-await paso('Inventario valorizado', async () => {
-  const r = await api('GET', '/reportes/inventario-valorizado');
-  return `${r.data.length} filas, valor a costo ${Q(r.totales.valorCosto)}`;
-});
-
-if (!producto) fin();
-
-// ── 5. Caja: abrir (o reutilizar la de hoy) ─────────────────────────────────
-let sesion = null;
-if (!(await paso('Abrir caja', async () => {
-  const actual = (await api('GET', '/caja/mi-sesion')).data;
-  if (actual && actual.fechaContable.slice(0, 10) === hoy) {
-    sesion = actual;
-    return `reutilizo la sesión abierta #${actual.id} (${actual.caja.nombre})`;
   }
-  if (actual) {
-    // Sesión de un día anterior: se cierra cuadrada para poder abrir la de hoy
-    const conteos = Object.entries(actual.resumen.esperado).map(([medioPago, monto]) => ({ medioPago, montoContado: Math.max(0, Number(monto)) }));
-    await api('POST', `/caja/sesiones/${actual.id}/cerrar`, { conteos, observacion: 'Cierre automático de prueba de humo (sesión de día anterior)' });
-  }
-  const cajas = (await api('GET', '/catalogos/cajas?limit=0')).data;
-  if (!cajas.length) throw new Error('La sucursal no tiene cajas');
-  const r = await api('POST', '/caja/abrir', { cajaId: cajas[0].id, montoApertura: 100 });
-  sesion = r.data;
-  return `sesión #${sesion.id} en "${cajas[0].nombre}" con fondo Q100.00`;
-}))) fin();
-
-// ── 6. Venta ────────────────────────────────────────────────────────────────
-let venta = null;
-await paso('Venta de 1 unidad en efectivo', async () => {
-  const precio = Number(producto.precioVenta);
-  const paga = Math.ceil(precio / 10) * 10 || 10;
-  const r = await api('POST', '/ventas', {
-    tipo: 'VENTA',
-    lineas: [{ productoId: producto.id, cantidad: 1, porcentajeDescuento: 0 }],
-    pagos: [{ medioPago: 'EFECTIVO', monto: paga }],
-  });
-  venta = r.data;
-  return `${venta.serie}-${venta.numero} total ${Q(venta.total)}, pagó ${Q(paga)}, cambio ${Q(venta.cambio)}`;
+  sucursalId = r.usuario.sucursales[0];
+  return `sede ${sucursalId}`;
 });
 
-if (venta) {
-  await paso('Certificación FEL (adaptador de prueba)', async () => {
-    await new Promise((r) => setTimeout(r, 1500)); // la certificación corre en segundo plano
-    const v = (await api('GET', `/ventas/${venta.id}`)).data;
-    if (v.felEstado !== 'CERTIFICADO') throw new Error(`estado FEL: ${v.felEstado} ${v.felMensaje ?? ''}`);
-    return `UUID ${v.felUuid}`;
-  });
-
-  await paso('Existencia descontada por el kardex', async () => {
-    const r = await api('GET', `/inventario/kardex/${producto.id}`);
-    const mov = r.data.find((m) => m.tipo === 'SALIDA_VENTA' && m.documentoId === venta.id);
-    if (!mov) throw new Error('no se encontró el movimiento SALIDA_VENTA');
-    return `salida ${Number(mov.cantidad)}, saldo ${Number(mov.saldoCantidad)}, costo ${Q(mov.costoUnitario)}`;
-  });
-}
-
-// ── 7. Cuadre y cierre de caja ──────────────────────────────────────────────
-await paso('Cuadre y cierre de caja', async () => {
-  const resumen = (await api('GET', `/caja/sesiones/${sesion.id}/resumen`)).data;
-  const conteos = Object.entries(resumen.esperado).map(([medioPago, monto]) => ({ medioPago, montoContado: Number(monto) }));
-  const r = await api('POST', `/caja/sesiones/${sesion.id}/cerrar`, { conteos });
-  return `esperado ${Q(resumen.totalEsperado)} → ${r.message}`;
+await paso('Datos de prueba disponibles', async () => {
+  const lista = async (ruta) => ok(await http('GET', `${ruta}?limit=0`)).data;
+  const [cabezales, pilotos, clientes, rutas, remolques] = await Promise.all([lista('/flota/cabezales'), lista('/pilotos'), lista('/terceros/clientes'), lista('/catalogos/rutas'), lista('/flota/remolques')]);
+  const enRuta = ok(await http('GET', '/viajes?estado=EN_RUTA')).data.viajes;
+  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guatemala' }).format(new Date());
+  const ayer = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const inspeccionados = new Set(ok(await http('GET', `/inspecciones?desde=${ayer}`)).data.inspecciones.map((i) => i.cabezal));
+  const libre = (c) => c.estado === 'ACTIVO' && !enRuta.some((v) => v.cabezal === c.codigo);
+  // De preferencia uno sin inspección en las últimas 24 h, para probar que no puede salir sin ella
+  contexto.cabezal = cabezales.find((c) => libre(c) && !inspeccionados.has(c.codigo)) ?? cabezales.find(libre);
+  contexto.sinInspeccion = !inspeccionados.has(contexto.cabezal?.codigo);
+  void hoy;
+  contexto.piloto = pilotos.find((p) => !enRuta.some((v) => v.pilotoId === p.id) && new Date(p.licenciaVence) > new Date());
+  contexto.cliente = clientes[0];
+  contexto.ruta = rutas[0];
+  contexto.remolque = remolques.find((r) => r.estado === 'ACTIVO' && !enRuta.some((v) => v.remolque === r.codigo));
+  if (!contexto.cabezal || !contexto.piloto || !contexto.cliente || !contexto.ruta) throw new Error('Faltan cabezal libre, piloto, cliente o ruta: corra npm run db:demo');
+  return `${contexto.cabezal.codigo}, piloto #${contexto.piloto.id}, ${contexto.ruta.nombre}`;
 });
 
-// ── 8. Cierre del día ───────────────────────────────────────────────────────
-await paso('Pre-cierre del día', async () => {
-  const p = (await api('GET', `/cierres/${hoy}/preview`)).data;
-  return `${p.puedeCerrar ? 'listo para cerrar' : 'bloqueado: ' + p.bloqueos.join('; ')} — ventas ${Q(p.resumen.ventasTotal)}, utilidad ${Q(p.resumen.utilidadBruta)}`;
+await paso('Cotizar el viaje (ida y regreso vacío)', async () => {
+  const r = ok(await http('POST', '/viajes/cotizar', { rutaId: contexto.ruta.id, clienteId: contexto.cliente.id, cabezalId: contexto.cabezal.id, regreso: 'VACIO' })).data;
+  contexto.precio = r.precioRedondeado;
+  return `${r.kmTotal} km, costo ${Q(r.costoTotal)}, sugerido ${Q(r.precioRedondeado)}${r.avisos?.length ? ` · ${r.avisos.length} aviso(s)` : ''}`;
 });
 
-if (o['cerrar-dia']) {
-  await paso('Cierre del día', async () => (await api('POST', `/cierres/${hoy}`, { observacion: 'Prueba de humo' })).message);
-}
+await paso('Programar el viaje', async () => {
+  const salida = new Date(Date.now() + 3_600_000).toISOString();
+  const r = ok(await http('POST', '/viajes', { clienteId: contexto.cliente.id, rutaId: contexto.ruta.id, cabezalId: contexto.cabezal.id, remolqueId: contexto.remolque?.id ?? null, pilotoId: contexto.piloto.id, fechaSalida: salida, carga: 'Prueba de humo', montoCobrado: contexto.precio }));
+  contexto.viaje = r.data;
+  return `${r.data.numero}${r.data.avisos.length ? ` · ${r.data.avisos.join('; ')}` : ''}`;
+});
 
-fin();
+const puntos = async (remolque) => ok(await http('GET', `/inspecciones/puntos?remolque=${remolque ? 'true' : 'false'}`)).data;
+
+await paso('No inicia sin inspección', async () => (contexto.sinInspeccion ? espera(await http('POST', `/viajes/${contexto.viaje.id}/iniciar`, {}), 'INSPECCION_REQUERIDA') : 'omitido: todos los cabezales libres tienen inspección de hoy'));
+
+await paso('Inspección con frenos en falla: rechazada, abre caso urgente y orden', async () => {
+  const lista = await puntos(!!contexto.remolque);
+  const r = ok(await http('POST', '/inspecciones', {
+    cabezalId: contexto.cabezal.id, remolqueId: contexto.remolque?.id ?? null, pilotoId: contexto.piloto.id, odometro: Number(contexto.cabezal.odometro) + 5,
+    puntos: lista.map((p) => (p.codigo === 'FRENOS' ? { codigo: p.codigo, estado: 'FALLA', nota: 'Pedal esponjoso, pierde aire' } : { codigo: p.codigo, estado: 'OK' })),
+  }));
+  if (r.data.resultado !== 'RECHAZADA') throw new Error(`resultado ${r.data.resultado}`);
+  if (!r.data.casos?.length) throw new Error('no abrió casos');
+  return `${r.data.ordenTrabajo} · casos ${r.data.casos.map((c) => `${c.numero} (${c.prioridad})`).join(', ')}`;
+});
+
+await paso('No inicia con la inspección rechazada', async () => espera(await http('POST', `/viajes/${contexto.viaje.id}/iniciar`, {}), 'INSPECCION_RECHAZADA'));
+
+await paso('Caso: pasar a en proceso y resolver', async () => {
+  const casos = ok(await http('GET', `/casos?cabezalId=${contexto.cabezal.id}&estado=ABIERTOS`)).data.casos;
+  const c = casos[0];
+  ok(await http('PUT', `/casos/${c.id}/estado`, { estado: 'EN_PROCESO', comentario: 'Taller revisa compresor' }));
+  ok(await http('PUT', `/casos/${c.id}/estado`, { estado: 'RESUELTO', comentario: 'Se cambió la válvula de purga' }));
+  return `${c.numero} resuelto`;
+});
+
+await paso('Nueva inspección aprobada', async () => {
+  const lista = await puntos(!!contexto.remolque);
+  const r = ok(await http('POST', '/inspecciones', { cabezalId: contexto.cabezal.id, remolqueId: contexto.remolque?.id ?? null, pilotoId: contexto.piloto.id, viajeId: contexto.viaje.id, puntos: lista.map((p) => ({ codigo: p.codigo, estado: 'OK' })) }));
+  if (r.data.resultado !== 'APROBADA') throw new Error(r.data.resultado);
+});
+
+await paso('Iniciar el viaje', async () => {
+  const r = ok(await http('POST', `/viajes/${contexto.viaje.id}/iniciar`, {}));
+  return r.message;
+});
+
+await paso('Entregar anticipo de Q1,000', async () => ok(await http('POST', `/viajes/${contexto.viaje.id}/anticipos`, { monto: 1000, nota: 'Prueba' })).message);
+await paso('Registrar peaje de Q120 (del anticipo)', async () => ok(await http('POST', `/viajes/${contexto.viaje.id}/costos`, { tipo: 'PEAJE', monto: 120, descripcion: 'Autopista Palín-Escuintla' })).message);
+await paso('El combustible no entra como costo suelto', async () => espera(await http('POST', `/viajes/${contexto.viaje.id}/costos`, { tipo: 'COMBUSTIBLE', monto: 500 }), 'COMBUSTIBLE_COMO_CARGA'));
+
+await paso('Carga de combustible en el viaje', async () => {
+  const det = ok(await http('GET', `/viajes/${contexto.viaje.id}`)).data;
+  contexto.kmSalida = Number(det.kmSalida);
+  const r = ok(await http('POST', '/combustible', { cabezalId: contexto.cabezal.id, viajeId: contexto.viaje.id, odometro: contexto.kmSalida + 90, galones: 18.5, precioGalon: 31.25, tanqueLleno: true, estacion: 'Prueba', confirmarSalto: true }));
+  return r.message;
+});
+
+await paso('Finalizar el viaje', async () => ok(await http('POST', `/viajes/${contexto.viaje.id}/finalizar`, { kmLlegada: contexto.kmSalida + Number(contexto.ruta.kmEstimados) * 2, kmVacios: Number(contexto.ruta.kmEstimados) })).message);
+
+await paso('Liquidar el viaje', async () => {
+  const r = ok(await http('POST', `/viajes/${contexto.viaje.id}/liquidar`));
+  return `${r.message} · ganancia ${Q(r.data.ganancia)} (${r.data.margen ?? '—'} %)`;
+});
+
+await paso('Guardar una cotización y convertirla en viaje', async () => {
+  const c = ok(await http('POST', '/cotizaciones', { clienteId: contexto.cliente.id, rutaId: contexto.ruta.id, regreso: 'VACIO', terreno: 'MONTANA', trafico: 'LENTO', horasEspera: 3, extras: [{ concepto: 'Maniobra de descarga', monto: 250 }] })).data;
+  const v = ok(await http('POST', `/cotizaciones/${c.id}/convertir`, { cabezalId: contexto.cabezal.id, pilotoId: contexto.piloto.id, fechaSalida: new Date(Date.now() + 86_400_000).toISOString() })).data;
+  ok(await http('POST', `/viajes/${v.id}/cancelar`, { motivo: 'Viaje de la prueba de humo' }));
+  return `${c.numero} → ${v.numero} (cancelado)`;
+});
+
+await paso('Ranking de rentabilidad', async () => {
+  const r = ok(await http('GET', '/viajes/rentabilidad')).data;
+  return `${r.porCliente.length} clientes, ${r.porRuta.length} rutas, ${r.viajes.length} viajes`;
+});
+
+console.log(fallos ? rojo(`\n${fallos} paso(s) fallaron`) : verde('\nTodo en orden'));
+process.exit(fallos ? 1 : 0);

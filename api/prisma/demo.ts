@@ -1,13 +1,15 @@
 /**
- * DATOS DE PRUEBA (ficticios): 5 cabezales, 5 pilotos, 2 remolques, clientes, rutas, tarifas,
- * documentos, llantas, repuestos, viajes del último mes con sus costos, cargas de combustible y
- * órdenes de taller. Sirven para ver reportes y pantallas con números antes de tener registros reales.
+ * DATOS DE PRUEBA (ficticios): 5 cabezales, 5 pilotos, 2 remolques, clientes, rutas con sus condiciones,
+ * tarifas, documentos, llantas, repuestos, viajes del último mes con anticipos, costos, cargas de combustible
+ * (con rendimiento) y liquidación, órdenes de taller, inspecciones y casos. Sirven para ver reportes y pantallas con números antes de tener registros reales.
  *
  *   npm run db:demo          (requiere haber corrido npm run db:seed)
  *
  * Idempotente: si ya existe el cabezal C-01 no hace nada. Para repetirlo, vacíe la base.
  */
 import { Prisma, PrismaClient } from '@prisma/client';
+import { liquidar } from '../src/modules/viajes/viajes.logica';
+import { PUNTOS } from '../src/modules/inspecciones/inspecciones.logica';
 
 const prisma = new PrismaClient();
 const D = (n: number | string) => new Prisma.Decimal(n);
@@ -39,10 +41,11 @@ async function main() {
 
   // Rutas y tarifas
   const rutas = await Promise.all([
-    { nombre: 'Guatemala - Puerto Quetzal', origen: 'Ciudad de Guatemala', destino: 'Puerto Quetzal, Escuintla', kmEstimados: D(110), horasEstimadas: D(3), peajesEstimados: D(60), viaticoEstimado: D(150) },
-    { nombre: 'Guatemala - Puerto Santo Tomás', origen: 'Ciudad de Guatemala', destino: 'Puerto Santo Tomás de Castilla, Izabal', kmEstimados: D(300), horasEstimadas: D(7), peajesEstimados: D(80), viaticoEstimado: D(350) },
-    { nombre: 'Guatemala - Quetzaltenango', origen: 'Ciudad de Guatemala', destino: 'Quetzaltenango', kmEstimados: D(205), horasEstimadas: D(5), peajesEstimados: D(0), viaticoEstimado: D(250) },
-    { nombre: 'Guatemala - San Salvador', origen: 'Ciudad de Guatemala', destino: 'San Salvador, El Salvador', kmEstimados: D(240), horasEstimadas: D(6), peajesEstimados: D(120), viaticoEstimado: D(400) },
+    // Condiciones ilustrativas: ajústelas a su experiencia (terreno, subida acumulada, tráfico, esperas en puerto o frontera)
+    { nombre: 'Guatemala - Puerto Quetzal', origen: 'Ciudad de Guatemala', destino: 'Puerto Quetzal, Escuintla', kmEstimados: D(110), horasEstimadas: D(3), peajesEstimados: D(60), viaticoEstimado: D(150), terreno: 'ONDULADO' as const, trafico: 'LENTO' as const, horasEspera: D(3), notas: 'Bajada a la costa; cola en la portuaria' },
+    { nombre: 'Guatemala - Puerto Santo Tomás', origen: 'Ciudad de Guatemala', destino: 'Puerto Santo Tomás de Castilla, Izabal', kmEstimados: D(300), horasEstimadas: D(7), peajesEstimados: D(80), viaticoEstimado: D(350), terreno: 'ONDULADO' as const, trafico: 'NORMAL' as const, horasEspera: D(2) },
+    { nombre: 'Guatemala - Quetzaltenango', origen: 'Ciudad de Guatemala', destino: 'Quetzaltenango', kmEstimados: D(205), horasEstimadas: D(5), peajesEstimados: D(0), viaticoEstimado: D(250), terreno: 'MONTANA' as const, subidaMetros: 2400, trafico: 'NORMAL' as const, horasEspera: D(0), notas: 'Interamericana: cumbre de Alaska' },
+    { nombre: 'Guatemala - San Salvador', origen: 'Ciudad de Guatemala', destino: 'San Salvador, El Salvador', kmEstimados: D(240), horasEstimadas: D(6), peajesEstimados: D(120), viaticoEstimado: D(400), terreno: 'ONDULADO' as const, trafico: 'NORMAL' as const, horasEspera: D(4), notas: 'Frontera Pedro de Alvarado o San Cristóbal' },
   ].map((r) => prisma.ruta.create({ data: r })));
   const tarifas = await Promise.all([
     prisma.tarifa.create({ data: { clienteId: clientes[0].id, rutaId: rutas[0].id, tipo: 'POR_VIAJE', monto: D(2800) } }),
@@ -111,48 +114,70 @@ async function main() {
   ].map((r) => prisma.repuesto.create({ data: r })));
   const planAceite = await prisma.planMantenimiento.findFirst({ where: { nombre: { contains: 'aceite' } } });
 
-  // Viajes del último mes: ~3 por cabezal, con costos y carga de combustible
+  // Viajes del último mes: 3 por cabezal, con odómetro continuo, anticipo, peajes, viáticos y una carga de
+  // tanque lleno al llegar (el rendimiento sale de llenado a llenado). Los liquidados guardan su ganancia.
   let numero = 1;
+  const COSTO_KM_DEMO = 4.5; // costo indirecto ilustrativo (Q/km) para la ganancia de la demo
   const combos = [[0, 0, 0], [0, 1, 1], [1, 2, 2], [2, 3, 3], [2, 0, 4]]; // [cliente, ruta, tarifa]
   for (let c = 0; c < cabezales.length; c += 1) {
+    let odo = 300000 + c * 40000;
+    const esperado = Number(cabezales[c].rendimientoEsperado);
+    // Carga base: primer llenado completo (punto de partida del rendimiento)
+    await prisma.cargaCombustible.create({ data: { sucursalId: sucursal.id, cabezalId: cabezales[c].id, pilotoId: pilotos[c].id, fecha: dia(30), odometro: D(odo), galones: D(60), precioGalon: D(30.5), total: D(1830), tanqueLleno: true, estacion: 'Puma Calzada Roosevelt', registradoPorId: admin.id } });
     for (let k = 0; k < 3; k += 1) {
       const [ci, ri, ti] = combos[(c + k) % combos.length];
       const ruta = rutas[ri];
-      const salida = dia(28 - c * 5 - k * 9);
+      const salida = dia(27 - k * 9 - c);
+      const llegada = new Date(salida.getTime() + Number(ruta.horasEstimadas) * 2 * 3_600_000);
       const kmRuta = Number(ruta.kmEstimados) * 2; // ida y vuelta
-      const kmSalida = 300000 + c * 40000 + k * 1000;
-      const galones = entre(kmRuta / 9.5, kmRuta / 7.5);
+      // Rendimiento real alrededor del esperado; el C-03 en su último viaje consume de más (dispara la alerta)
+      const rend = c === 2 && k === 2 ? esperado * 0.78 : entre(esperado * 0.9, esperado * 1.04);
+      const galones = Math.round((kmRuta / rend) * 1000) / 1000;
       const precioGal = entre(29.5, 31.5);
       const combustible = Math.round(galones * precioGal * 100) / 100;
       const peajes = Number(ruta.peajesEstimados) * 2;
       const viatico = Number(ruta.viaticoEstimado);
-      const totalCostos = Math.round((combustible + peajes + viatico) * 100) / 100;
+      const anticipo = Math.round((peajes + viatico) * 1.1);
+      const liquidado = k < 2;
+      const l = liquidar({ montoCobrado: tarifas[ti].monto, pagoPiloto: 150, kmRecorridos: kmRuta, costoKmFijo: COSTO_KM_DEMO, anticipos: [anticipo], costos: [
+        { tipo: 'COMBUSTIBLE', monto: combustible, pagadoPorPiloto: false }, { tipo: 'PEAJE', monto: peajes, pagadoPorPiloto: true }, { tipo: 'VIATICO', monto: viatico, pagadoPorPiloto: true },
+      ] });
       const viaje = await prisma.viaje.create({ data: {
         numero: `V-${String(numero).padStart(6, '0')}`, sucursalId: sucursal.id, clienteId: clientes[ci].id, rutaId: ruta.id, tarifaId: tarifas[ti].id,
         cabezalId: cabezales[c].id, remolqueId: remolques[k % 2].id, pilotoId: pilotos[c].id,
         origen: ruta.origen, destino: ruta.destino, carga: ci === 1 ? 'Cemento en sacos (28 t)' : ci === 0 ? 'Contenedor 40 pies' : 'Abarrotes paletizados',
-        fechaSalida: salida, fechaLlegada: new Date(salida.getTime() + Number(ruta.horasEstimadas) * 2 * 3_600_000), fechaCompromiso: new Date(salida.getTime() + 36 * 3_600_000),
-        kmSalida: D(kmSalida), kmLlegada: D(kmSalida + kmRuta), kmVacios: D(Number(ruta.kmEstimados)),
-        montoCobrado: tarifas[ti].monto, anticipoPiloto: D(Math.round((peajes + viatico) * 1.1)), pagoPiloto: D(150), totalCostos: D(totalCostos),
-        estado: k === 2 ? 'FINALIZADO' : 'LIQUIDADO', creadoPorId: admin.id,
+        fechaSalida: salida, iniciadoEn: salida, fechaLlegada: llegada, fechaCompromiso: new Date(salida.getTime() + (k === 1 ? 10 : 36) * 3_600_000),
+        kmSalida: D(odo), kmLlegada: D(odo + kmRuta), kmVacios: D(Number(ruta.kmEstimados)),
+        montoCobrado: tarifas[ti].monto, anticipoPiloto: D(anticipo), pagoPiloto: D(150), totalCostos: l.costosDirectos,
+        estado: liquidado ? 'LIQUIDADO' : 'FINALIZADO', creadoPorId: admin.id,
+        ...(liquidado ? { liquidadoEn: new Date(llegada.getTime() + 86_400_000), liquidadoPorId: admin.id, saldoPiloto: l.saldoPiloto, costoKmFijo: D(COSTO_KM_DEMO), prorrateo: l.prorrateo, ganancia: l.ganancia } : {}),
       } });
       numero += 1;
+      await prisma.anticipoViaje.create({ data: { viajeId: viaje.id, monto: D(anticipo), medio: 'EFECTIVO', fecha: salida, nota: 'Peajes y viáticos', entregadoPorId: admin.id } });
       await prisma.costoViaje.createMany({ data: [
-        { viajeId: viaje.id, tipo: 'COMBUSTIBLE', descripcion: 'Diésel', monto: D(combustible), fecha: salida, registradoPorId: admin.id },
         { viajeId: viaje.id, tipo: 'PEAJE', descripcion: 'Peajes ida y vuelta', monto: D(peajes), fecha: salida, registradoPorId: admin.id },
         { viajeId: viaje.id, tipo: 'VIATICO', descripcion: 'Alimentación y hospedaje', monto: D(viatico), fecha: salida, registradoPorId: admin.id },
       ] });
-      await prisma.cargaCombustible.create({ data: {
-        sucursalId: sucursal.id, cabezalId: cabezales[c].id, pilotoId: pilotos[c].id, viajeId: viaje.id, fecha: salida, odometro: D(kmSalida),
-        galones: D(galones), precioGalon: D(precioGal), total: D(combustible), tanqueLleno: true, estacion: 'Puma Calzada Roosevelt', documento: `VALE-${numero}`, registradoPorId: admin.id,
+      const alerta = rend < esperado * 0.85;
+      const carga = await prisma.cargaCombustible.create({ data: {
+        sucursalId: sucursal.id, cabezalId: cabezales[c].id, pilotoId: pilotos[c].id, viajeId: viaje.id, fecha: llegada, odometro: D(odo + kmRuta),
+        galones: D(galones), precioGalon: D(precioGal), total: D(combustible), tanqueLleno: true, estacion: 'Shell Amatitlán', documento: `VALE-${numero}`, registradoPorId: admin.id,
+        kmRecorridos: D(kmRuta), galonesTramo: D(galones), rendimiento: D(Math.round((kmRuta / galones) * 1000) / 1000), alerta,
       } });
-      // Cierre del tramo: carga al llegar (para rendimiento tanque lleno a tanque lleno)
-      await prisma.cargaCombustible.create({ data: {
-        sucursalId: sucursal.id, cabezalId: cabezales[c].id, pilotoId: pilotos[c].id, viajeId: viaje.id, fecha: new Date(salida.getTime() + 20 * 3_600_000), odometro: D(kmSalida + kmRuta),
-        galones: D(Math.round(galones * 0.4 * 1000) / 1000), precioGalon: D(precioGal), total: D(Math.round(galones * 0.4 * precioGal * 100) / 100), tanqueLleno: true, estacion: 'Shell Amatitlán', registradoPorId: admin.id,
-      } });
+      await prisma.costoViaje.create({ data: { viajeId: viaje.id, tipo: 'COMBUSTIBLE', descripcion: `${galones.toFixed(2)} gal · Shell Amatitlán`, monto: D(combustible), pagadoPorPiloto: false, cargaId: carga.id, fecha: llegada, registradoPorId: admin.id } });
+      odo += kmRuta + 15; // patio y maniobras entre viajes
     }
+    await prisma.cabezal.update({ where: { id: cabezales[c].id }, data: { odometro: D(odo) } });
   }
+
+  // Inspecciones pre viaje de hoy: C-01 aprobada; C-05 con observaciones (extintor) y su caso abierto
+  const aprobar = (cabezalId: number, remolqueId: number | null, fallas: Record<string, string> = {}) => PUNTOS.filter((p) => p.aplicaA === 'CABEZAL' || remolqueId).map((p) => ({ codigo: p.codigo, estado: fallas[p.codigo] ? 'FALLA' as const : 'OK' as const, critico: p.critico, nota: fallas[p.codigo] ?? null }));
+  const c1 = await prisma.cabezal.findUniqueOrThrow({ where: { id: cabezales[0].id } });
+  await prisma.inspeccion.create({ data: { sucursalId: sucursal.id, cabezalId: c1.id, pilotoId: pilotos[0].id, odometro: c1.odometro, resultado: 'APROBADA', registradoPorId: admin.id, puntos: { create: aprobar(c1.id, null) } } });
+  const c5 = await prisma.cabezal.findUniqueOrThrow({ where: { id: cabezales[4].id } });
+  const i5 = await prisma.inspeccion.create({ data: { sucursalId: sucursal.id, cabezalId: c5.id, pilotoId: pilotos[4].id, odometro: c5.odometro, resultado: 'CON_OBSERVACIONES', fallas: 1, registradoPorId: admin.id, puntos: { create: aprobar(c5.id, null, { EXTINTOR: 'Vencido en octubre' }) } } });
+  await prisma.caso.create({ data: { numero: 'CS-000001', sucursalId: sucursal.id, origen: 'INSPECCION', tipo: 'SEGURIDAD', prioridad: 'ALTA', titulo: 'Extintor cargado y vigente', descripcion: 'Vencido en octubre', cabezalId: c5.id, inspeccionId: i5.id, puntoCodigo: 'EXTINTOR', venceEn: new Date(Date.now() + 20 * 3_600_000), creadoPorId: admin.id } });
+  await prisma.caso.create({ data: { numero: 'CS-000002', sucursalId: sucursal.id, origen: 'MANUAL', tipo: 'DOCUMENTOS', prioridad: 'MODERADA', titulo: 'Renovar seguro del C-01', descripcion: 'La póliza vence en menos de dos semanas', cabezalId: c1.id, venceEn: new Date(Date.now() - 2 * 3_600_000), creadoPorId: admin.id } });
 
   // Órdenes de taller: preventivo en C-01 y C-02, correctivo abierto en C-04 (que está en taller)
   const ot = async (i: number, data: Omit<Prisma.OrdenTrabajoUncheckedCreateInput, 'numero' | 'sucursalId' | 'creadoPorId'>) =>
@@ -176,7 +201,7 @@ async function main() {
     { sucursalId: sucursal.id, categoriaId: await cat('Salarios'), fecha: ymd(10), concepto: 'Planilla administrativa', monto: D(12000), medioPago: 'TRANSFERENCIA', usuarioId: admin.id },
   ] });
 
-  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 3 órdenes de taller.`);
+  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 3 órdenes de taller, 2 inspecciones y 2 casos.`);
 }
 
 main()
