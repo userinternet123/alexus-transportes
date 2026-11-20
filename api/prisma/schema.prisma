@@ -57,15 +57,17 @@ model Sucursal {
   creadoEn      DateTime @default(now()) @map("creado_en")
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
-  empresa   Empresa            @relation(fields: [empresaId], references: [id])
-  municipio Municipio?         @relation(fields: [municipioId], references: [id])
-  usuarios  UsuarioSucursal[]
-  empleados Empleado[]
-  gastos    Gasto[]
-  cabezales Cabezal[]
-  viajes    Viaje[]
-  cargas    CargaCombustible[]
-  ordenes   OrdenTrabajo[]
+  empresa      Empresa            @relation(fields: [empresaId], references: [id])
+  municipio    Municipio?         @relation(fields: [municipioId], references: [id])
+  usuarios     UsuarioSucursal[]
+  empleados    Empleado[]
+  gastos       Gasto[]
+  cabezales    Cabezal[]
+  viajes       Viaje[]
+  cargas       CargaCombustible[]
+  ordenes      OrdenTrabajo[]
+  inspecciones Inspeccion[]
+  casos        Caso[]
 
   @@map("sucursales")
 }
@@ -99,15 +101,22 @@ model Usuario {
   creadoEn            DateTime  @default(now()) @map("creado_en")
   actualizadoEn       DateTime  @updatedAt @map("actualizado_en")
 
-  empleado          Empleado?          @relation(fields: [empleadoId], references: [id])
-  roles             UsuarioRol[]
-  sucursales        UsuarioSucursal[]
-  sesiones          SesionRefresh[]
-  gastos            Gasto[]
-  viajesCreados     Viaje[]            @relation("ViajeCreadoPor")
-  costosRegistrados CostoViaje[]
-  cargasRegistradas CargaCombustible[]
-  ordenesCreadas    OrdenTrabajo[]
+  empleado            Empleado?          @relation(fields: [empleadoId], references: [id])
+  roles               UsuarioRol[]
+  sucursales          UsuarioSucursal[]
+  sesiones            SesionRefresh[]
+  gastos              Gasto[]
+  viajesCreados       Viaje[]            @relation("ViajeCreadoPor")
+  costosRegistrados   CostoViaje[]
+  cargasRegistradas   CargaCombustible[]
+  ordenesCreadas      OrdenTrabajo[]
+  anticiposEntregados AnticipoViaje[]
+  viajesLiquidados    Viaje[]            @relation("ViajeLiquidadoPor")
+  inspecciones        Inspeccion[]
+  casosCreados        Caso[]             @relation("CasoCreadoPor")
+  casosAsignados      Caso[]             @relation("CasoResponsable")
+  notasCaso           CasoNota[]
+  cotizaciones        Cotizacion[]
 
   @@map("usuarios")
 }
@@ -287,6 +296,7 @@ model Tercero {
   viajes        Viaje[]
   llantas       Llanta[]
   ordenesTaller OrdenTrabajo[]
+  cotizaciones  Cotizacion[]
 
   @@index([nit])
   @@index([cui])
@@ -378,10 +388,11 @@ model Piloto {
   creadoEn           DateTime @default(now()) @map("creado_en")
   actualizadoEn      DateTime @updatedAt @map("actualizado_en")
 
-  empleado  Empleado           @relation(fields: [empleadoId], references: [id])
-  cabezales Cabezal[] // cabezal(es) que tiene asignados
-  viajes    Viaje[]
-  cargas    CargaCombustible[]
+  empleado     Empleado           @relation(fields: [empleadoId], references: [id])
+  cabezales    Cabezal[] // cabezal(es) que tiene asignados
+  viajes       Viaje[]
+  cargas       CargaCombustible[]
+  inspecciones Inspeccion[]
 
   @@map("pilotos")
 }
@@ -484,18 +495,20 @@ model PlanillaDetalle {
 
 /// Fotos de vales de combustible, recibos de viáticos, pólizas, facturas de taller, logos.
 model Archivo {
-  id          String              @id @default(uuid())
-  nombre      String
-  mime        String
-  tamano      Int
-  datos       Bytes
-  publico     Boolean             @default(false) // true: logos/fondos visibles sin sesión (login)
-  creadoPorId Int?                @map("creado_por_id")
-  creadoEn    DateTime            @default(now()) @map("creado_en")
-  documentos  DocumentoVehiculo[]
-  costos      CostoViaje[]
-  cargas      CargaCombustible[]
-  ordenes     OrdenTrabajo[]
+  id               String              @id @default(uuid())
+  nombre           String
+  mime             String
+  tamano           Int
+  datos            Bytes
+  publico          Boolean             @default(false) // true: logos/fondos visibles sin sesión (login)
+  creadoPorId      Int?                @map("creado_por_id")
+  creadoEn         DateTime            @default(now()) @map("creado_en")
+  documentos       DocumentoVehiculo[]
+  costos           CostoViaje[]
+  cargas           CargaCombustible[]
+  ordenes          OrdenTrabajo[]
+  anticipos        AnticipoViaje[]
+  puntosInspeccion InspeccionPunto[]
 
   @@map("archivos")
 }
@@ -542,6 +555,8 @@ model Cabezal {
   cargas         CargaCombustible[]
   montajes       MontajeLlanta[]
   ordenes        OrdenTrabajo[]
+  inspecciones   Inspeccion[]
+  casos          Caso[]
 
   @@map("cabezales")
 }
@@ -565,10 +580,12 @@ model Remolque {
   creadoEn           DateTime       @default(now()) @map("creado_en")
   actualizadoEn      DateTime       @updatedAt @map("actualizado_en")
 
-  documentos DocumentoVehiculo[]
-  viajes     Viaje[]
-  montajes   MontajeLlanta[]
-  ordenes    OrdenTrabajo[]
+  documentos   DocumentoVehiculo[]
+  viajes       Viaje[]
+  montajes     MontajeLlanta[]
+  ordenes      OrdenTrabajo[]
+  inspecciones Inspeccion[]
+  casos        Caso[]
 
   @@map("remolques")
 }
@@ -601,22 +618,92 @@ model DocumentoVehiculo {
 
 /// Ruta frecuente con sus kilómetros y peajes estimados (base del cotizador).
 model Ruta {
-  id              Int      @id @default(autoincrement())
-  nombre          String   @unique // "Guatemala - Puerto Quetzal"
+  id              Int         @id @default(autoincrement())
+  nombre          String      @unique // "Guatemala - Puerto Quetzal"
   origen          String
   destino         String
-  kmEstimados     Decimal  @map("km_estimados") @db.Decimal(12, 1)
-  horasEstimadas  Decimal? @map("horas_estimadas") @db.Decimal(6, 2)
-  peajesEstimados Decimal  @default(0) @map("peajes_estimados") @db.Decimal(14, 2)
-  viaticoEstimado Decimal  @default(0) @map("viatico_estimado") @db.Decimal(14, 2)
-  activo          Boolean  @default(true)
-  creadoEn        DateTime @default(now()) @map("creado_en")
-  actualizadoEn   DateTime @updatedAt @map("actualizado_en")
+  kmEstimados     Decimal     @map("km_estimados") @db.Decimal(12, 1)
+  horasEstimadas  Decimal?    @map("horas_estimadas") @db.Decimal(6, 2)
+  peajesEstimados Decimal     @default(0) @map("peajes_estimados") @db.Decimal(14, 2)
+  viaticoEstimado Decimal     @default(0) @map("viatico_estimado") @db.Decimal(14, 2)
+  // Condiciones que encarecen la ruta (el cotizador las convierte en combustible, desgaste y tiempo)
+  terreno         TerrenoRuta @default(PLANO)
+  subidaMetros    Int?        @map("subida_metros") // ascenso acumulado en el sentido de ida (m)
+  trafico         TraficoRuta @default(NORMAL)
+  horasEspera     Decimal     @default(0) @map("horas_espera") @db.Decimal(6, 2) // colas en aduana, puerto, planta
+  notas           String?
+  activo          Boolean     @default(true)
+  creadoEn        DateTime    @default(now()) @map("creado_en")
+  actualizadoEn   DateTime    @updatedAt @map("actualizado_en")
 
-  tarifas Tarifa[]
-  viajes  Viaje[]
+  tarifas      Tarifa[]
+  viajes       Viaje[]
+  cotizaciones Cotizacion[]
 
   @@map("rutas")
+}
+
+enum TerrenoRuta {
+  PLANO
+  ONDULADO
+  MONTANA
+}
+
+enum TraficoRuta {
+  FLUIDO
+  NORMAL
+  LENTO
+  MUY_LENTO
+}
+
+enum EstadoCotizacion {
+  BORRADOR
+  ENVIADA
+  ACEPTADA
+  RECHAZADA
+  CONVERTIDA
+}
+
+/// Cotización guardada: el cálculo queda congelado (partidas, supuestos) y se puede convertir en viaje.
+model Cotizacion {
+  id             Int              @id @default(autoincrement())
+  numero         String           @unique // CT-000001
+  sucursalId     Int              @map("sucursal_id")
+  clienteId      Int?             @map("cliente_id")
+  rutaId         Int?             @map("ruta_id")
+  origen         String
+  destino        String
+  kmIda          Decimal          @map("km_ida") @db.Decimal(12, 1)
+  regreso        String // VACIO | CARGADO | NINGUNO
+  terreno        TerrenoRuta
+  trafico        TraficoRuta
+  subidaMetros   Int?             @map("subida_metros")
+  horasEspera    Decimal          @default(0) @map("horas_espera") @db.Decimal(6, 2)
+  extras         Json             @default("[]") // [{ concepto, monto }]
+  toneladas      Decimal?         @db.Decimal(8, 2)
+  supuestos      Json // rendimiento, precio del galón, costo/km y sus fuentes
+  partidas       Json // [{ concepto, monto, detalle }]
+  kmTotal        Decimal          @map("km_total") @db.Decimal(12, 1)
+  horasEstimadas Decimal?         @map("horas_estimadas") @db.Decimal(6, 1)
+  costoTotal     Decimal          @map("costo_total") @db.Decimal(14, 2)
+  margen         Decimal          @db.Decimal(6, 2) // % objetivo sobre el costo
+  precioSugerido Decimal          @map("precio_sugerido") @db.Decimal(14, 2)
+  precioOfrecido Decimal          @map("precio_ofrecido") @db.Decimal(14, 2)
+  vigenteHasta   DateTime         @map("vigente_hasta") @db.Date
+  estado         EstadoCotizacion @default(BORRADOR)
+  notas          String?
+  viajeId        Int?             @unique @map("viaje_id")
+  creadoPorId    Int              @map("creado_por_id")
+  creadoEn       DateTime         @default(now()) @map("creado_en")
+  actualizadoEn  DateTime         @updatedAt @map("actualizado_en")
+
+  cliente   Tercero? @relation(fields: [clienteId], references: [id])
+  ruta      Ruta?    @relation(fields: [rutaId], references: [id])
+  viaje     Viaje?   @relation(fields: [viajeId], references: [id])
+  creadoPor Usuario  @relation(fields: [creadoPorId], references: [id])
+
+  @@index([creadoEn])
+  @@map("cotizaciones")
 }
 
 enum TipoTarifa {
@@ -657,52 +744,67 @@ enum EstadoViaje {
 
 /// Un viaje = un servicio cobrado a un cliente. Centro de costos y ganancias.
 model Viaje {
-  id              Int         @id @default(autoincrement())
-  numero          String      @unique // V-000001
-  sucursalId      Int         @map("sucursal_id")
-  clienteId       Int         @map("cliente_id")
-  rutaId          Int?        @map("ruta_id")
-  tarifaId        Int?        @map("tarifa_id")
-  cabezalId       Int         @map("cabezal_id")
-  remolqueId      Int?        @map("remolque_id")
-  pilotoId        Int         @map("piloto_id")
-  origen          String
-  destino         String
-  carga           String? // descripción de la carga
-  toneladas       Decimal?    @db.Decimal(8, 2)
-  referencia      String? // orden de servicio, BL, contenedor
-  fechaSalida     DateTime    @map("fecha_salida")
-  fechaLlegada    DateTime?   @map("fecha_llegada")
-  fechaCompromiso DateTime?   @map("fecha_compromiso") // para entregas a tiempo
-  kmSalida        Decimal?    @map("km_salida") @db.Decimal(12, 1)
-  kmLlegada       Decimal?    @map("km_llegada") @db.Decimal(12, 1)
-  kmVacios        Decimal     @default(0) @map("km_vacios") @db.Decimal(12, 1) // sin carga (deadhead)
-  montoCobrado    Decimal     @default(0) @map("monto_cobrado") @db.Decimal(14, 2) // tarifa al cliente
-  anticipoPiloto  Decimal     @default(0) @map("anticipo_piloto") @db.Decimal(14, 2)
-  pagoPiloto      Decimal     @default(0) @map("pago_piloto") @db.Decimal(14, 2) // bono por viaje
-  totalCostos     Decimal     @default(0) @map("total_costos") @db.Decimal(14, 2) // suma de CostoViaje (materializado)
-  estado          EstadoViaje @default(PROGRAMADO)
-  observaciones   String?
-  creadoPorId     Int         @map("creado_por_id")
-  creadoEn        DateTime    @default(now()) @map("creado_en")
-  actualizadoEn   DateTime    @updatedAt @map("actualizado_en")
+  id                Int         @id @default(autoincrement())
+  numero            String      @unique // V-000001
+  sucursalId        Int         @map("sucursal_id")
+  clienteId         Int         @map("cliente_id")
+  rutaId            Int?        @map("ruta_id")
+  tarifaId          Int?        @map("tarifa_id")
+  cabezalId         Int         @map("cabezal_id")
+  remolqueId        Int?        @map("remolque_id")
+  pilotoId          Int         @map("piloto_id")
+  origen            String
+  destino           String
+  carga             String? // descripción de la carga
+  toneladas         Decimal?    @db.Decimal(8, 2)
+  referencia        String? // orden de servicio, BL, contenedor
+  fechaSalida       DateTime    @map("fecha_salida")
+  fechaLlegada      DateTime?   @map("fecha_llegada")
+  fechaCompromiso   DateTime?   @map("fecha_compromiso") // para entregas a tiempo
+  kmSalida          Decimal?    @map("km_salida") @db.Decimal(12, 1)
+  kmLlegada         Decimal?    @map("km_llegada") @db.Decimal(12, 1)
+  kmVacios          Decimal     @default(0) @map("km_vacios") @db.Decimal(12, 1) // sin carga (deadhead)
+  montoCobrado      Decimal     @default(0) @map("monto_cobrado") @db.Decimal(14, 2) // tarifa al cliente
+  anticipoPiloto    Decimal     @default(0) @map("anticipo_piloto") @db.Decimal(14, 2)
+  pagoPiloto        Decimal     @default(0) @map("pago_piloto") @db.Decimal(14, 2) // bono por viaje
+  totalCostos       Decimal     @default(0) @map("total_costos") @db.Decimal(14, 2) // suma de CostoViaje (materializado)
+  estado            EstadoViaje @default(PROGRAMADO)
+  observaciones     String?
+  iniciadoEn        DateTime?   @map("iniciado_en") // salida real (al iniciar)
+  motivoCancelacion String?     @map("motivo_cancelacion")
+  // Liquidación (foto al cerrar el viaje; no cambia aunque cambien los costos del período)
+  liquidadoEn       DateTime?   @map("liquidado_en")
+  liquidadoPorId    Int?        @map("liquidado_por_id")
+  saldoPiloto       Decimal?    @map("saldo_piloto") @db.Decimal(14, 2) // + el piloto devuelve; − la empresa le paga
+  costoKmFijo       Decimal?    @map("costo_km_fijo") @db.Decimal(10, 4) // costo indirecto por km usado al liquidar
+  prorrateo         Decimal?    @db.Decimal(14, 2) // km recorridos × costoKmFijo
+  ganancia          Decimal?    @db.Decimal(14, 2) // cobrado − costos directos − pago al piloto − prorrateo
+  creadoPorId       Int         @map("creado_por_id")
+  creadoEn          DateTime    @default(now()) @map("creado_en")
+  actualizadoEn     DateTime    @updatedAt @map("actualizado_en")
 
-  sucursal  Sucursal           @relation(fields: [sucursalId], references: [id])
-  cliente   Tercero            @relation(fields: [clienteId], references: [id])
-  ruta      Ruta?              @relation(fields: [rutaId], references: [id])
-  tarifa    Tarifa?            @relation(fields: [tarifaId], references: [id])
-  cabezal   Cabezal            @relation(fields: [cabezalId], references: [id])
-  remolque  Remolque?          @relation(fields: [remolqueId], references: [id])
-  piloto    Piloto             @relation(fields: [pilotoId], references: [id])
-  creadoPor Usuario            @relation("ViajeCreadoPor", fields: [creadoPorId], references: [id])
-  costos    CostoViaje[]
-  cargas    CargaCombustible[]
-  gastos    Gasto[]
+  sucursal     Sucursal           @relation(fields: [sucursalId], references: [id])
+  cliente      Tercero            @relation(fields: [clienteId], references: [id])
+  ruta         Ruta?              @relation(fields: [rutaId], references: [id])
+  tarifa       Tarifa?            @relation(fields: [tarifaId], references: [id])
+  cabezal      Cabezal            @relation(fields: [cabezalId], references: [id])
+  remolque     Remolque?          @relation(fields: [remolqueId], references: [id])
+  piloto       Piloto             @relation(fields: [pilotoId], references: [id])
+  creadoPor    Usuario            @relation("ViajeCreadoPor", fields: [creadoPorId], references: [id])
+  liquidadoPor Usuario?           @relation("ViajeLiquidadoPor", fields: [liquidadoPorId], references: [id])
+  costos       CostoViaje[]
+  cargas       CargaCombustible[]
+  gastos       Gasto[]
+  anticipos    AnticipoViaje[]
+  inspecciones Inspeccion[]
+  casos        Caso[]
+  cotizacion   Cotizacion?
 
   @@index([fechaSalida])
   @@index([cabezalId, fechaSalida])
   @@index([pilotoId, fechaSalida])
   @@index([clienteId, fechaSalida])
+  @@index([estado])
   @@map("viajes")
 }
 
@@ -726,16 +828,40 @@ model CostoViaje {
   descripcion     String?
   monto           Decimal        @db.Decimal(14, 2)
   fecha           DateTime       @default(now())
+  pagadoPorPiloto Boolean        @default(true) @map("pagado_por_piloto") // true: salió del anticipo; false: lo pagó la empresa (crédito, tarjeta)
+  documento       String? // factura o recibo
+  cargaId         Int?           @unique @map("carga_id") // si nace de una carga de combustible
   archivoId       String?        @map("archivo_id") // foto del recibo
   registradoPorId Int            @map("registrado_por_id")
   creadoEn        DateTime       @default(now()) @map("creado_en")
 
-  viaje         Viaje    @relation(fields: [viajeId], references: [id], onDelete: Cascade)
-  archivo       Archivo? @relation(fields: [archivoId], references: [id])
-  registradoPor Usuario  @relation(fields: [registradoPorId], references: [id])
+  viaje         Viaje             @relation(fields: [viajeId], references: [id], onDelete: Cascade)
+  carga         CargaCombustible? @relation(fields: [cargaId], references: [id])
+  archivo       Archivo?          @relation(fields: [archivoId], references: [id])
+  registradoPor Usuario           @relation(fields: [registradoPorId], references: [id])
 
   @@index([viajeId])
   @@map("costos_viaje")
+}
+
+/// Efectivo que se entrega al piloto para el viaje (peajes, comidas, imprevistos). Se liquida contra los costos que pagó.
+model AnticipoViaje {
+  id             Int        @id @default(autoincrement())
+  viajeId        Int        @map("viaje_id")
+  monto          Decimal    @db.Decimal(14, 2)
+  medio          MedioGasto @default(EFECTIVO)
+  fecha          DateTime   @default(now())
+  nota           String?
+  archivoId      String?    @map("archivo_id") // foto del vale firmado
+  entregadoPorId Int        @map("entregado_por_id")
+  creadoEn       DateTime   @default(now()) @map("creado_en")
+
+  viaje        Viaje    @relation(fields: [viajeId], references: [id], onDelete: Cascade)
+  archivo      Archivo? @relation(fields: [archivoId], references: [id])
+  entregadoPor Usuario  @relation(fields: [entregadoPorId], references: [id])
+
+  @@index([viajeId])
+  @@map("anticipos_viaje")
 }
 
 // ─────────────────────────────── COMBUSTIBLE ────────────────────────────────
@@ -756,19 +882,92 @@ model CargaCombustible {
   estacion        String?
   documento       String? // número de factura o vale
   archivoId       String?  @map("archivo_id") // foto del vale
+  pagadoPorPiloto Boolean  @default(false) @map("pagado_por_piloto") // con el anticipo del viaje
+  // Rendimiento tanque lleno a tanque lleno (se calcula al registrar)
+  kmRecorridos    Decimal? @map("km_recorridos") @db.Decimal(12, 1)
+  galonesTramo    Decimal? @map("galones_tramo") @db.Decimal(10, 3)
+  rendimiento     Decimal? @db.Decimal(8, 3) // km por galón
+  alerta          Boolean  @default(false) // rendimiento por debajo del esperado
+  anulada         Boolean  @default(false)
+  motivoAnulacion String?  @map("motivo_anulacion")
   registradoPorId Int      @map("registrado_por_id")
   creadoEn        DateTime @default(now()) @map("creado_en")
 
-  sucursal      Sucursal @relation(fields: [sucursalId], references: [id])
-  cabezal       Cabezal  @relation(fields: [cabezalId], references: [id])
-  piloto        Piloto?  @relation(fields: [pilotoId], references: [id])
-  viaje         Viaje?   @relation(fields: [viajeId], references: [id])
-  archivo       Archivo? @relation(fields: [archivoId], references: [id])
-  registradoPor Usuario  @relation(fields: [registradoPorId], references: [id])
+  sucursal      Sucursal    @relation(fields: [sucursalId], references: [id])
+  cabezal       Cabezal     @relation(fields: [cabezalId], references: [id])
+  piloto        Piloto?     @relation(fields: [pilotoId], references: [id])
+  viaje         Viaje?      @relation(fields: [viajeId], references: [id])
+  archivo       Archivo?    @relation(fields: [archivoId], references: [id])
+  registradoPor Usuario     @relation(fields: [registradoPorId], references: [id])
+  costo         CostoViaje?
+
+  @@index([cabezalId, fecha])
+  @@index([cabezalId, odometro])
+  @@index([fecha])
+  @@map("cargas_combustible")
+}
+
+// ─────────────────────────────── INSPECCIÓN PRE VIAJE ───────────────────────
+
+enum ResultadoInspeccion {
+  APROBADA // todo bien
+  CON_OBSERVACIONES // fallas menores: puede salir, se abre orden de trabajo
+  RECHAZADA // falla crítica (frenos, llantas, luces…): no puede salir
+}
+
+enum EstadoPunto {
+  OK
+  FALLA
+  NO_APLICA
+}
+
+/// Revisión diaria del piloto antes de salir (DVIR). Una falla abre una orden de trabajo correctiva sola.
+model Inspeccion {
+  id              Int                 @id @default(autoincrement())
+  sucursalId      Int                 @map("sucursal_id")
+  cabezalId       Int                 @map("cabezal_id")
+  remolqueId      Int?                @map("remolque_id")
+  pilotoId        Int?                @map("piloto_id")
+  viajeId         Int?                @map("viaje_id")
+  fecha           DateTime            @default(now())
+  odometro        Decimal?            @db.Decimal(12, 1)
+  resultado       ResultadoInspeccion
+  fallas          Int                 @default(0)
+  fallasCriticas  Int                 @default(0) @map("fallas_criticas")
+  observaciones   String?
+  ordenTrabajoId  Int?                @unique @map("orden_trabajo_id")
+  registradoPorId Int                 @map("registrado_por_id")
+  creadoEn        DateTime            @default(now()) @map("creado_en")
+
+  sucursal      Sucursal          @relation(fields: [sucursalId], references: [id])
+  cabezal       Cabezal           @relation(fields: [cabezalId], references: [id])
+  remolque      Remolque?         @relation(fields: [remolqueId], references: [id])
+  piloto        Piloto?           @relation(fields: [pilotoId], references: [id])
+  viaje         Viaje?            @relation(fields: [viajeId], references: [id])
+  ordenTrabajo  OrdenTrabajo?     @relation(fields: [ordenTrabajoId], references: [id])
+  registradoPor Usuario           @relation(fields: [registradoPorId], references: [id])
+  puntos        InspeccionPunto[]
+  casos         Caso[]
 
   @@index([cabezalId, fecha])
   @@index([fecha])
-  @@map("cargas_combustible")
+  @@map("inspecciones")
+}
+
+model InspeccionPunto {
+  id           Int         @id @default(autoincrement())
+  inspeccionId Int         @map("inspeccion_id")
+  codigo       String // FRENOS, LUCES, LLANTAS... (catálogo en código: inspecciones.logica.ts)
+  estado       EstadoPunto
+  critico      Boolean     @default(false) // foto del catálogo al momento de la inspección
+  nota         String?
+  archivoId    String?     @map("archivo_id")
+
+  inspeccion Inspeccion @relation(fields: [inspeccionId], references: [id], onDelete: Cascade)
+  archivo    Archivo?   @relation(fields: [archivoId], references: [id])
+
+  @@unique([inspeccionId, codigo])
+  @@map("inspecciones_puntos")
 }
 
 // ─────────────────────────────── LLANTAS ────────────────────────────────────
@@ -889,6 +1088,7 @@ model OrdenTrabajo {
   planId         Int?               @map("plan_id")
   tallerId       Int?               @map("taller_id") // null = taller propio
   tipo           TipoOrdenTrabajo
+  prioridad      PrioridadCaso      @default(MODERADA)
   descripcion    String
   odometro       Decimal?           @db.Decimal(12, 1)
   fechaApertura  DateTime           @default(now()) @map("fecha_apertura")
@@ -904,14 +1104,16 @@ model OrdenTrabajo {
   creadoEn       DateTime           @default(now()) @map("creado_en")
   actualizadoEn  DateTime           @updatedAt @map("actualizado_en")
 
-  sucursal  Sucursal               @relation(fields: [sucursalId], references: [id])
-  cabezal   Cabezal?               @relation(fields: [cabezalId], references: [id])
-  remolque  Remolque?              @relation(fields: [remolqueId], references: [id])
-  plan      PlanMantenimiento?     @relation(fields: [planId], references: [id])
-  taller    Tercero?               @relation(fields: [tallerId], references: [id])
-  archivo   Archivo?               @relation(fields: [archivoId], references: [id])
-  creadoPor Usuario                @relation(fields: [creadoPorId], references: [id])
-  repuestos OrdenTrabajoRepuesto[]
+  sucursal   Sucursal               @relation(fields: [sucursalId], references: [id])
+  cabezal    Cabezal?               @relation(fields: [cabezalId], references: [id])
+  remolque   Remolque?              @relation(fields: [remolqueId], references: [id])
+  plan       PlanMantenimiento?     @relation(fields: [planId], references: [id])
+  taller     Tercero?               @relation(fields: [tallerId], references: [id])
+  archivo    Archivo?               @relation(fields: [archivoId], references: [id])
+  creadoPor  Usuario                @relation(fields: [creadoPorId], references: [id])
+  repuestos  OrdenTrabajoRepuesto[]
+  inspeccion Inspeccion?
+  casos      Caso[]
 
   @@index([cabezalId, fechaApertura])
   @@index([fechaApertura])
@@ -933,6 +1135,80 @@ model OrdenTrabajoRepuesto {
 
   @@index([ordenId])
   @@map("ordenes_trabajo_repuestos")
+}
+
+// ─────────────────────────────── CASOS ──────────────────────────────────────
+
+enum PrioridadCaso {
+  URGENTE // atender de inmediato (plazo por parámetro, 4 h)
+  ALTA // hoy (24 h)
+  MODERADA // esta semana (72 h)
+  BAJA // cuando se pueda (7 días)
+}
+
+enum EstadoCaso {
+  ABIERTO
+  EN_PROCESO
+  RESUELTO
+  ANULADO
+}
+
+/// Caso o requerimiento: algo que hay que atender (hallazgo de una inspección, un reporte del piloto, un pendiente).
+/// Tiene prioridad, plazo de atención, responsable y su historial de seguimiento.
+model Caso {
+  id             Int           @id @default(autoincrement())
+  numero         String        @unique // CS-000001
+  sucursalId     Int           @map("sucursal_id")
+  origen         String // INSPECCION | VIAJE | MANUAL
+  tipo           String // MECANICO | LLANTAS | DOCUMENTOS | SEGURIDAD | CARGA | OTRO
+  prioridad      PrioridadCaso
+  estado         EstadoCaso    @default(ABIERTO)
+  titulo         String
+  descripcion    String?
+  impideSalir    Boolean       @default(false) @map("impide_salir")
+  cabezalId      Int?          @map("cabezal_id")
+  remolqueId     Int?          @map("remolque_id")
+  viajeId        Int?          @map("viaje_id")
+  inspeccionId   Int?          @map("inspeccion_id")
+  puntoCodigo    String?       @map("punto_codigo") // punto de la lista de revisión que lo originó
+  ordenTrabajoId Int?          @map("orden_trabajo_id")
+  responsableId  Int?          @map("responsable_id")
+  venceEn        DateTime      @map("vence_en") // plazo de atención según la prioridad
+  resueltoEn     DateTime?     @map("resuelto_en")
+  resolucion     String?
+  creadoPorId    Int           @map("creado_por_id")
+  creadoEn       DateTime      @default(now()) @map("creado_en")
+  actualizadoEn  DateTime      @updatedAt @map("actualizado_en")
+
+  sucursal     Sucursal      @relation(fields: [sucursalId], references: [id])
+  cabezal      Cabezal?      @relation(fields: [cabezalId], references: [id])
+  remolque     Remolque?     @relation(fields: [remolqueId], references: [id])
+  viaje        Viaje?        @relation(fields: [viajeId], references: [id])
+  inspeccion   Inspeccion?   @relation(fields: [inspeccionId], references: [id])
+  ordenTrabajo OrdenTrabajo? @relation(fields: [ordenTrabajoId], references: [id])
+  responsable  Usuario?      @relation("CasoResponsable", fields: [responsableId], references: [id])
+  creadoPor    Usuario       @relation("CasoCreadoPor", fields: [creadoPorId], references: [id])
+  notas        CasoNota[]
+
+  @@index([estado, venceEn])
+  @@index([cabezalId, estado])
+  @@map("casos")
+}
+
+/// Seguimiento de un caso: comentarios y cambios de estado o prioridad.
+model CasoNota {
+  id        Int      @id @default(autoincrement())
+  casoId    Int      @map("caso_id")
+  usuarioId Int      @map("usuario_id")
+  cambio    String? // "ABIERTO → EN_PROCESO", "MODERADA → URGENTE"
+  texto     String?
+  creadoEn  DateTime @default(now()) @map("creado_en")
+
+  caso    Caso    @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([casoId])
+  @@map("casos_notas")
 }
 
 // ─────────────────────────────── GASTOS ─────────────────────────────────────

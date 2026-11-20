@@ -54,6 +54,14 @@
       "header": "Horas"
     },
     {
+      "accessorKey": "terreno",
+      "header": "Terreno"
+    },
+    {
+      "accessorKey": "trafico",
+      "header": "Tráfico"
+    },
+    {
       "accessorKey": "peajesEstimados",
       "header": "Peajes",
       "type": "money"

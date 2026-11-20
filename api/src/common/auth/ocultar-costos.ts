@@ -14,6 +14,8 @@ export const CAMPOS_SENSIBLES = new Set([
   'costo', 'costoPromedio', 'costoUnitario', 'costoTotal', 'costoVentas', 'costoEstimado',
   'valorCosto', 'valorInmovilizado', 'saldoCostoPromedio', 'saldoCosto',
   'utilidad', 'utilidadBruta', 'margen', 'margenPorcentaje', 'ganancia',
+  // Transporte: prorrateo de costos indirectos y márgenes del cotizador
+  'prorrateo', 'costoKm', 'costoKmFijo', 'costoPorKm', 'costoKmIndirecto', 'periodoCostoKm', 'margenTarifaActual',
 ]);
 
 const esHoja = (v: unknown) =>

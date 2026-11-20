@@ -68,6 +68,16 @@ export class NotificacionesController {
         });
       }
     }
+    // Casos: vencidos y urgentes abiertos de la sede
+    if (puede('casos.ver') && ctx.sucursalId) {
+      const abiertos = { sucursalId: ctx.sucursalId, estado: { in: ['ABIERTO', 'EN_PROCESO'] as ('ABIERTO' | 'EN_PROCESO')[] } };
+      const [vencidos, urgentes] = await Promise.all([
+        this.prisma.caso.findMany({ where: { ...abiertos, venceEn: { lte: new Date() } }, select: { id: true }, orderBy: { id: 'desc' } }),
+        this.prisma.caso.count({ where: { ...abiertos, prioridad: 'URGENTE' } }),
+      ]);
+      if (vencidos.length) lista.push({ id: `casos-vencidos:${vencidos[0].id}:${vencidos.length}`, tipo: 'caso', nivel: 'critico', titulo: `${vencidos.length} caso(s) con el plazo vencido`, detalle: 'Atiéndalos o cambie su prioridad.', ruta: '/home/casos' });
+      if (urgentes) lista.push({ id: `casos-urgentes:${urgentes}`, tipo: 'caso', nivel: 'aviso', titulo: `${urgentes} caso(s) urgente(s) abiertos`, detalle: 'Revise los casos de la flota.', ruta: '/home/casos' });
+    }
     // Hechos de la última semana (pedido enviado, recibido…)
     lista.push(...(await this.notificaciones.eventosRecientes(ctx, puede)));
     // Visto / no visto (por usuario): las no vistas primero; las vistas siguen abajo, en gris

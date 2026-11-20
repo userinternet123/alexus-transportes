@@ -18,7 +18,7 @@ Sistema de control para empresas de transporte pesado: **cabezales, remolques, p
 # API
 cd api && cp .env.example .env     # DATABASE_URL, JWT_ACCESS_SECRET…
 npm install
-npx prisma migrate dev --name inicial   # primera vez: crea las tablas
+npx prisma migrate deploy         # crea o actualiza las tablas con las migraciones del repositorio
 SEED_ADMIN_PASSWORD='CambiarAhora2026' npm run db:seed   # permisos, roles, sede, planes de mantenimiento
 npm run db:demo                   # (opcional) 5 cabezales, 5 pilotos, viajes y taller ficticios
 npm run dev                       # http://localhost:3000/api/docs
@@ -28,26 +28,36 @@ cd .. && cp env.example .env       # VITE_API_URL
 npm install && npm run dev
 ```
 
-Entre con `admin` y la contraseña del seed (pide cambiarla). Sin `CLAVE_PUBLICA_LICENCIAS` el API corre en **modo abierto** (todos los módulos) para desarrollo.
+Entre con `admin` y la contraseña del seed (pide cambiarla). El API trae la clave pública de licencias de ALEXUS, así que necesita una licencia emitida desde Central (o con `npm run licencia:emitir`, que requiere la llave privada). Solo si `CLAVE_PUBLICA_LICENCIAS` queda vacía el API corre en **modo abierto** (todos los módulos), y eso no debe subirse al repositorio.
+
+> Si ya había creado las tablas con `prisma migrate dev --name inicial` antes de que existieran las migraciones del repositorio, vacíe la base de desarrollo y corra `migrate deploy`, o marque la inicial como aplicada: `npx prisma migrate resolve --applied 20261120000000_inicial`.
 
 ## Módulos (licencia)
 
 | Módulo | Qué incluye | Fase |
 |---|---|---|
-| Núcleo (siempre) | Seguridad, sedes, clientes, proveedores, talleres, flota (cabezales, remolques, documentos con vencimiento) | 0 |
-| `viajes` | Programación, costos por viaje, km vacíos, liquidación, cotizador, tarifas por cliente | 1 |
+| Núcleo (siempre) | Seguridad, sedes, clientes, proveedores, talleres, flota (cabezales, remolques, documentos con vencimiento), inspección pre viaje, casos y requerimientos | 0-1 |
+| `viajes` | Programación, anticipos, costos por viaje, km vacíos, liquidación, cotizador por condiciones de ruta, cotizaciones, tarifas por cliente | 1 |
 | `combustible` | Cargas con foto, rendimiento km/gal, alertas de consumo | 1 |
 | `pilotos` | Licencias con vencimiento, pago por viaje, viáticos, scorecard | 1 |
 | `mantenimiento` | Planes por km o fecha, órdenes de trabajo, servicios mayores, repuestos por marca, alertas | 2 |
 | `llantas` | Vida por posición, rotaciones, reencauches, costo por km por marca | 3 |
-| `finanzas` | Gastos de operación, costo por km, rentabilidad por viaje, cabezal, piloto y cliente | 1-2 |
+| `finanzas` | Gastos de operación, costo por km, rentabilidad por viaje, cliente, ruta, cabezal y piloto | 1-2 |
 | `reportes` · `tablero` | Centro de reportes y tablero de gerencia | 0-3 |
 | `rrhh` · `multisede` · `sinmarca` | Planilla, varias sedes, marca blanca | |
 
 ## Estado del proyecto
 
-- **Fase 0 (esta versión):** plataforma limpia, esquema de datos completo de transporte, permisos y roles (gerente, despachador, piloto, taller, contador, RRHH), 17 catálogos en el portal (cabezales, remolques, documentos, pilotos, rutas, tarifas, llantas, planes, repuestos, marcas, clientes, proveedores, talleres, sedes, áreas, puestos, empleados), 10 reportes SQL, gastos de operación, datos de prueba.
-- **Siguiente, fase 1:** pantallas de viajes (programar, en ruta, finalizar, liquidar), cotizador, cargas de combustible, inspección pre viaje y app del piloto.
+- **Fase 0:** plataforma limpia, esquema de datos de transporte, permisos y roles (gerente, despachador, piloto, taller, contador, RRHH), 17 catálogos, 10 reportes SQL, gastos de operación, datos de prueba y migración inicial.
+- **Fase 1 (esta versión):**
+  - **Viajes**: programar (tarifa automática), iniciar con inspección, finalizar con km y km vacíos, anticipos, costos con recibo, liquidación con saldo del piloto y ganancia real; cancelar con motivo.
+  - **Cotizador**: precio por distancia, ida y vuelta, terreno, subida, tráfico, esperas y extras, con el costo por km del historial; cotizaciones guardadas con vigencia que se convierten en viaje.
+  - **Combustible**: cargas con rendimiento tanque a tanque, alerta de consumo, rendimiento por cabezal.
+  - **Inspección pre viaje**: 24 puntos (8 críticos) más hallazgos libres; cada falla abre un **caso** con prioridad y plazo, y las mecánicas una orden de taller. Una falla crítica deja la unidad fuera de servicio.
+  - **Casos y requerimientos** con prioridad, responsable, seguimiento y avisos de vencidos en la campana.
+  - **Rentabilidad**: viajes, clientes, rutas, cabezales y pilotos que mejor pagan y más ganan.
+- **Siguiente, fase 2:** órdenes de taller y servicios mayores, repuestos por marca, alertas de mantenimiento, **cuentas por cobrar con recordatorios a 30/60/90 días** (o los días de crédito de cada cliente), incidentes y multas.
+- **Fase 3:** llantas con **km por cada vida** (nueva y cada reencauche), scorecard del piloto, presupuesto de mantenimiento, costo total por cabezal, tablero de gerencia y app del piloto.
 
 ## Agregar un catálogo nuevo
 1. Modelo en `api/prisma/schema.prisma` con campo `activo` → `npx prisma migrate dev`.

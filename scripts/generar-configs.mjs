@@ -70,12 +70,18 @@ const MODULOS = [
   // ── Rutas y tarifas ────────────────────────────────────────
   {
     clave: 'rutas', singular: 'ruta', titulo: 'Rutas', endpoint: '/catalogos/rutas', icono: 'map', busqueda: 'Nombre, origen o destino',
-    columnas: [['nombre', 'Ruta'], ['origen', 'Origen'], ['destino', 'Destino'], ['kmEstimados', 'Km'], ['horasEstimadas', 'Horas'], ['peajesEstimados', 'Peajes', 'money'], ['viaticoEstimado', 'Viático', 'money']],
+    columnas: [['nombre', 'Ruta'], ['origen', 'Origen'], ['destino', 'Destino'], ['kmEstimados', 'Km'], ['horasEstimadas', 'Horas'], ['terreno', 'Terreno'], ['trafico', 'Tráfico'], ['peajesEstimados', 'Peajes', 'money'], ['viaticoEstimado', 'Viático', 'money']],
     campos: [
       txt('nombre', 'Nombre de la ruta', { required: true, size: 'large', placeholder: 'Guatemala - Puerto Quetzal' }),
       txt('origen', 'Origen', { required: true }), txt('destino', 'Destino', { required: true }),
-      num('kmEstimados', 'Km estimados', { required: true }), num('horasEstimadas', 'Horas estimadas'),
-      money('peajesEstimados', 'Peajes estimados'), money('viaticoEstimado', 'Viático estimado'),
+      num('kmEstimados', 'Km de ida', { required: true }), num('horasEstimadas', 'Horas de ida'),
+      money('peajesEstimados', 'Peajes por sentido'), money('viaticoEstimado', 'Viático por sentido'),
+      // Condiciones que usa el cotizador (combustible, desgaste y tiempo)
+      opciones('terreno', 'Terreno', [['PLANO', 'Plano'], ['ONDULADO', 'Ondulado'], ['MONTANA', 'Montaña']], { size: 'small' }),
+      num('subidaMetros', 'Subida acumulada de ida (m)'),
+      opciones('trafico', 'Tráfico', [['FLUIDO', 'Fluido'], ['NORMAL', 'Normal'], ['LENTO', 'Lento'], ['MUY_LENTO', 'Muy lento']], { size: 'small' }),
+      num('horasEspera', 'Horas de espera (colas, aduana, puerto)'),
+      txt('notas', 'Notas de la ruta', { size: 'full', placeholder: 'Ej. cumbre de Alaska; cola en la portuaria' }),
     ],
   },
   {

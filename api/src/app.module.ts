@@ -17,6 +17,10 @@ import { LicenciaModule } from './modules/licencia/licencia.module';
 import { CentralModule } from './modules/central/central.module';
 import { NotificacionesModule } from './modules/notificaciones/notificaciones.module';
 import { GastosModule } from './modules/gastos/gastos.module';
+import { ViajesModule } from './modules/viajes/viajes.module';
+import { CombustibleModule } from './modules/combustible/combustible.module';
+import { InspeccionesModule } from './modules/inspecciones/inspecciones.module';
+import { CasosModule } from './modules/casos/casos.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CatalogosModule } from './modules/catalogos/catalogos.module';
 import { ReportesModule } from './modules/reportes/reportes.module';
@@ -30,8 +34,9 @@ import { SistemaModule } from './modules/sistema/sistema.module';
  * reportes) + dominio de transporte: flota, pilotos, viajes, combustible,
  * llantas y mantenimiento. Los catálogos (cabezales, remolques, rutas, tarifas,
  * pilotos, llantas, repuestos, planes) nacen del CRUD genérico; las operaciones
- * con reglas propias (viajes, cargas, órdenes de trabajo, montajes) tendrán su
- * módulo en las fases siguientes.
+ * con reglas propias tienen su módulo: viajes (con cotizador y liquidación),
+ * combustible e inspección pre viaje (fase 1); órdenes de trabajo y montajes de
+ * llantas en las fases siguientes.
  */
 @Module({
   imports: [
@@ -62,6 +67,11 @@ import { SistemaModule } from './modules/sistema/sistema.module';
     SeguridadModule,
     SistemaModule,
     CatalogosModule,
+    // Operación de transporte
+    ViajesModule,
+    CombustibleModule,
+    InspeccionesModule,
+    CasosModule,
     // Gestión
     GastosModule,
     ReportesModule,
