@@ -55,6 +55,7 @@ export interface Liquidacion {
   /** + el piloto devuelve efectivo · − la empresa le debe (gastó más de lo que recibió) */
   saldoPiloto: Decimal;
   pagoPiloto: Decimal; // bono por viaje (va a planilla)
+  cargasPagoPiloto: Decimal; // IGSS, IRTRA, INTECAP y prestaciones incluidas sobre ese bono
   kmRecorridos: Decimal;
   costoKmFijo: Decimal;
   prorrateo: Decimal;
@@ -63,7 +64,7 @@ export interface Liquidacion {
   margen: Decimal | null;
 }
 
-export function liquidar(d: { montoCobrado: Num; pagoPiloto: Num; costos: CostoLiq[]; anticipos: Num[]; kmRecorridos: Num; costoKmFijo: Num }): Liquidacion {
+export function liquidar(d: { montoCobrado: Num; pagoPiloto: Num; costos: CostoLiq[]; anticipos: Num[]; kmRecorridos: Num; costoKmFijo: Num; factorCargas?: Num }): Liquidacion {
   const porTipo = new Map<string, Decimal>();
   for (const c of d.costos) porTipo.set(c.tipo, (porTipo.get(c.tipo) ?? ZERO).plus(D(c.monto)));
   const costosDirectos = r2(suma(d.costos.map((c) => c.monto)));
@@ -71,11 +72,12 @@ export function liquidar(d: { montoCobrado: Num; pagoPiloto: Num; costos: CostoL
   const anticipos = r2(suma(d.anticipos));
   const cobrado = r2(d.montoCobrado);
   const pagoPiloto = r2(d.pagoPiloto);
+  const cargasPagoPiloto = r2(pagoPiloto.times(D(d.factorCargas ?? 0)).div(100));
   const km = D(d.kmRecorridos).isNegative() ? ZERO : D(d.kmRecorridos);
   const prorrateo = r2(km.times(D(d.costoKmFijo)));
-  const ganancia = r2(cobrado.minus(costosDirectos).minus(pagoPiloto).minus(prorrateo));
+  const ganancia = r2(cobrado.minus(costosDirectos).minus(pagoPiloto).minus(cargasPagoPiloto).minus(prorrateo));
   return {
-    cobrado, costosDirectos, pagadoPorPiloto, anticipos, pagoPiloto, prorrateo, ganancia,
+    cobrado, costosDirectos, pagadoPorPiloto, anticipos, pagoPiloto, cargasPagoPiloto, prorrateo, ganancia,
     porTipo: [...porTipo].map(([tipo, monto]) => ({ tipo, monto: r2(monto) })).sort((a, b) => b.monto.cmp(a.monto)),
     pagadoPorEmpresa: r2(costosDirectos.minus(pagadoPorPiloto)),
     saldoPiloto: r2(anticipos.minus(pagadoPorPiloto)),
@@ -118,6 +120,7 @@ export interface EntradaCotizacion {
   peajes: Num; // por sentido
   viatico: Num; // por sentido
   pagoPiloto: Num; // por viaje
+  factorCargasPiloto?: Num; // % de IGSS, IRTRA, INTECAP y prestaciones incluidas, sobre el pago al piloto
   costoKmIndirecto: Num; // taller, llantas, sueldos y fijos ÷ km
   extras: { concepto: string; monto: Num }[];
   margenObjetivo: Num; // % sobre el costo
@@ -165,6 +168,7 @@ export function cotizar(e: EntradaCotizacion) {
     { concepto: 'Peajes', monto: r2(D(e.peajes).times(sentidos)), detalle: `${sentidos} sentido(s)` },
     { concepto: 'Viáticos', monto: r2(D(e.viatico).times(sentidos)), detalle: `${sentidos} sentido(s)` },
     { concepto: 'Pago al piloto', monto: r2(e.pagoPiloto), detalle: 'bono por viaje' },
+    ...(D(e.factorCargasPiloto ?? 0).gt(0) && D(e.pagoPiloto).gt(0) ? [{ concepto: 'Cargas laborales del pago al piloto', monto: r2(D(e.pagoPiloto).times(D(e.factorCargasPiloto)).div(100)), detalle: `${D(e.factorCargasPiloto).toFixed(2)} % (IGSS, IRTRA, INTECAP, prestaciones incluidas)` }] : []),
     { concepto: 'Taller, llantas, sueldos y fijos', monto: indirectos, detalle: `${kmTotal.toFixed(0)} km × Q${D(e.costoKmIndirecto).toFixed(2)}/km${pctDesgaste.gt(0) ? ` +${pctDesgaste.toFixed(0)} % desgaste por terreno` : ''}` },
     ...(espera.gt(0) ? [{ concepto: 'Esperas y colas', monto: espera, detalle: `${D(e.horasEspera).toFixed(1)} h × Q${D(f.costoHoraEspera).toFixed(2)}` }] : []),
     ...e.extras.filter((x) => D(x.monto).gt(0)).map((x) => ({ concepto: x.concepto, monto: r2(x.monto), detalle: 'extra' })),

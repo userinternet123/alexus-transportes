@@ -8,7 +8,8 @@ import { usePermisos } from '../../hooks/usePermisos'
 import Campo from '../comun/Campo'
 import Modal from '../comun/Modal'
 import { Boton, BotonPrimario, Etiqueta } from './comun'
-import { ent, enviar, fechaHora, haceDias, hoy, nombrePiloto, num, PRIORIDAD, TIPO_CASO, useCatalogos, useConsulta } from './util'
+import { ent, enviar, fechaHora, haceDias, hoy, nombrePiloto, num, PRIORIDAD, TIPO_CASO, paraEnviar, useCatalogos, useConsulta } from './util'
+import { CapturaFotos } from './Evidencias'
 
 const RESULTADO = { APROBADA: { texto: 'Aprobada', color: 'verde' }, CON_OBSERVACIONES: { texto: 'Con observaciones', color: 'ambar' }, RECHAZADA: { texto: 'Fuera de servicio', color: 'rojo' } }
 const ESTADOS = [['OK', 'Bien', 'bg-green-600 text-white'], ['FALLA', 'Falla', 'bg-red-600 text-white'], ['NO_APLICA', 'N/A', 'bg-gray-500 text-white']]
@@ -18,6 +19,7 @@ function NuevaInspeccion({ onListo, onCerrar }) {
   const [f, setF] = useState({ cabezalId: '', remolqueId: '', pilotoId: '', viajeId: '', odometro: '', observaciones: '' })
   const [resp, setResp] = useState({}) // codigo → { estado, nota, prioridad }
   const [hallazgos, setHallazgos] = useState([])
+  const [fotos, setFotos] = useState([]) // generales de la unidad
   const [enviando, setEnviando] = useState(false)
   const [resultado, setResultado] = useState(null)
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }))
@@ -40,8 +42,9 @@ function NuevaInspeccion({ onListo, onCerrar }) {
     setEnviando(true)
     const r = await enviar('post', '/inspecciones', {
       cabezalId: f.cabezalId, remolqueId: f.remolqueId || null, pilotoId: f.pilotoId || null, viajeId: f.viajeId || null, odometro: f.odometro || null, observaciones: f.observaciones,
-      puntos: (puntos ?? []).map((p) => ({ codigo: p.codigo, estado: resp[p.codigo].estado, nota: resp[p.codigo].nota || null, prioridad: resp[p.codigo].estado === 'FALLA' ? resp[p.codigo].prioridad : null })),
+      puntos: (puntos ?? []).map((p) => ({ codigo: p.codigo, estado: resp[p.codigo].estado, nota: resp[p.codigo].nota || null, prioridad: resp[p.codigo].estado === 'FALLA' ? resp[p.codigo].prioridad : null, archivoId: resp[p.codigo].estado === 'FALLA' ? resp[p.codigo].fotos?.[0]?.archivoId ?? null : null })),
       hallazgos,
+      evidencias: paraEnviar([...fotos, ...Object.values(resp).flatMap((x) => (x.estado === 'FALLA' ? (x.fotos ?? []).slice(1) : []))]),
     })
     setEnviando(false)
     if (r) {setResultado(r.data)}
@@ -93,6 +96,7 @@ function NuevaInspeccion({ onListo, onCerrar }) {
                       <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_10rem]">
                         <input value={r.nota ?? ''} onChange={(e) => setResp((x) => ({ ...x, [p.codigo]: { ...x[p.codigo], nota: e.target.value } }))} maxLength={200} placeholder="Describa la falla (obligatorio)" aria-label={`Descripción de la falla en ${p.nombre}`} className="rounded-control border px-2 py-1.5" />
                         <select value={r.prioridad} onChange={(e) => setResp((x) => ({ ...x, [p.codigo]: { ...x[p.codigo], prioridad: e.target.value } }))} aria-label="Prioridad" className="rounded-control border px-2 py-1.5">{Object.entries(PRIORIDAD).map(([k, v]) => <option key={k} value={k}>{v.texto}</option>)}</select>
+                        <div className="sm:col-span-2"><CapturaFotos valor={r.fotos ?? []} onCambio={(l) => setResp((x) => ({ ...x, [p.codigo]: { ...x[p.codigo], fotos: l } }))} max={3} etiqueta="Foto de la falla" /></div>
                       </div>
                     )}
                   </li>
@@ -120,6 +124,7 @@ function NuevaInspeccion({ onListo, onCerrar }) {
           )
         })}
       </ul>
+      <div className="mt-4 text-sm"><p className="mb-1 font-semibold">Fotos de la unidad</p><p className="mb-2 text-xs text-gray-500">Frente, costados, llantas, carga: quedan como evidencia del estado en que salió.</p><CapturaFotos valor={fotos} onCambio={setFotos} /></div>
       <Campo etiqueta="Observaciones generales" id="obs" className="mt-4 text-sm"><textarea rows={2} value={f.observaciones} onChange={set('observaciones')} maxLength={500} className={ent} /></Campo>
     </Modal>
   )

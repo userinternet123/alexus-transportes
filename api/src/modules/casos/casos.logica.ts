@@ -3,6 +3,7 @@
  */
 import { z } from 'zod';
 import { zBool, zIdOpt } from '../../common/pipes/zod';
+import { evidenciasZ, zLatitud, zLongitud } from '../../common/evidencias';
 
 export const PRIORIDADES = ['URGENTE', 'ALTA', 'MODERADA', 'BAJA'] as const;
 export type Prioridad = (typeof PRIORIDADES)[number];
@@ -48,7 +49,13 @@ export const crearCasoZ = z.object({
   remolqueId: zIdOpt,
   viajeId: zIdOpt,
   responsableId: zIdOpt,
+  latitud: zLatitud,
+  longitud: zLongitud,
+  uuidCliente: z.string().uuid().nullish(), // reenvío desde el móvil sin duplicar
+  evidencias: evidenciasZ,
 });
+
+export const agregarEvidenciasZ = z.object({ evidencias: evidenciasZ.refine((l) => l.length > 0, 'Adjunte al menos una foto') });
 
 export const cambiarEstadoZ = z.object({
   estado: z.enum(['ABIERTO', 'EN_PROCESO', 'RESUELTO', 'ANULADO']),

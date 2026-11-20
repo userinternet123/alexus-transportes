@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import { zBool, zIdOpt, zIdReq, zNum } from '../../common/pipes/zod';
 import { PRIORIDADES, Prioridad, TIPOS, TipoCaso } from '../casos/casos.logica';
+import { evidenciasZ } from '../../common/evidencias';
 
 export interface Punto { codigo: string; nombre: string; grupo: string; critico: boolean; aplicaA: 'CABEZAL' | 'REMOLQUE' }
 
@@ -109,6 +110,7 @@ export const inspeccionZ = z.object({
     prioridad: z.enum(PRIORIDADES, { errorMap: () => ({ message: 'Elija la prioridad del hallazgo' }) }),
     impideSalir: zBool.transform((v) => v ?? false),
   })).max(20).default([]),
+  evidencias: evidenciasZ, // fotos generales de la unidad
 }).superRefine((d, ctx) => {
   const vistos = new Set<string>();
   for (const p of d.puntos) {

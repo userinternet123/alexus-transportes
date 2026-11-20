@@ -11,6 +11,7 @@ export class CasosController {
   @Get('responsables') @Permisos('casos.gestionar') responsables(@Contexto() ctx: Ctx) { return this.casos.responsables(ctx); }
   @Get(':id') @Permisos('casos.crear') detalle(@Contexto() ctx: Ctx, @Param('id', ParseIntPipe) id: number) { return this.casos.detalle(ctx, id); }
   @Post() @Permisos('casos.crear') crear(@Contexto() ctx: Ctx, @Body() b: unknown) { return this.casos.crear(ctx, b); }
+  @Post(':id/evidencias') @Permisos('casos.crear') evidencias(@Contexto() ctx: Ctx, @Param('id', ParseIntPipe) id: number, @Body() b: unknown) { return this.casos.agregarEvidencias(ctx, id, b); }
   @Put(':id') @Permisos('casos.gestionar') editar(@Contexto() ctx: Ctx, @Param('id', ParseIntPipe) id: number, @Body() b: unknown) { return this.casos.editar(ctx, id, b); }
   @Put(':id/estado') @Permisos('casos.gestionar') estado(@Contexto() ctx: Ctx, @Param('id', ParseIntPipe) id: number, @Body() b: unknown) { return this.casos.cambiarEstado(ctx, id, b); }
 }

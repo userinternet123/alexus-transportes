@@ -108,6 +108,8 @@ function Calculadora() {
             <ul className="space-y-0.5 text-xs text-gray-600">
               <li>Rendimiento: {num(res.supuestos.rendimiento, 2)} km/gal · {res.supuestos.fuenteRendimiento}</li>
               <li>Diésel: Q{num(res.supuestos.precioGalon, 2)}/gal · {res.supuestos.fuentePrecio}</li>
+              {res.supuestos.fuenteSueldos && <li>Sueldos: {{ PLANILLA: 'planillas aprobadas', ESTIMADO: 'estimados con los empleados activos', NINGUNA: 'no incluidos' }[res.supuestos.fuenteSueldos]}</li>}
+              {res.supuestos.cargas?.length > 0 && <li>Cargas laborales: {res.supuestos.cargas.filter((x) => x.incluida).map((x) => `${x.nombre.split(' (')[0]} ${num(x.tasa, 2)} %${x.pagaHoy ? '' : ' (no se paga hoy)'}`).join(', ') || 'ninguna incluida'}</li>}
               {res.supuestos.fuenteCostoKm && <li>Costo indirecto: {res.supuestos.fuenteCostoKm === 'HISTORIAL' ? `historial ${res.periodoCostoKm?.desde ?? ''} a ${res.periodoCostoKm?.hasta ?? ''}` : 'parámetro'}</li>}
               <li>Terreno {TERRENO[res.terreno].toLowerCase()} · tráfico {TRAFICO[res.trafico].toLowerCase()}{res.subidaMetros ? ` · ${num(res.subidaMetros)} m de subida` : ''}</li>
             </ul>

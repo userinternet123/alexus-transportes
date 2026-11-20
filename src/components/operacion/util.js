@@ -76,3 +76,28 @@ export const PRIORIDAD = {
 }
 
 export const TIPO_CASO = { MECANICO: 'Mecánico', LLANTAS: 'Llantas', DOCUMENTOS: 'Documentos', SEGURIDAD: 'Seguridad', CARGA: 'Carga', OTRO: 'Otro' }
+
+/** Enlace a Google Maps para una ubicación reportada. */
+export const enlaceMapa = (lat, lng) => (hay(lat) && hay(lng) ? `https://www.google.com/maps?q=${Number(lat)},${Number(lng)}` : null)
+
+/** Ubicación del equipo (celular o computadora) si la persona lo permite; null si no hay o no quiso. */
+export const pedirUbicacion = () => new Promise((resolve) => {
+  if (!navigator.geolocation) { resolve(null); return }
+  navigator.geolocation.getCurrentPosition(
+    (p) => resolve({ latitud: Number(p.coords.latitude.toFixed(6)), longitud: Number(p.coords.longitude.toFixed(6)), precisionM: Math.round(p.coords.accuracy) }),
+    () => resolve(null),
+    { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+  )
+})
+
+/** "hace 5 min", "hace 2 h", "hace 3 días" */
+export const hace = (fecha) => {
+  const min = Math.max(0, Math.round((Date.now() - new Date(fecha).getTime()) / 60_000))
+  if (min < 1) { return 'ahora' }
+  if (min < 60) { return `hace ${min} min` }
+  if (min < 48 * 60) { return `hace ${Math.round(min / 60)} h` }
+  return `hace ${Math.round(min / 1440)} días`
+}
+
+/** Evidencias tal como las pide el API (sin la vista previa local). */
+export const paraEnviar = (fotos) => fotos.map((f) => ({ archivoId: f.archivoId, descripcion: f.descripcion || null, latitud: f.latitud ?? null, longitud: f.longitud ?? null, tomadaEn: f.tomadaEn ?? null }))

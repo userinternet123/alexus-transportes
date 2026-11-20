@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Banknote, CheckCircle2, Flag, Play, Plus, Receipt, Route as RutaIcono, Search, Trash2, XCircle } from 'lucide-react'
+import { AlertTriangle, Banknote, CheckCircle2, Flag, MapPin, Megaphone, Phone, Play, Plus, Radio, Receipt, Route as RutaIcono, Search, Trash2, XCircle } from 'lucide-react'
 import { usePermisos } from '../../hooks/usePermisos'
 import { Q } from '../comun/formato'
 import Campo from '../comun/Campo'
@@ -12,7 +12,10 @@ import Hoja from '../comun/Hoja'
 import Modal from '../comun/Modal'
 import { confirmar } from '../comun/Confirmacion'
 import { Boton, BotonPrimario, Etiqueta, Pestanas } from './comun'
-import { ahoraLocal, deLocal, ent, enviar, ESTADO_VIAJE, fechaHora, hay, nombrePiloto, nombreTercero, num, useCatalogos, useConsulta } from './util'
+import { ahoraLocal, deLocal, enlaceMapa, ent, enviar, ESTADO_VIAJE, fechaHora, hace, hay, nombrePiloto, nombreTercero, num, paraEnviar, pedirUbicacion, PRIORIDAD, TIPO_CASO, useCatalogos, useConsulta } from './util'
+import { CapturaFotos, Galeria } from './Evidencias'
+
+const EVENTOS = { SALIDA: 'Salida', LLEGADA_CARGA: 'Llegó a cargar', CARGANDO: 'Cargando', EN_RUTA: 'En ruta', EN_COLA: 'En cola', ADUANA: 'En aduana', PARADA: 'Parada', LLEGADA_DESTINO: 'Llegó al destino', DESCARGANDO: 'Descargando', ENTREGADO: 'Entregado', INCIDENTE: 'Incidente', NOTA: 'Nota' }
 
 const TIPOS_COSTO = { PEAJE: 'Peaje', VIATICO: 'Viático', HORAS_EXTRA: 'Horas extra', PARQUEO: 'Parqueo', CARGA_DESCARGA: 'Carga y descarga', MULTA: 'Multa', REPARACION_EN_RUTA: 'Reparación en ruta', OTRO: 'Otro', COMBUSTIBLE: 'Combustible', GASTO_EMPRESA: 'Gasto de la empresa' }
 const PESTANAS = [['ABIERTOS', 'Abiertos'], ['PROGRAMADO', 'Programados'], ['EN_RUTA', 'En ruta'], ['FINALIZADO', 'Por liquidar'], ['LIQUIDADO', 'Liquidados'], ['CANCELADO', 'Cancelados'], ['', 'Todos']]
@@ -157,6 +160,7 @@ function Liquidacion({ l }) {
       <Fila etiqueta="Cobrado al cliente" valor={Q(l.cobrado)} />
       {l.porTipo.map((t) => <Fila key={t.tipo} etiqueta={`− ${TIPOS_COSTO[t.tipo] ?? t.tipo}`} valor={Q(t.monto)} />)}
       <Fila etiqueta="− Pago al piloto (bono)" valor={Q(l.pagoPiloto)} />
+      {Number(l.cargasPagoPiloto) > 0 && <Fila etiqueta="− IGSS, IRTRA, INTECAP y prestaciones del bono" valor={Q(l.cargasPagoPiloto)} />}
       {hay(l.prorrateo) && <Fila etiqueta={`− Indirectos (${num(l.kmRecorridos)} km × ${Q(l.costoKmFijo)})`} valor={Q(l.prorrateo)} />}
       {hay(l.ganancia) && <div className="mt-1 border-t pt-1"><Fila etiqueta={`Ganancia${hay(l.margen) ? ` (${num(l.margen, 1)} %)` : ''}`} valor={Q(l.ganancia)} fuerte tono={Number(l.ganancia) < 0 ? 'malo' : 'bueno'} /></div>}
       <div className="mt-3 rounded-control bg-gray-50 p-3">
@@ -165,6 +169,116 @@ function Liquidacion({ l }) {
         <Fila etiqueta={saldo >= 0 ? 'El piloto devuelve' : 'Se le paga al piloto'} valor={Q(Math.abs(saldo))} fuerte />
       </div>
       {!l.definitiva && l.avisos?.map((a) => <p key={a} className="mt-2 text-xs text-amber-800">{a}</p>)}
+    </section>
+  )
+}
+
+// ───────────────────────────── Reporte en vivo ─────────────────────────────
+
+function Reportar({ viaje, onListo, onCerrar }) {
+  const [f, setF] = useState({ tipo: viaje.estado === 'PROGRAMADO' ? 'LLEGADA_CARGA' : 'EN_RUTA', texto: '' })
+  const [fotos, setFotos] = useState([])
+  const [abrirCaso, setAbrirCaso] = useState(true)
+  const [caso, setCaso] = useState({ tipo: 'MECANICO', prioridad: 'ALTA', titulo: '', impideSalir: false })
+  const [enviando, setEnviando] = useState(false)
+  const incidente = f.tipo === 'INCIDENTE'
+  const ir = async () => {
+    setEnviando(true)
+    const u = await pedirUbicacion()
+    const r = await enviar('post', `/viajes/${viaje.id}/eventos`, {
+      ...f, ...(u ?? {}), uuidCliente: crypto.randomUUID(),
+      evidencias: paraEnviar(fotos),
+      caso: incidente && abrirCaso ? { ...caso, titulo: caso.titulo || f.texto } : null,
+    })
+    setEnviando(false)
+    if (r) { onListo() }
+  }
+  const casoIncompleto = incidente && abrirCaso && (caso.titulo || f.texto).trim().length < 5
+  return (
+    <Modal abierto titulo={`Reportar · ${viaje.numero}`} onCerrar={onCerrar} ancho="max-w-lg"
+      pie={<><Boton onClick={onCerrar}>Cancelar</Boton><BotonPrimario disabled={enviando || casoIncompleto || (incidente && !f.texto.trim() && !abrirCaso)} onClick={ir}><Megaphone className="h-4 w-4" aria-hidden /> {enviando ? 'Enviando…' : 'Reportar'}</BotonPrimario></>}>
+      <div className="space-y-3 text-sm">
+        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Qué está pasando">
+          {Object.entries(EVENTOS).map(([k, t]) => <button key={k} type="button" role="radio" aria-checked={f.tipo === k} onClick={() => setF((x) => ({ ...x, tipo: k }))} className={`rounded-full border px-3 py-1.5 ${f.tipo === k ? (k === 'INCIDENTE' ? 'border-red-600 bg-red-600 text-white' : 'border-green-600 bg-green-600 text-white') : 'hover:bg-gray-50'}`}>{t}</button>)}
+        </div>
+        <Campo etiqueta={incidente ? 'Qué pasó' : 'Comentario'} id="texto"><textarea rows={2} value={f.texto} onChange={(e) => setF((x) => ({ ...x, texto: e.target.value }))} maxLength={500} placeholder={incidente ? 'Ej. llanta trasera derecha baja, detenido en km 45' : 'Opcional'} className={ent} /></Campo>
+        {incidente && (
+          <fieldset className="space-y-2 rounded-control border border-red-200 bg-red-50 p-3">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={abrirCaso} onChange={(e) => setAbrirCaso(e.target.checked)} className="accent-red-600" /> Abrir un caso para darle seguimiento</label>
+            {abrirCaso && <div className="grid gap-2 sm:grid-cols-2">
+              <input value={caso.titulo} onChange={(e) => setCaso((c) => ({ ...c, titulo: e.target.value }))} maxLength={150} placeholder="Título del caso (vacío = el comentario)" aria-label="Título del caso" className="rounded-control border px-3 py-2 sm:col-span-2" />
+              <select value={caso.tipo} onChange={(e) => setCaso((c) => ({ ...c, tipo: e.target.value }))} aria-label="Tipo de caso" className="rounded-control border px-3 py-2">{Object.entries(TIPO_CASO).map(([k, t]) => <option key={k} value={k}>{t}</option>)}</select>
+              <select value={caso.prioridad} onChange={(e) => setCaso((c) => ({ ...c, prioridad: e.target.value }))} aria-label="Prioridad" className="rounded-control border px-3 py-2">{Object.entries(PRIORIDAD).map(([k, v]) => <option key={k} value={k}>{v.texto}</option>)}</select>
+              <label className="flex items-center gap-2 sm:col-span-2"><input type="checkbox" checked={caso.impideSalir} onChange={(e) => setCaso((c) => ({ ...c, impideSalir: e.target.checked }))} className="accent-red-600" /> La unidad no puede seguir hasta resolverlo</label>
+            </div>}
+          </fieldset>
+        )}
+        <div><p className="mb-1 font-medium">Fotos de evidencia</p><CapturaFotos valor={fotos} onCambio={setFotos} /></div>
+        <p className="text-xs text-gray-500">Se envía con la hora y, si el equipo lo permite, la ubicación.</p>
+      </div>
+    </Modal>
+  )
+}
+
+function Bitacora({ viaje, puedeReportar, onCambio }) {
+  const vivo = viaje.estado === 'EN_RUTA'
+  const { datos: eventos, recargar } = useConsulta(`/viajes/${viaje.id}/eventos`, { v: viaje.estado })
+  const [reportando, setReportando] = useState(false)
+  // En ruta se actualiza sola cada 30 segundos
+  useEffect(() => { if (!vivo) { return undefined } const t = setInterval(recargar, 30_000); return () => clearInterval(t) }, [vivo, recargar])
+  const abierto = ['PROGRAMADO', 'EN_RUTA', 'FINALIZADO'].includes(viaje.estado)
+  return (
+    <section className="rounded-tarjeta bg-white p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="flex items-center gap-1.5 font-semibold">{vivo && <Radio className="h-4 w-4 text-red-600" aria-label="En vivo" />}Bitácora del viaje</h3>
+        {abierto && puedeReportar && <Boton onClick={() => setReportando(true)}><Megaphone className="h-4 w-4" aria-hidden /> Reportar</Boton>}
+      </div>
+      <ol className="space-y-3">
+        {eventos?.map((e) => (
+          <li key={e.id} className={`border-l-2 pl-3 ${e.tipo === 'INCIDENTE' ? 'border-red-500' : 'border-green-500'}`}>
+            <div className="flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
+              <span className={`text-sm font-medium ${e.tipo === 'INCIDENTE' ? 'text-red-700' : 'text-gray-900'}`}>{e.etiqueta}</span>
+              <span>{fechaHora(e.ocurridoEn)}</span>
+              {e.sinSenalMin >= 5 && <span title="Se envió cuando hubo señal">· llegó {e.sinSenalMin} min después</span>}
+              {enlaceMapa(e.latitud, e.longitud) && <a href={enlaceMapa(e.latitud, e.longitud)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 text-green-700 underline"><MapPin className="h-3 w-3" aria-hidden />mapa</a>}
+              <span>· {e.reporto}</span>
+            </div>
+            {e.texto && <p className="text-sm">{e.texto}</p>}
+            {e.caso && <p className="mt-0.5 text-xs">Caso <b>{e.caso.numero}</b> · <Etiqueta color={PRIORIDAD[e.caso.prioridad]?.color}>{PRIORIDAD[e.caso.prioridad]?.texto}</Etiqueta> {e.caso.estado.toLowerCase().replace('_', ' ')}</p>}
+            {e.evidencias.length > 0 && <div className="mt-1.5"><Galeria evidencias={e.evidencias} /></div>}
+          </li>
+        ))}
+        {eventos && !eventos.length && <li className="text-sm text-gray-500">Sin reportes todavía.{abierto ? ' El piloto reporta desde el celular: salida, colas, entrega, incidentes, con fotos.' : ''}</li>}
+      </ol>
+      {reportando && <Reportar viaje={viaje} onCerrar={() => setReportando(false)} onListo={() => { setReportando(false); recargar(); onCambio() }} />}
+    </section>
+  )
+}
+
+/** Viajes en ruta con su último reporte: qué pasa y desde cuándo no se sabe de cada uno. */
+function EnRutaAhora({ onAbrir }) {
+  const { datos, recargar } = useConsulta('/viajes/en-vivo')
+  useEffect(() => { const t = setInterval(recargar, 60_000); return () => clearInterval(t) }, [recargar])
+  if (!datos?.length) { return null }
+  return (
+    <section aria-label="En ruta ahora">
+      <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><Radio className="h-4 w-4 text-red-600" aria-hidden /> En ruta ahora ({datos.length})</h2>
+      <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {datos.map((v) => {
+          const alerta = v.casosAbiertos.length > 0 || v.ultimo?.tipo === 'INCIDENTE'
+          const silencio = v.minutosSinReporte > 120
+          return (
+            <li key={v.id}>
+              <button type="button" onClick={() => onAbrir(v.id)} className={`w-full rounded-tarjeta border bg-white p-3 text-left text-sm hover:shadow-sm ${alerta ? 'border-red-300' : silencio ? 'border-amber-300' : ''}`}>
+                <div className="flex items-center justify-between gap-2"><span className="font-medium">{v.numero} · {v.cabezal}</span>{alerta ? <Etiqueta color="rojo"><AlertTriangle className="mr-1 h-3 w-3" aria-hidden />{v.casosAbiertos.length ? `${v.casosAbiertos.length} caso(s)` : 'Incidente'}</Etiqueta> : v.atrasado ? <Etiqueta color="ambar">Atrasado</Etiqueta> : null}</div>
+                <p className="truncate text-xs text-gray-500">{v.piloto} → {v.destino}</p>
+                <p className={`mt-1 text-xs ${silencio ? 'font-medium text-amber-800' : 'text-gray-600'}`}>{v.ultimo ? `${v.ultimo.etiqueta} · ${hace(v.ultimo.ocurridoEn)}` : `Sin reportes · salió ${hace(v.salio)}`}</p>
+                {v.telefono && silencio && <a href={`tel:${v.telefono}`} onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 text-xs text-green-700 underline"><Phone className="h-3 w-3" aria-hidden />Llamar al piloto</a>}
+              </button>
+            </li>
+          )
+        })}
+      </ul>
     </section>
   )
 }
@@ -225,7 +339,10 @@ function Detalle({ id, onCerrar, onCambio }) {
               {!v.costos.length && <li className="py-1.5 text-gray-500">Sin costos registrados.</li>}</ul>
           </section>
 
-          <Liquidacion l={v.liquidacion} />
+          <Bitacora viaje={v} puedeReportar={puede('viajes.reportar')} onCambio={() => { recargar(); onCambio() }} />
+
+          {/* La liquidación solo tiene sentido con los km de llegada */}
+          {['FINALIZADO', 'LIQUIDADO'].includes(estado) && <Liquidacion l={v.liquidacion} />}
         </div>
       )}
       {modal === 'iniciar' && <Iniciar viaje={v} puedeAutorizar={puede('viajes.liquidar')} onListo={listo} onCerrar={() => setModal(null)} />}
@@ -261,6 +378,7 @@ export default function Viajes() {
         <label className="relative ml-auto"><span className="sr-only">Buscar</span><Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" aria-hidden /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Número, referencia o destino" className="w-60 rounded-control border py-2 pl-8 pr-3 text-sm" /></label>
         {puede('viajes.crear') && <BotonPrimario onClick={() => setProgramando(true)}><Plus className="h-4 w-4" aria-hidden /> Programar viaje</BotonPrimario>}
       </div>
+      <EnRutaAhora onAbrir={abrir} />
       <ul className="divide-y rounded-superficie border bg-white">
         {datos?.viajes.map((v) => (
           <li key={v.id}>

@@ -2,17 +2,21 @@ import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query } 
 import { Contexto, Permisos } from '../../common/auth/decoradores';
 import { Ctx } from '../../common/auth/tipos';
 import { CotizadorService } from './cotizador.service';
+import { EventosViajeService } from './eventos.service';
 import { ViajesService } from './viajes.service';
 
 /** VIAJES: programar, iniciar, finalizar, liquidar; costos, anticipos y cotizador (sede de trabajo). */
 @Controller('viajes')
 export class ViajesController {
-  constructor(private readonly viajes: ViajesService, private readonly cotizador: CotizadorService) {}
+  constructor(private readonly viajes: ViajesService, private readonly cotizador: CotizadorService, private readonly eventos: EventosViajeService) {}
 
   @Get() @Permisos('viajes.ver') listar(@Contexto() ctx: Ctx, @Query() q: unknown) { return this.viajes.listar(ctx, q); }
   @Post('cotizar') @Permisos('viajes.cotizar') cotizar(@Body() b: unknown) { return this.cotizador.cotizar(b); }
   @Get('costo-km') @Permisos('finanzas.costos') costoKm() { return this.viajes.costoPorKm(); }
   @Get('rentabilidad') @Permisos('finanzas.costos') rentabilidad(@Contexto() ctx: Ctx, @Query() q: unknown) { return this.viajes.rentabilidad(ctx, q); }
+  @Get('en-vivo') @Permisos('viajes.ver') enVivo(@Contexto() ctx: Ctx) { return this.eventos.enVivo(ctx); }
+  @Get(':id/eventos') @Permisos('viajes.ver') eventosViaje(@Contexto() ctx: Ctx, @Param('id', ParseIntPipe) id: number) { return this.eventos.listar(ctx, id); }
+  @Post(':id/eventos') @Permisos('viajes.reportar') reportar(@Contexto() ctx: Ctx, @Param('id', ParseIntPipe) id: number, @Body() b: unknown) { return this.eventos.reportar(ctx, id, b); }
   @Get(':id') @Permisos('viajes.ver') detalle(@Contexto() ctx: Ctx, @Param('id', ParseIntPipe) id: number) { return this.viajes.detalle(ctx, id); }
 
   @Post() @Permisos('viajes.crear') programar(@Contexto() ctx: Ctx, @Body() b: unknown) { return this.viajes.programar(ctx, b); }

@@ -39,6 +39,11 @@ describe('liquidación', () => {
     expect(l.margen?.toString()).toBe('49.2');
     expect(l.porTipo[0].tipo).toBe('COMBUSTIBLE');
   });
+  it('suma las cargas laborales incluidas sobre el pago al piloto', () => {
+    const l = liquidar({ ...base, factorCargas: 12.67, anticipos: [], costos: [] });
+    expect(l.cargasPagoPiloto.toString()).toBe('38.01'); // 300 × 12.67 %
+    expect(l.ganancia.toString()).toBe('5171.99'); // 6500 − 300 − 38.01 − 990
+  });
   it('saldo negativo cuando el piloto gastó más del anticipo', () => {
     const l = liquidar({ ...base, anticipos: [200], costos: [{ tipo: 'PEAJE', monto: 350, pagadoPorPiloto: true }] });
     expect(l.saldoPiloto.toString()).toBe('-150');
@@ -66,6 +71,12 @@ describe('cotizador', () => {
     expect(c.precioSugerido.toString()).toBe('3250');
     expect(c.margenTarifaActual?.toString()).toBe('13.3');
     expect(c.horasEstimadas.toString()).toBe('4'); // 220 km / 50 × 0.9
+  });
+  it('agrega las cargas laborales del pago al piloto si están incluidas', () => {
+    const c = cotizar({ ...base, factorCargasPiloto: 12.67 });
+    expect(c.partidas.find((p) => p.concepto === 'Cargas laborales del pago al piloto')?.monto.toString()).toBe('38.01');
+    expect(c.costoTotal.toString()).toBe('2638.01');
+    expect(cotizar({ ...base, factorCargasPiloto: 0 }).partidas.some((p) => p.concepto.startsWith('Cargas'))).toBe(false);
   });
   it('solo ida no cobra el regreso', () => {
     const c = cotizar({ ...base, regreso: 'NINGUNO' });

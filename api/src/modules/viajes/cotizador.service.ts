@@ -16,6 +16,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { validar } from '../../common/pipes/zod';
 import { z } from 'zod';
 import { CostoKmService } from './costo-km.service';
+import { factorIncluido } from '../../common/costos/cargas-laborales';
 import { ViajesService } from './viajes.service';
 import { convertirZ, cotizar, cotizarZ, elegirTarifa, Factores, guardarCotizacionZ, montoPorTarifa, siguienteNumero } from './viajes.logica';
 
@@ -103,7 +104,7 @@ export class CotizadorService {
     const factores = await this.factores();
     const c = cotizar({
       kmIda, regreso: d.regreso, terreno, trafico, subidaMetros, horasEspera, horasIda: ruta?.horasEstimadas ?? null,
-      rendimiento, rendimientoDeRuta, precioGalon, pagoPiloto, costoKmIndirecto: ck.costoKm, margenObjetivo: margen, tarifaActual,
+      rendimiento, rendimientoDeRuta, precioGalon, pagoPiloto, factorCargasPiloto: factorIncluido(ck.cargas), costoKmIndirecto: ck.costoKm, margenObjetivo: margen, tarifaActual,
       peajes: d.peajes ?? ruta?.peajesEstimados ?? 0, viatico: d.viatico ?? ruta?.viaticoEstimado ?? 0, extras: d.extras, factores,
     });
     if (c.margenTarifaActual && c.margenTarifaActual.lt(0)) avisos.push(`La tarifa actual del cliente (Q${c.tarifaActual!.toFixed(2)}) no cubre el costo estimado`);
@@ -111,7 +112,8 @@ export class CotizadorService {
     return {
       ...c, ruta: ruta?.nombre ?? null, rutaId: ruta?.id ?? null, origen, destino, kmIda, regreso: d.regreso, terreno, trafico, subidaMetros, horasEspera, extras: d.extras,
       margenObjetivo: margen, avisos,
-      supuestos: { rendimiento, fuenteRendimiento: fuenteRend, precioGalon, fuentePrecio, pagoPiloto, costoKmIndirecto: ck.costoKm, fuenteCostoKm: ck.fuente },
+      supuestos: { rendimiento, fuenteRendimiento: fuenteRend, precioGalon, fuentePrecio, pagoPiloto, costoKmIndirecto: ck.costoKm, fuenteCostoKm: ck.fuente, fuenteSueldos: ck.fuenteSueldos,
+        cargas: ck.cargas.map((x) => ({ nombre: x.nombre, tasa: x.tasa, pagaHoy: x.paga, incluida: x.incluida })) },
       periodoCostoKm: { desde: ck.desde, hasta: ck.hasta, km: ck.km, partidas: ck.partidas },
     };
   }

@@ -20,7 +20,8 @@ NestJS 11 · Prisma 6 · PostgreSQL 16 · Zod · Argon2 · Pino.  Prefijo: `/api
 | Cotizaciones | `GET/POST /cotizaciones` · `GET /cotizaciones/:id` · `PUT /cotizaciones/:id/estado` · `POST /cotizaciones/:id/convertir` |
 | Combustible | `GET /combustible` · `GET /combustible/mias` · `GET /combustible/rendimiento` · `POST /combustible` · `PUT /combustible/:id/anular` |
 | Inspección pre viaje | `GET /inspecciones/puntos` · `GET/POST /inspecciones` · `GET /inspecciones/:id` |
-| Casos | `GET/POST /casos` · `GET/PUT /casos/:id` · `PUT /casos/:id/estado` · `GET /casos/responsables` |
+| Casos | `GET/POST /casos` · `GET/PUT /casos/:id` · `PUT /casos/:id/estado` · `POST /casos/:id/evidencias` · `GET /casos/responsables` |
+| Reporte en vivo | `GET/POST /viajes/:id/eventos` · `GET /viajes/en-vivo` (fotos: subir con `POST /archivos` y ligar con `evidencias: [{ archivoId, latitud, longitud, tomadaEn }]`) |
 | Taller | Fase 2 (modelos ya en `schema.prisma`: `OrdenTrabajo`, `MontajeLlanta`) |
 | Reportes | `GET /reportes` · `GET /reportes/:clave` · `GET /reportes/:clave/excel` |
 | RRHH | `/rrhh/asistencias` · `/rrhh/ausencias` (+ `aprobar`/`rechazar`) · `POST /rrhh/planillas/generar` · `PUT /rrhh/planillas/:id/empleados/:empleadoId` · `POST /rrhh/planillas/:id/aprobar` |
@@ -42,5 +43,7 @@ Una entrada en `modules/reportes/reportes.registro.ts` (parámetros, columnas, S
 - **Combustible**: rendimiento de tanque lleno a tanque lleno; alerta si cae más del 15 % del esperado. Una carga de un viaje entra como su costo.
 - **Cotizador**: ida y vuelta (vacío, con carga o solo ida), terreno, subida, tráfico, esperas y extras; factores en los parámetros `cotizador.*`. El rendimiento usa el histórico de la ruta si hay 3 viajes o más.
 - **Casos**: prioridad `URGENTE · ALTA · MODERADA · BAJA` con plazo en horas (`casos.horas_*`). Los mecánicos y de llantas abren orden de taller; un punto de la inspección que vuelve a salir bien resuelve su caso.
+- **Reporte en vivo y evidencias** (`common/evidencias.ts`): solo se ligan fotos que subió el mismo usuario; la hora del celular se respeta (hasta 7 días atrás, nunca futura) y `uuidCliente` hace idempotente el reenvío sin señal.
+- **Cargas laborales** (`common/costos/cargas-laborales.ts`): `rrhh.paga_*` decide si la planilla las calcula; `costos.incluir_*` si entran al costo por km, al cotizador y a la ganancia (también sobre el pago por viaje). Se avisa cuando lo pagado y lo costeado no coinciden.
 - **Visibilidad**: sin `finanzas.costos` el API quita ganancia, margen, prorrateo y costo por km de todas las respuestas. Un piloto sin permiso de programar solo ve sus viajes.
 - **Pruebas**: `npm test` (lógica pura) y `npm run humo -- --password …` (flujo completo contra el API en marcha, con `npm run db:demo`).

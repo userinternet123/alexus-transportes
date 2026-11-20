@@ -11,10 +11,11 @@ import { noEncontrado, prohibido, reglaNegocio } from '../../common/errors';
 import { ParametrosService } from '../../common/parametros/parametros.service';
 import { PrismaService, Tx } from '../../common/prisma/prisma.service';
 import { validar } from '../../common/pipes/zod';
+import { evidenciaSalida, ligarEvidencias } from '../../common/evidencias';
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
 import { siguienteNumero } from '../viajes/viajes.logica';
 import {
-  cambiarEstadoZ, crearCasoZ, editarCasoZ, ETIQUETA_PRIORIDAD, EstadoCaso, filtroCasosZ, masUrgente, PARAMETRO_PLAZO, Prioridad,
+  agregarEvidenciasZ, cambiarEstadoZ, crearCasoZ, editarCasoZ, ETIQUETA_PRIORIDAD, EstadoCaso, filtroCasosZ, masUrgente, PARAMETRO_PLAZO, Prioridad,
   puedePasar, semaforo, TipoCaso, TIPOS_TALLER, venceEn,
 } from './casos.logica';
 
@@ -72,6 +73,10 @@ export class CasosService {
     const sucursalId = this.sucursal(ctx);
     if (!d.cabezalId && !d.remolqueId && !d.viajeId && TIPOS_TALLER.includes(d.tipo)) throw reglaNegocio('SIN_UNIDAD', 'Indique el cabezal o el remolque');
     if (d.responsableId && !tienePermiso(ctx.usuario, 'casos.gestionar')) throw prohibido('Solo quien gestiona casos puede asignar un responsable');
+    if (d.uuidCliente) {
+      const ya = await this.prisma.caso.findUnique({ where: { uuidCliente: d.uuidCliente }, select: { id: true, numero: true, ordenTrabajo: { select: { numero: true } } } });
+      if (ya) return { data: { id: ya.id, numero: ya.numero, ordenTrabajo: ya.ordenTrabajo?.numero ?? null }, message: `Caso ${ya.numero} ya recibido` };
+    }
     const plazos = await this.todosLosPlazos();
     const r = await this.prisma.enTransaccion(async (tx) => {
       let cabezalId = d.cabezalId ?? null;
@@ -88,7 +93,9 @@ export class CasosService {
         ? await this.abrirOrden(tx, ctx, { sucursalId, cabezalId, remolqueId, descripcion: `${d.titulo}${d.descripcion ? `: ${d.descripcion}` : ''}`, prioridad: d.prioridad })
         : null;
       const [caso] = await this.crearEn(tx, ctx, [{ sucursalId, origen: d.viajeId ? 'VIAJE' : 'MANUAL', tipo: d.tipo, prioridad: d.prioridad, titulo: d.titulo, descripcion: d.descripcion, impideSalir: d.impideSalir, cabezalId, remolqueId, viajeId: d.viajeId ?? null, ordenTrabajoId: orden?.id ?? null, responsableId: d.responsableId ?? null }], plazos);
-      await this.audit.registrar(ctx, { accion: 'CREAR', entidad: 'Caso', entidadId: caso.id, despues: { ...d, numero: caso.numero, orden: orden?.numero ?? null } }, tx);
+      await tx.caso.update({ where: { id: caso.id }, data: { latitud: d.latitud ?? null, longitud: d.longitud ?? null, uuidCliente: d.uuidCliente ?? null } });
+      await ligarEvidencias(tx, ctx, d.evidencias, { casoId: caso.id });
+      await this.audit.registrar(ctx, { accion: 'CREAR', entidad: 'Caso', entidadId: caso.id, despues: { ...d, evidencias: d.evidencias.length, numero: caso.numero, orden: orden?.numero ?? null } }, tx);
       return { caso, orden };
     });
     if (d.prioridad === 'URGENTE') await this.notificaciones.evento({ sucursalId, permiso: 'casos.gestionar', tipo: 'caso-urgente', nivel: 'critico', titulo: `Caso urgente ${r.caso.numero}`, detalle: d.titulo, ruta: '/home/casos' });
@@ -119,10 +126,10 @@ export class CasosService {
   }
 
   async detalle(ctx: Ctx, id: number) {
-    const c = await this.prisma.caso.findFirst({ where: { id, sucursalId: this.sucursal(ctx) }, include: { notas: { orderBy: { creadoEn: 'asc' }, include: { usuario: { select: { nombre: true } } } }, cabezal: { select: { codigo: true, placa: true } }, remolque: { select: { codigo: true } }, viaje: { select: { numero: true } }, inspeccion: { select: { id: true, fecha: true, resultado: true } }, ordenTrabajo: { select: { numero: true, estado: true } }, responsable: { select: { id: true, nombre: true } }, creadoPor: { select: { nombre: true } } } });
+    const c = await this.prisma.caso.findFirst({ where: { id, sucursalId: this.sucursal(ctx) }, include: { evidencias: { orderBy: { creadoEn: 'asc' }, include: { archivo: { select: { mime: true, nombre: true } } } }, notas: { orderBy: { creadoEn: 'asc' }, include: { usuario: { select: { nombre: true } } } }, cabezal: { select: { codigo: true, placa: true } }, remolque: { select: { codigo: true } }, viaje: { select: { numero: true } }, inspeccion: { select: { id: true, fecha: true, resultado: true } }, ordenTrabajo: { select: { numero: true, estado: true } }, responsable: { select: { id: true, nombre: true } }, creadoPor: { select: { nombre: true } } } });
     if (!c) throw noEncontrado('Caso', id);
     if (!tienePermiso(ctx.usuario, 'casos.ver') && c.creadoPorId !== ctx.usuario.sub) throw prohibido();
-    return { data: { ...c, semaforo: semaforo(c), notas: c.notas.map((n) => ({ id: n.id, cambio: n.cambio, texto: n.texto, usuario: n.usuario.nombre, fecha: n.creadoEn })) } };
+    return { data: { ...c, semaforo: semaforo(c), evidencias: c.evidencias.map(evidenciaSalida), notas: c.notas.map((n) => ({ id: n.id, cambio: n.cambio, texto: n.texto, usuario: n.usuario.nombre, fecha: n.creadoEn })) } };
   }
 
   async cambiarEstado(ctx: Ctx, id: number, body: unknown) {
@@ -166,6 +173,21 @@ export class CasosService {
       return c.numero;
     });
     return { message: `Caso ${numero} actualizado` };
+  }
+
+  /** Más fotos para un caso abierto (quien lo reportó o quien gestiona casos). */
+  async agregarEvidencias(ctx: Ctx, id: number, body: unknown) {
+    const d = validar(agregarEvidenciasZ, body);
+    const numero = await this.prisma.enTransaccion(async (tx) => {
+      const c = await tx.caso.findFirst({ where: { id, sucursalId: this.sucursal(ctx) } });
+      if (!c) throw noEncontrado('Caso', id);
+      if (c.creadoPorId !== ctx.usuario.sub && !tienePermiso(ctx.usuario, 'casos.gestionar')) throw prohibido('Solo quien reportó el caso o quien lo gestiona puede agregar fotos');
+      if (c.estado === 'ANULADO') throw reglaNegocio('ESTADO_CASO', 'El caso está anulado');
+      const n = await ligarEvidencias(tx, ctx, d.evidencias, { casoId: id });
+      await tx.casoNota.create({ data: { casoId: id, usuarioId: ctx.usuario.sub, texto: `Agregó ${n} foto(s)` } });
+      return c.numero;
+    });
+    return { message: `${d.evidencias.length} foto(s) agregadas al caso ${numero}` };
   }
 
   /** Usuarios activos de la sede a quienes se puede asignar un caso. */

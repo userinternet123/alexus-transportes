@@ -19,6 +19,7 @@ import { NotificacionesService } from '../notificaciones/notificaciones.service'
 import { VIGENCIA_HORAS } from '../inspecciones/inspecciones.logica';
 import { CostoKmService } from './costo-km.service';
 import { CasosService } from '../casos/casos.service';
+import { CargasLaboralesService, factorIncluido } from '../../common/costos/cargas-laborales';
 import {
   admiteCostos, anticipoZ, cancelarZ, costoZ, elegirTarifa, Estado, ETIQUETA_ESTADO, filtroRentabilidadZ, filtroViajesZ,
   finalizarZ, iniciarZ, liquidar, montoPorTarifa, programarZ, siguienteNumero, TRANSICIONES,
@@ -48,6 +49,7 @@ export class ViajesService {
     private readonly parametros: ParametrosService,
     private readonly costoKm: CostoKmService,
     private readonly notificaciones: NotificacionesService,
+    private readonly cargas: CargasLaboralesService,
   ) {}
 
   // ─────────────────────────────── utilidades ──────────────────────────────
@@ -58,13 +60,14 @@ export class ViajesService {
   }
 
   /** Si el usuario es un piloto sin permiso de programar, devuelve su pilotoId (y se le limita a sus viajes). */
-  private async pilotoPropio(ctx: Ctx): Promise<number | null> {
+  async pilotoPropio(ctx: Ctx): Promise<number | null> {
     if (tienePermiso(ctx.usuario, 'viajes.crear')) return null;
     const u = await this.prisma.usuario.findUnique({ where: { id: ctx.usuario.sub }, select: { empleado: { select: { piloto: { select: { id: true } } } } } });
     return u?.empleado?.piloto?.id ?? null;
   }
 
-  private async cargar(ctx: Ctx, id: number, db: Tx | PrismaService = this.prisma) {
+  /** El viaje de la sede, si el usuario puede verlo (un piloto, solo los suyos). */
+  async cargar(ctx: Ctx, id: number, db: Tx | PrismaService = this.prisma) {
     const v = await db.viaje.findFirst({ where: { id, sucursalId: this.sucursal(ctx) } });
     if (!v) throw noEncontrado('Viaje', id);
     const propio = await this.pilotoPropio(ctx);
@@ -188,7 +191,7 @@ export class ViajesService {
   }
 
   /** Liquidación: la guardada si ya está liquidado; si no, una vista previa con el costo por km de hoy. */
-  private async liquidacion(v: { id: number; estado: Estado; montoCobrado: Prisma.Decimal; pagoPiloto: Prisma.Decimal; kmSalida: Prisma.Decimal | null; kmLlegada: Prisma.Decimal | null; costoKmFijo: Prisma.Decimal | null; fechaLlegada: Date | null }) {
+  private async liquidacion(v: { id: number; estado: Estado; montoCobrado: Prisma.Decimal; pagoPiloto: Prisma.Decimal; kmSalida: Prisma.Decimal | null; kmLlegada: Prisma.Decimal | null; costoKmFijo: Prisma.Decimal | null; factorCargas: Prisma.Decimal | null; fechaLlegada: Date | null }) {
     if (v.estado === 'CANCELADO') return null;
     const [costos, anticipos, gastos] = await Promise.all([
       this.prisma.costoViaje.findMany({ where: { viajeId: v.id }, select: { tipo: true, monto: true, pagadoPorPiloto: true } }),
@@ -197,8 +200,9 @@ export class ViajesService {
     ]);
     const km = v.kmLlegada && v.kmSalida ? D(v.kmLlegada).minus(D(v.kmSalida)) : D(0);
     const ck = v.costoKmFijo != null ? { costoKm: D(v.costoKmFijo), fuente: 'LIQUIDACION', avisos: [] as string[] } : await this.costoKm.calcular(v.fechaLlegada ?? new Date());
+    const factorCargas = v.factorCargas != null ? D(v.factorCargas) : factorIncluido(await this.cargas.conceptos());
     const l = liquidar({
-      montoCobrado: v.montoCobrado, pagoPiloto: v.pagoPiloto, kmRecorridos: km, costoKmFijo: ck.costoKm,
+      montoCobrado: v.montoCobrado, pagoPiloto: v.pagoPiloto, kmRecorridos: km, costoKmFijo: ck.costoKm, factorCargas,
       costos: [...costos, ...gastos.map((g) => ({ tipo: 'GASTO_EMPRESA', monto: g.monto, pagadoPorPiloto: false }))],
       anticipos: anticipos.map((a) => a.monto),
     });
@@ -418,6 +422,7 @@ export class ViajesService {
 
   async liquidar(ctx: Ctx, id: number) {
     const ck = await this.costoKm.calcular(new Date());
+    const factorCargas = factorIncluido(ck.cargas);
     const r = await this.prisma.enTransaccion(async (tx) => {
       await this.bloquear(tx, id);
       const v = await this.cargar(ctx, id, tx);
@@ -430,12 +435,12 @@ export class ViajesService {
         tx.gasto.findMany({ where: { viajeId: id, estado: 'REGISTRADO' }, select: { monto: true } }),
       ]);
       const l = liquidar({
-        montoCobrado: v.montoCobrado, pagoPiloto: v.pagoPiloto, costoKmFijo,
+        montoCobrado: v.montoCobrado, pagoPiloto: v.pagoPiloto, costoKmFijo, factorCargas,
         kmRecorridos: D(v.kmLlegada).minus(D(v.kmSalida)),
         costos: [...costos, ...gastos.map((g) => ({ tipo: 'GASTO_EMPRESA', monto: g.monto, pagadoPorPiloto: false }))],
         anticipos: anticipos.map((a) => a.monto),
       });
-      await tx.viaje.update({ where: { id }, data: { estado: 'LIQUIDADO', liquidadoEn: new Date(), liquidadoPorId: ctx.usuario.sub, saldoPiloto: l.saldoPiloto, costoKmFijo, prorrateo: l.prorrateo, ganancia: l.ganancia, totalCostos: r2(suma(costos.map((c) => c.monto))) } });
+      await tx.viaje.update({ where: { id }, data: { estado: 'LIQUIDADO', liquidadoEn: new Date(), liquidadoPorId: ctx.usuario.sub, saldoPiloto: l.saldoPiloto, costoKmFijo, factorCargas, prorrateo: l.prorrateo, ganancia: l.ganancia, totalCostos: r2(suma(costos.map((c) => c.monto))) } });
       await this.audit.registrar(ctx, { accion: 'LIQUIDAR', entidad: 'Viaje', entidadId: id, antes: { estado: v.estado }, despues: { estado: 'LIQUIDADO', ...l } }, tx);
       return { v, l };
     });

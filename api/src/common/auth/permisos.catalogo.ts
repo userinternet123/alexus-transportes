@@ -51,6 +51,7 @@ export const PERMISOS: Record<string, { modulo: string; descripcion: string }> =
   'viajes.editar': { modulo: 'Viajes', descripcion: 'Editar viajes programados (cliente, cabezal, piloto, tarifa)' },
   'viajes.costos': { modulo: 'Viajes', descripcion: 'Registrar costos del viaje (peajes, viáticos, combustible) con su recibo' },
   'viajes.anticipos': { modulo: 'Viajes', descripcion: 'Entregar anticipos de efectivo al piloto' },
+  'viajes.reportar': { modulo: 'Viajes', descripcion: 'Reportar en vivo desde el camino (estado, ubicación, fotos, incidentes)' },
   'viajes.cerrar': { modulo: 'Viajes', descripcion: 'Finalizar viajes (km de llegada)' },
   'viajes.liquidar': { modulo: 'Viajes', descripcion: 'Liquidar viajes: anticipos, costos y pago al piloto' },
   'viajes.anular': { modulo: 'Viajes', descripcion: 'Cancelar viajes' },
@@ -120,13 +121,13 @@ export const ROLES_BASE: Record<string, { descripcion: string; permisos: string[
     descripcion: 'Despacho: programa viajes, asigna cabezal y piloto, registra costos y combustible',
     permisos: [
       'catalogos.ver', 'terceros.ver', 'terceros.crear', 'terceros.editar', 'tarifas.ver', 'flota.ver', 'pilotos.ver',
-      'viajes.ver', 'viajes.crear', 'viajes.editar', 'viajes.costos', 'viajes.anticipos', 'viajes.cerrar', 'viajes.cotizar',
+      'viajes.ver', 'viajes.crear', 'viajes.editar', 'viajes.costos', 'viajes.anticipos', 'viajes.reportar', 'viajes.cerrar', 'viajes.cotizar',
       'inspecciones.ver', 'inspecciones.registrar', 'casos.ver', 'casos.crear', 'combustible.ver', 'combustible.registrar', 'mantenimiento.ver', 'reportes.viajes', 'reportes.flota',
     ],
   },
   PILOTO: {
     descripcion: 'Piloto: ve sus viajes, registra combustible y gastos del viaje desde el celular',
-    permisos: ['viajes.ver', 'viajes.costos', 'combustible.registrar', 'inspecciones.ver', 'inspecciones.registrar', 'casos.crear', 'flota.ver'],
+    permisos: ['viajes.ver', 'viajes.costos', 'viajes.reportar', 'combustible.registrar', 'inspecciones.ver', 'inspecciones.registrar', 'casos.crear', 'flota.ver'],
   },
   TALLER: {
     descripcion: 'Taller: órdenes de trabajo, repuestos y llantas',

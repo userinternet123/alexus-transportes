@@ -3,7 +3,8 @@
 // PRUEBA DE HUMO de ALEXUS Transportes: recorre el flujo de un viaje contra el API en marcha.
 //   salud → login → cotizar → programar → iniciar sin inspección (debe fallar) → inspección con falla
 //   crítica (rechazada + caso + orden) → nueva inspección aprobada → iniciar → anticipo → peaje
-//   → carga de combustible → finalizar → liquidar → cotización guardada → ranking de rentabilidad
+//   → reporte en vivo con fotos e incidente sin señal (caso, sin duplicar) → en ruta ahora → carga de combustible
+//   → finalizar → liquidar (con cargas laborales) → cotización guardada → ranking de rentabilidad
 //
 // Uso (con el API corriendo: npm run dev, y datos de prueba: npm run db:demo):
 //   node scripts/prueba-humo.mjs --password "CambiarAhora2026" --nueva "MiClaveNueva2026"   (primera vez)
@@ -150,6 +151,46 @@ await paso('Iniciar el viaje', async () => {
   return r.message;
 });
 
+// JPEG mínimo válido (1×1) para probar las evidencias
+const FOTO = '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA='
+const subirFoto = async (nombre) => ok(await http('POST', '/archivos', { nombre, mime: 'image/jpeg', base64: FOTO })).data.id
+
+await paso('Reporte en vivo: salida con ubicación y foto', async () => {
+  const foto = await subirFoto('salida.jpg')
+  const r = ok(await http('POST', `/viajes/${contexto.viaje.id}/eventos`, { tipo: 'SALIDA', texto: 'Sale del predio', latitud: 14.6349, longitud: -90.5069, precisionM: 12, evidencias: [{ archivoId: foto, descripcion: 'Carga asegurada' }] }))
+  return r.message
+})
+
+await paso('Incidente sin señal: abre caso con foto y no se duplica al reenviar', async () => {
+  const foto = await subirFoto('llanta.jpg')
+  const uuid = crypto.randomUUID()
+  const cuerpo = { tipo: 'INCIDENTE', texto: 'Llanta trasera baja', latitud: 14.30, longitud: -90.78, ocurridoEn: new Date(Date.now() - 40 * 60_000).toISOString(), uuidCliente: uuid, evidencias: [{ archivoId: foto }], caso: { tipo: 'LLANTAS', prioridad: 'ALTA', titulo: 'Llanta trasera derecha baja' } }
+  const a = ok(await http('POST', `/viajes/${contexto.viaje.id}/eventos`, cuerpo))
+  const b = ok(await http('POST', `/viajes/${contexto.viaje.id}/eventos`, cuerpo))
+  if (a.data.id !== b.data.id) throw new Error('el reenvío duplicó el reporte')
+  if (!a.data.caso) throw new Error('no abrió caso')
+  if (a.data.sinSenalMin < 39) throw new Error('no respetó la hora del celular')
+  contexto.casoIncidente = a.data.caso
+  return `${a.message} · reenvío: ${b.message} · ${a.data.sinSenalMin} min sin señal`
+})
+
+await paso('No se puede adjuntar la foto de otro usuario ni una inexistente', async () => espera(await http('POST', `/viajes/${contexto.viaje.id}/eventos`, { tipo: 'NOTA', texto: 'x', evidencias: [{ archivoId: crypto.randomUUID() }] }), 'EVIDENCIA_NO_EXISTE'))
+
+await paso('En ruta ahora', async () => {
+  const r = ok(await http('GET', '/viajes/en-vivo')).data
+  const v = r.find((x) => x.id === contexto.viaje.id)
+  if (!v?.ultimo) throw new Error('el viaje no aparece con su último reporte')
+  return `${r.length} viaje(s) en ruta · ${v.numero}: ${v.ultimo.etiqueta}, ${v.casosAbiertos.length} caso(s) abierto(s)`
+})
+
+await paso('Caso del incidente con su foto; agregar otra y resolverlo', async () => {
+  const c = ok(await http('GET', `/casos/${contexto.casoIncidente.id}`)).data
+  if (c.evidencias.length !== 1 || c.latitud == null) throw new Error('el caso no trae foto o ubicación')
+  ok(await http('POST', `/casos/${c.id}/evidencias`, { evidencias: [{ archivoId: await subirFoto('reparada.jpg'), descripcion: 'Llanta cambiada' }] }))
+  ok(await http('PUT', `/casos/${c.id}/estado`, { estado: 'RESUELTO', comentario: 'Se cambió por la de repuesto en ruta' }))
+  return `${c.numero}: 2 fotos, resuelto`
+})
+
 await paso('Entregar anticipo de Q1,000', async () => ok(await http('POST', `/viajes/${contexto.viaje.id}/anticipos`, { monto: 1000, nota: 'Prueba' })).message);
 await paso('Registrar peaje de Q120 (del anticipo)', async () => ok(await http('POST', `/viajes/${contexto.viaje.id}/costos`, { tipo: 'PEAJE', monto: 120, descripcion: 'Autopista Palín-Escuintla' })).message);
 await paso('El combustible no entra como costo suelto', async () => espera(await http('POST', `/viajes/${contexto.viaje.id}/costos`, { tipo: 'COMBUSTIBLE', monto: 500 }), 'COMBUSTIBLE_COMO_CARGA'));
@@ -163,9 +204,15 @@ await paso('Carga de combustible en el viaje', async () => {
 
 await paso('Finalizar el viaje', async () => ok(await http('POST', `/viajes/${contexto.viaje.id}/finalizar`, { kmLlegada: contexto.kmSalida + Number(contexto.ruta.kmEstimados) * 2, kmVacios: Number(contexto.ruta.kmEstimados) })).message);
 
-await paso('Liquidar el viaje', async () => {
+await paso('Liquidar el viaje (con cargas laborales sobre el pago al piloto)', async () => {
   const r = ok(await http('POST', `/viajes/${contexto.viaje.id}/liquidar`));
-  return `${r.message} · ganancia ${Q(r.data.ganancia)} (${r.data.margen ?? '—'} %)`;
+  return `${r.message} · ganancia ${Q(r.data.ganancia)} (${r.data.margen ?? '—'} %) · cargas ${Q(r.data.cargasPagoPiloto)}`;
+});
+
+await paso('Cotizador desglosa sueldos y cargas laborales incluidas', async () => {
+  const r = ok(await http('POST', '/viajes/cotizar', { rutaId: contexto.ruta.id })).data
+  const cargas = r.supuestos.cargas.filter((c) => c.incluida).map((c) => `${c.nombre.split(' ')[0]} ${c.tasa} %`)
+  return `sueldos: ${r.supuestos.fuenteSueldos.toLowerCase()} · ${cargas.join(', ')}`
 });
 
 await paso('Guardar una cotización y convertirla en viaje', async () => {

@@ -14,6 +14,7 @@ import { parseFecha, sumarDias } from '../../common/fecha';
 import { D } from '../../common/money';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { validar } from '../../common/pipes/zod';
+import { evidenciaSalida, ligarEvidencias } from '../../common/evidencias';
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
 import { CasosService } from '../casos/casos.service';
 import { masUrgente, Prioridad, TIPOS_TALLER } from '../casos/casos.logica';
@@ -53,6 +54,8 @@ export class InspeccionesService {
     const r = await this.prisma.enTransaccion(async (tx) => {
       const cabezal = await tx.cabezal.findFirst({ where: { id: d.cabezalId, activo: true } });
       if (!cabezal) throw reglaNegocio('CABEZAL_INVALIDO', 'Elija un cabezal activo');
+      const fotosPuntos = d.puntos.map((p) => p.archivoId).filter((x): x is string => Boolean(x));
+      if (fotosPuntos.length && (await tx.archivo.count({ where: { id: { in: fotosPuntos }, creadoPorId: ctx.usuario.sub } })) !== new Set(fotosPuntos).size) throw reglaNegocio('EVIDENCIA_AJENA', 'Solo puede adjuntar fotos que usted subió');
       if (d.remolqueId && !(await tx.remolque.findFirst({ where: { id: d.remolqueId, activo: true } }))) throw reglaNegocio('REMOLQUE_INVALIDO', 'Elija un remolque activo');
       if (d.odometro != null && D(d.odometro).lt(D(cabezal.odometro))) throw reglaNegocio('ODOMETRO_MENOR', `El odómetro (${D(d.odometro).toFixed(1)}) es menor que el último registrado del cabezal ${cabezal.codigo} (${D(cabezal.odometro).toFixed(1)} km)`);
       let viajeId = d.viajeId ?? null;
@@ -100,6 +103,7 @@ export class InspeccionesService {
         await tx.caso.update({ where: { id: c.id }, data: { estado: 'RESUELTO', resueltoEn: new Date(), resolucion: `El punto pasó la inspección #${insp.id}` } });
         await tx.casoNota.create({ data: { casoId: c.id, usuarioId: ctx.usuario.sub, cambio: `${c.estado} → RESUELTO`, texto: `Resuelto: el punto pasó la inspección #${insp.id}` } });
       }
+      await ligarEvidencias(tx, ctx, d.evidencias, { inspeccionId: insp.id });
       if (d.odometro != null && D(d.odometro).gt(D(cabezal.odometro))) await tx.cabezal.update({ where: { id: cabezal.id }, data: { odometro: d.odometro } });
       await this.audit.registrar(ctx, { accion: 'CREAR', entidad: 'Inspeccion', entidadId: insp.id, despues: { ...res, cabezalId: d.cabezalId, ordenTrabajo: orden?.numero ?? null, casos: casos.map((c) => c.numero), resueltos: previos.map((c) => c.numero) } }, tx);
       return { insp, orden, cabezal, casos, resueltos: previos };
@@ -141,8 +145,8 @@ export class InspeccionesService {
   }
 
   async detalle(ctx: Ctx, id: number) {
-    const i = await this.prisma.inspeccion.findFirst({ where: { id, sucursalId: this.sucursal(ctx) }, include: { puntos: true, casos: { select: { id: true, numero: true, prioridad: true, estado: true, titulo: true } }, cabezal: { select: { codigo: true, placa: true } }, remolque: { select: { codigo: true } }, ordenTrabajo: { select: { numero: true, estado: true } }, piloto: { select: { empleado: { select: { nombres: true, apellidos: true } } } } } });
+    const i = await this.prisma.inspeccion.findFirst({ where: { id, sucursalId: this.sucursal(ctx) }, include: { puntos: true, evidencias: { include: { archivo: { select: { mime: true, nombre: true } } } }, casos: { select: { id: true, numero: true, prioridad: true, estado: true, titulo: true } }, cabezal: { select: { codigo: true, placa: true } }, remolque: { select: { codigo: true } }, ordenTrabajo: { select: { numero: true, estado: true } }, piloto: { select: { empleado: { select: { nombres: true, apellidos: true } } } } } });
     if (!i) throw noEncontrado('Inspección', id);
-    return { data: { ...i, piloto: nombre(i.piloto?.empleado), puntos: i.puntos.map((p) => ({ ...p, nombre: punto(p.codigo)?.nombre ?? p.codigo, grupo: punto(p.codigo)?.grupo ?? '' })) } };
+    return { data: { ...i, evidencias: i.evidencias.map(evidenciaSalida), piloto: nombre(i.piloto?.empleado), puntos: i.puntos.map((p) => ({ ...p, nombre: punto(p.codigo)?.nombre ?? p.codigo, grupo: punto(p.codigo)?.grupo ?? '' })) } };
   }
 }

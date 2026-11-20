@@ -117,6 +117,8 @@ model Usuario {
   casosAsignados      Caso[]             @relation("CasoResponsable")
   notasCaso           CasoNota[]
   cotizaciones        Cotizacion[]
+  eventosViaje        EventoViaje[]
+  evidencias          Evidencia[]
 
   @@map("usuarios")
 }
@@ -509,6 +511,7 @@ model Archivo {
   ordenes          OrdenTrabajo[]
   anticipos        AnticipoViaje[]
   puntosInspeccion InspeccionPunto[]
+  evidencias       Evidencia[]
 
   @@map("archivos")
 }
@@ -778,7 +781,8 @@ model Viaje {
   saldoPiloto       Decimal?    @map("saldo_piloto") @db.Decimal(14, 2) // + el piloto devuelve; − la empresa le paga
   costoKmFijo       Decimal?    @map("costo_km_fijo") @db.Decimal(10, 4) // costo indirecto por km usado al liquidar
   prorrateo         Decimal?    @db.Decimal(14, 2) // km recorridos × costoKmFijo
-  ganancia          Decimal?    @db.Decimal(14, 2) // cobrado − costos directos − pago al piloto − prorrateo
+  ganancia          Decimal?    @db.Decimal(14, 2) // cobrado − costos directos − pago al piloto (+ cargas) − prorrateo
+  factorCargas      Decimal?    @map("factor_cargas") @db.Decimal(6, 2) // % de cargas laborales sobre el pago al piloto usado al liquidar
   creadoPorId       Int         @map("creado_por_id")
   creadoEn          DateTime    @default(now()) @map("creado_en")
   actualizadoEn     DateTime    @updatedAt @map("actualizado_en")
@@ -799,6 +803,7 @@ model Viaje {
   inspecciones Inspeccion[]
   casos        Caso[]
   cotizacion   Cotizacion?
+  eventos      EventoViaje[]
 
   @@index([fechaSalida])
   @@index([cabezalId, fechaSalida])
@@ -948,6 +953,7 @@ model Inspeccion {
   registradoPor Usuario           @relation(fields: [registradoPorId], references: [id])
   puntos        InspeccionPunto[]
   casos         Caso[]
+  evidencias    Evidencia[]
 
   @@index([cabezalId, fecha])
   @@index([fecha])
@@ -1166,6 +1172,9 @@ model Caso {
   titulo         String
   descripcion    String?
   impideSalir    Boolean       @default(false) @map("impide_salir")
+  latitud        Decimal?      @db.Decimal(9, 6) // dónde se reportó (móvil)
+  longitud       Decimal?      @db.Decimal(9, 6)
+  uuidCliente    String?       @unique @map("uuid_cliente") // id generado en el móvil: reenviar sin conexión no duplica
   cabezalId      Int?          @map("cabezal_id")
   remolqueId     Int?          @map("remolque_id")
   viajeId        Int?          @map("viaje_id")
@@ -1189,6 +1198,8 @@ model Caso {
   responsable  Usuario?      @relation("CasoResponsable", fields: [responsableId], references: [id])
   creadoPor    Usuario       @relation("CasoCreadoPor", fields: [creadoPorId], references: [id])
   notas        CasoNota[]
+  evidencias   Evidencia[]
+  eventos      EventoViaje[]
 
   @@index([estado, venceEn])
   @@index([cabezalId, estado])
@@ -1209,6 +1220,75 @@ model CasoNota {
 
   @@index([casoId])
   @@map("casos_notas")
+}
+
+// ─────────────────────────────── REPORTE EN VIVO ────────────────────────────
+
+enum TipoEventoViaje {
+  SALIDA
+  LLEGADA_CARGA // llegó al punto de carga
+  CARGANDO
+  EN_RUTA
+  EN_COLA // aduana, puerto, planta
+  ADUANA
+  PARADA // comida, descanso, combustible
+  LLEGADA_DESTINO
+  DESCARGANDO
+  ENTREGADO
+  INCIDENTE // falla, accidente, retén, robo, clima
+  NOTA
+}
+
+/// Bitácora en vivo del viaje: lo que el piloto reporta desde el camino, con hora, ubicación y fotos.
+model EventoViaje {
+  id              Int             @id @default(autoincrement())
+  viajeId         Int             @map("viaje_id")
+  tipo            TipoEventoViaje
+  texto           String?
+  latitud         Decimal?        @db.Decimal(9, 6)
+  longitud        Decimal?        @db.Decimal(9, 6)
+  precisionM      Int?            @map("precision_m")
+  odometro        Decimal?        @db.Decimal(12, 1)
+  ocurridoEn      DateTime        @map("ocurrido_en") // hora del celular (puede llegar después, sin señal)
+  recibidoEn      DateTime        @default(now()) @map("recibido_en")
+  uuidCliente     String?         @unique @map("uuid_cliente")
+  casoId          Int?            @map("caso_id") // un incidente puede abrir un caso
+  registradoPorId Int             @map("registrado_por_id")
+
+  viaje         Viaje       @relation(fields: [viajeId], references: [id], onDelete: Cascade)
+  caso          Caso?       @relation(fields: [casoId], references: [id])
+  registradoPor Usuario     @relation(fields: [registradoPorId], references: [id])
+  evidencias    Evidencia[]
+
+  @@index([viajeId, ocurridoEn])
+  @@index([recibidoEn])
+  @@map("eventos_viaje")
+}
+
+/// Foto (o PDF) de evidencia de un evento del viaje, un caso o una inspección, con dónde y cuándo se tomó.
+model Evidencia {
+  id            Int       @id @default(autoincrement())
+  archivoId     String    @map("archivo_id")
+  eventoViajeId Int?      @map("evento_viaje_id")
+  casoId        Int?      @map("caso_id")
+  inspeccionId  Int?      @map("inspeccion_id")
+  descripcion   String?
+  latitud       Decimal?  @db.Decimal(9, 6)
+  longitud      Decimal?  @db.Decimal(9, 6)
+  tomadaEn      DateTime? @map("tomada_en")
+  creadoPorId   Int       @map("creado_por_id")
+  creadoEn      DateTime  @default(now()) @map("creado_en")
+
+  archivo     Archivo      @relation(fields: [archivoId], references: [id])
+  eventoViaje EventoViaje? @relation(fields: [eventoViajeId], references: [id], onDelete: Cascade)
+  caso        Caso?        @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  inspeccion  Inspeccion?  @relation(fields: [inspeccionId], references: [id], onDelete: Cascade)
+  creadoPor   Usuario      @relation(fields: [creadoPorId], references: [id])
+
+  @@index([eventoViajeId])
+  @@index([casoId])
+  @@index([inspeccionId])
+  @@map("evidencias")
 }
 
 // ─────────────────────────────── GASTOS ─────────────────────────────────────

@@ -9,7 +9,8 @@ import Campo from '../comun/Campo'
 import Hoja from '../comun/Hoja'
 import Modal from '../comun/Modal'
 import { Boton, BotonPrimario, Cifra, Etiqueta } from './comun'
-import { ent, enviar, fechaHora, PRIORIDAD, TIPO_CASO, useCatalogos, useConsulta } from './util'
+import { enlaceMapa, ent, enviar, fechaHora, pedirUbicacion, PRIORIDAD, TIPO_CASO, paraEnviar, useCatalogos, useConsulta } from './util'
+import { CapturaFotos, Galeria } from './Evidencias'
 
 const ESTADO = { ABIERTO: { texto: 'Abierto', color: 'azul' }, EN_PROCESO: { texto: 'En proceso', color: 'ambar' }, RESUELTO: { texto: 'Resuelto', color: 'verde' }, ANULADO: { texto: 'Anulado', color: 'gris' } }
 const SEMAFORO = { VENCIDO: { texto: 'Vencido', color: 'rojo' }, POR_VENCER: { texto: 'Por vencer', color: 'ambar' }, A_TIEMPO: { texto: 'A tiempo', color: 'verde' } }
@@ -26,7 +27,14 @@ function ReportarCaso({ onListo, onCerrar }) {
   const [f, setF] = useState({ tipo: 'MECANICO', prioridad: 'MODERADA', titulo: '', descripcion: '', cabezalId: '', remolqueId: '', impideSalir: false })
   const [enviando, setEnviando] = useState(false)
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
-  const ir = async () => { setEnviando(true); const r = await enviar('post', '/casos', { ...f, cabezalId: f.cabezalId || null, remolqueId: f.remolqueId || null }); setEnviando(false); if (r) {onListo()} }
+  const [fotos, setFotos] = useState([])
+  const ir = async () => {
+    setEnviando(true)
+    const u = await pedirUbicacion()
+    const r = await enviar('post', '/casos', { ...f, cabezalId: f.cabezalId || null, remolqueId: f.remolqueId || null, latitud: u?.latitud ?? null, longitud: u?.longitud ?? null, uuidCliente: crypto.randomUUID(), evidencias: paraEnviar(fotos) })
+    setEnviando(false)
+    if (r) { onListo() }
+  }
   return (
     <Modal abierto titulo="Reportar caso" onCerrar={onCerrar} ancho="max-w-lg"
       pie={<><Boton onClick={onCerrar}>Cancelar</Boton><button type="button" disabled={enviando || f.titulo.trim().length < 5} onClick={ir} className="rounded-control bg-green-700 px-4 py-2 font-medium text-white disabled:opacity-50">{enviando ? 'Guardando…' : 'Reportar'}</button></>}>
@@ -39,6 +47,7 @@ function ReportarCaso({ onListo, onCerrar }) {
         <Campo etiqueta="Detalle" id="descripcion" className="sm:col-span-2"><textarea rows={3} value={f.descripcion} onChange={set('descripcion')} maxLength={1000} className={ent} /></Campo>
         <label className="flex items-center gap-2 sm:col-span-2"><input type="checkbox" checked={f.impideSalir} onChange={set('impideSalir')} className="accent-red-600" /> Impide que la unidad salga a viaje hasta resolverlo</label>
       </div>
+      <div className="mt-3 text-sm"><p className="mb-1">Fotos de evidencia</p><CapturaFotos valor={fotos} onCambio={setFotos} /></div>
       {['MECANICO', 'LLANTAS'].includes(f.tipo) && <p className="mt-3 text-xs text-gray-500">Los casos mecánicos y de llantas abren también una orden de taller.</p>}
     </Modal>
   )
@@ -50,10 +59,12 @@ function Detalle({ id, onCerrar, onCambio }) {
   const { datos: responsables } = useConsulta(id && puede('casos.gestionar') ? '/casos/responsables' : null)
   const [comentario, setComentario] = useState('')
   const [enviando, setEnviando] = useState(false)
-  if (!id) {return null}
+  const [nuevas, setNuevas] = useState([])
+  if (!id) { return null }
   const gestiona = puede('casos.gestionar')
   const cerrado = c && ['RESUELTO', 'ANULADO'].includes(c.estado)
   const hecho = () => { setComentario(''); recargar(); onCambio() }
+  const agregarFotos = async () => { setEnviando(true); if (await enviar('post', `/casos/${c.id}/evidencias`, { evidencias: paraEnviar(nuevas) })) { setNuevas([]); hecho() } setEnviando(false) }
   const estado = async (nuevo) => { setEnviando(true); if (await enviar('put', `/casos/${c.id}/estado`, { estado: nuevo, comentario })) {hecho()} setEnviando(false) }
   const editar = async (cambio) => { setEnviando(true); if (await enviar('put', `/casos/${c.id}`, { ...cambio, comentario: comentario || null })) {hecho()} setEnviando(false) }
   return (
@@ -79,7 +90,13 @@ function Detalle({ id, onCerrar, onCambio }) {
               <dt className="text-gray-500">Reportó</dt><dd>{c.creadoPor?.nombre} · {fechaHora(c.creadoEn)}</dd>
               <dt className="text-gray-500">Plazo</dt><dd>{fechaHora(c.venceEn)}</dd>
             </dl>
+            {enlaceMapa(c.latitud, c.longitud) && <p className="mt-2 text-xs"><a href={enlaceMapa(c.latitud, c.longitud)} target="_blank" rel="noopener noreferrer" className="text-green-700 underline">Ver dónde se reportó</a></p>}
             {c.resolucion && <p className="mt-2 rounded-control bg-green-50 px-3 py-2 text-green-900">{c.resolucion}</p>}
+          </section>
+          <section className="rounded-tarjeta bg-white p-4">
+            <h3 className="mb-2 font-semibold">Evidencias ({c.evidencias.length})</h3>
+            {c.evidencias.length ? <Galeria evidencias={c.evidencias} tamano="h-20 w-20" /> : <p className="text-gray-500">Sin fotos.</p>}
+            {c.estado !== 'ANULADO' && <div className="mt-3"><CapturaFotos valor={nuevas} onCambio={setNuevas} etiqueta="Agregar foto" />{nuevas.length > 0 && <BotonPrimario className="mt-2" disabled={enviando} onClick={agregarFotos}>Guardar {nuevas.length} foto(s)</BotonPrimario>}</div>}
           </section>
           {gestiona && !cerrado && (
             <section className="grid gap-3 rounded-tarjeta bg-white p-4 sm:grid-cols-2">
