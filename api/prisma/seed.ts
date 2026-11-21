@@ -68,6 +68,13 @@ async function main() {
     await prisma.parametroSistema.upsert({ where: { clave }, create: { clave, ...p }, update: {} });
   }
 
+  // 3b) Reglas generales de depreciación (referencia: ajústelas con su contador). No se pisan si ya existen.
+  const reglas = [
+    { nombre: 'Cabezales (general)', aplicaA: 'CABEZAL', vidaUtilAnios: 10, valorResidualPct: 25, notas: 'Valor de referencia: ajústelo con su contador. Cree reglas por marca o año para afinarlo.' },
+    { nombre: 'Remolques (general)', aplicaA: 'REMOLQUE', vidaUtilAnios: 15, valorResidualPct: 15, notas: 'Valor de referencia: ajústelo con su contador.' },
+  ];
+  for (const r of reglas) await prisma.reglaDepreciacion.upsert({ where: { nombre: r.nombre }, create: { ...r, metodo: 'LINEA_RECTA' }, update: {} });
+
   // 4) Geografía mínima (el ETL carga departamentos/municipios completos)
   const gt = await prisma.pais.upsert({ where: { nombre: 'Guatemala' }, create: { nombre: 'Guatemala', codigoIso: 'GT' }, update: {} });
 

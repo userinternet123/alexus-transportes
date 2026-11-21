@@ -11,6 +11,7 @@ import DynamicPage from '../pages/DynamicPage'
 
 import Gastos from '../components/finanzas/Gastos'
 import Rentabilidad from '../components/finanzas/Rentabilidad'
+import Depreciacion from '../components/finanzas/Depreciacion'
 import Viajes from '../components/operacion/Viajes'
 import Cotizador from '../components/operacion/Cotizador'
 import Combustible from '../components/operacion/Combustible'
@@ -44,6 +45,7 @@ function AppRouter() {
 
           {/* Finanzas y reportes */}
           <Route path="rentabilidad" element={<Rentabilidad />} />
+          <Route path="depreciacion" element={<Depreciacion />} />
           <Route path="gastos" element={<Gastos />} />
           <Route path="reportes" element={<CentroReportes />} />
 

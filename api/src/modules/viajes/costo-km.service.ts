@@ -1,7 +1,8 @@
 /**
  * COSTO INDIRECTO POR KILÓMETRO: lo que cuesta tener la flota andando, aparte de los costos directos de cada viaje.
  *
- *   costo/km indirecto = (taller + llantas + sueldos + cargas laborales incluidas + gastos de operación + combustible sin viaje) ÷ km recorridos
+ *   costo/km indirecto = (taller + llantas + sueldos + cargas laborales incluidas + depreciación (si se incluye)
+ *                        + gastos de operación + combustible sin viaje) ÷ km recorridos
  *
  * Se calcula sobre un período móvil (por defecto 90 días) con lo que ya está registrado. Sirve para dos cosas:
  *  - prorratear en la liquidación de cada viaje (ganancia real = cobrado − directos − pago al piloto − km × costo/km);
@@ -13,6 +14,7 @@ import { Injectable } from '@nestjs/common';
 import { ParametrosService } from '../../common/parametros/parametros.service';
 import { avisosCargas, CargasLaboralesService, Concepto, partidasCargas } from '../../common/costos/cargas-laborales';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { DepreciacionService } from '../../common/costos/depreciacion.service';
 import { D, Decimal, r2, suma } from '../../common/money';
 import { sumarDias } from '../../common/fecha';
 
@@ -26,12 +28,14 @@ export interface CostoKm {
   fuente: 'HISTORIAL' | 'PARAMETRO';
   fuenteSueldos: 'PLANILLA' | 'ESTIMADO' | 'NINGUNA';
   cargas: Concepto[];
+  /** Depreciación del período: incluida o no en el total, según `costos.incluir_depreciacion`. */
+  depreciacion: { monto: Decimal; incluida: boolean; unidades: number };
   avisos: string[];
 }
 
 @Injectable()
 export class CostoKmService {
-  constructor(private readonly prisma: PrismaService, private readonly parametros: ParametrosService, private readonly cargasLaborales: CargasLaboralesService) {}
+  constructor(private readonly prisma: PrismaService, private readonly parametros: ParametrosService, private readonly cargasLaborales: CargasLaboralesService, private readonly depreciacion: DepreciacionService) {}
 
   async calcular(hasta: Date = new Date()): Promise<CostoKm> {
     const dias = await this.parametros.numero('cotizador.dias_historial');
@@ -77,11 +81,18 @@ export class CostoKmService {
     if (fuenteSueldos === 'NINGUNA') avisos.push('No hay planillas ni empleados activos: el costo por km no incluye sueldos.');
     avisos.push(...avisosCargas(cargas));
 
+    // Depreciación de cabezales y remolques en el mismo período (cuánto valor perdieron mientras recorrían esos km)
+    const dep = await this.depreciacion.calcular({ hasta: fin, desde: inicio });
+    const depreciacion = { monto: dep.totales.periodo, incluida: dep.incluidaEnCostos, unidades: dep.unidades.filter((u) => u.periodo.gt(0)).length };
+    if (!depreciacion.incluida) avisos.push(`La depreciación (Q${depreciacion.monto.toFixed(2)} en el período) no está incluida en el costo: parámetro «costos.incluir_depreciacion».`);
+    avisos.push(...dep.avisos);
+
     const partidas = [
       { concepto: 'Taller y repuestos', monto: r2(ordenes._sum.total) },
       { concepto: 'Llantas compradas', monto: r2(llantas._sum.precio) },
       { concepto: fuenteSueldos === 'ESTIMADO' ? 'Sueldos y bonificación (estimado)' : 'Sueldos y bonificación', monto: r2(sueldos) },
       ...partidasCargas(cargas, baseAfecta),
+      ...(depreciacion.incluida ? [{ concepto: 'Depreciación de cabezales y remolques', monto: depreciacion.monto }] : []),
       { concepto: 'Gastos de operación', monto: r2(gastos._sum.monto) },
       { concepto: 'Combustible fuera de viajes', monto: r2(cargasSueltas._sum.total) },
     ];
@@ -97,7 +108,7 @@ export class CostoKmService {
       avisos.push(`Solo hay ${km.toFixed(0)} km de viajes en los últimos ${dias} días (se necesitan ${kmMinimos}). Se usa el costo indirecto del parámetro «cotizador.costo_km_indirecto» (Q${costoKm.toFixed(2)}/km).`);
       if (costoKm.isZero()) avisos.push('El parámetro está en cero: la ganancia y el precio sugerido no incluyen taller, llantas, sueldos ni gastos fijos. Configúrelo en Administración › Parámetros.');
     }
-    return { desde: inicio.toISOString().slice(0, 10), hasta: fin.toISOString().slice(0, 10), km, partidas, total, costoKm, fuente, fuenteSueldos, cargas, avisos };
+    return { desde: inicio.toISOString().slice(0, 10), hasta: fin.toISOString().slice(0, 10), km, partidas, total, costoKm, fuente, fuenteSueldos, cargas, depreciacion, avisos };
   }
 
   /** Rendimiento real (km/gal) de los últimos 90 días: de un cabezal o de toda la flota. */

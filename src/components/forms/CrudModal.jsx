@@ -13,7 +13,14 @@ function CrudModal({
   readOnly = false,
   action,
 }) {
-  const [form, setForm] = useState(initialValues)
+  // Las fechas llegan del servidor como «2026-11-04T00:00:00.000Z»: el formulario trabaja con «2026-11-04»
+  const [form, setForm] = useState(() => {
+    const v = { ...initialValues }
+    for (const f of config.flatMap((sec) => sec.fields ?? [])) {
+      if (f.type === 'date' && typeof v[f.name] === 'string') { v[f.name] = v[f.name].slice(0, 10) }
+    }
+    return v
+  })
   const [errors, setErrors] = useState({})
   const [lista, setLista] = useState([])
   const [enviando, setEnviando] = useState(false)
@@ -125,7 +132,8 @@ function CrudModal({
       {aviso && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{aviso}</p>}
       {config.map((section) => (
         <div key={section.subgrupo} className="border rounded-xl p-4">
-          <h3 className="font-semibold mb-4">{section.subgrupo}</h3>
+          <h3 className={`font-semibold ${section.description ? 'mb-1' : 'mb-4'}`}>{section.subgrupo}</h3>
+          {section.description && <p className="mb-4 text-sm text-gray-500">{section.description}</p>}
 
           <div className="grid grid-cols-12 gap-4">
             {section.fields.map((field) => (

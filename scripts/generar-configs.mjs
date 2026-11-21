@@ -33,6 +33,21 @@ const money = (name, label, extra = {}) => ({ name, label, type: 'money', size: 
 const chk = (name, label) => ({ name, label, type: 'checkbox', size: 'small' })
 const fecha = (name, label, extra = {}) => ({ name, label, type: 'date', size: 'small', ...extra })
 
+const METODOS_DEPRECIACION = [['LINEA_RECTA', 'Línea recta'], ['SUMA_DIGITOS', 'Suma de dígitos (más al inicio)'], ['SALDO_DECRECIENTE', 'Saldo decreciente (más al inicio)'], ['TABLA', 'Tabla por año (de la regla)'], ['POR_KM', 'Por kilómetro']]
+const TIPOS_REMOLQUE = [['FURGON', 'Furgón'], ['PLATAFORMA', 'Plataforma'], ['CISTERNA', 'Cisterna'], ['PORTACONTENEDOR', 'Portacontenedor'], ['LOWBOY', 'Lowboy'], ['VOLTEO', 'Volteo'], ['OTRO', 'Otro']]
+/** Sección «Depreciación» de cabezales y remolques: lo que quede vacío sale de la regla que le aplica. */
+const seccionDepreciacion = (conOdometro) => ({
+  titulo: 'Depreciación',
+  icono: 'money',
+  descripcion: 'Deje vacío lo que deba salir de su regla (Finanzas › Reglas de depreciación, por marca, tipo y año). Necesita el costo y la fecha de compra. Marque «No depreciar» si es arrendado o no debe entrar a los costos.',
+  campos: [
+    opciones('metodoDepreciacion', 'Método propio (vacío: el de su regla)', METODOS_DEPRECIACION),
+    num('vidaUtilAnios', 'Vida útil (años)'), num('vidaUtilKm', 'Vida útil (km)'), money('valorResidual', 'Valor residual (Q)'),
+    ...(conOdometro ? [num('kmCompra', 'Odómetro al comprar (km)')] : []),
+    fecha('fechaBaja', 'Fecha de venta o baja'),
+    chk('excluirDepreciacion', 'No depreciar'),
+  ],
+})
 const ESTADO_VEHICULO = [['ACTIVO', 'Activo'], ['EN_TALLER', 'En taller'], ['INACTIVO', 'Inactivo'], ['VENDIDO', 'Vendido']]
 const NOMBRE_TERCERO = { codigo: 'id', nombre: 'razonSocial' }
 const NOMBRE_EMPLEADO = { codigo: 'id', nombre: 'nombres' }
@@ -108,11 +123,12 @@ const MODULOS = [
       txt('modelo', 'Modelo'), num('anio', 'Año'), txt('vin', 'VIN / chasis'), txt('motor', 'Motor'), txt('color', 'Color', { size: 'small' }),
       num('ejes', 'Ejes'), num('odometro', 'Odómetro actual (km)'),
       num('capacidadTanque', 'Tanque (galones)'), num('rendimientoEsperado', 'Rendimiento esperado (km/gal)'),
-      fecha('fechaCompra', 'Fecha de compra'), money('costoCompra', 'Costo de compra'), num('vidaUtilAnios', 'Vida útil (años)'),
+      fecha('fechaCompra', 'Fecha de compra'), money('costoCompra', 'Costo de compra'),
       sel('pilotoAsignadoId', 'Piloto asignado', '/pilotos', { columnaDb: { codigo: 'id', nombre: 'empleado.nombres' } }),
       opciones('estado', 'Situación', ESTADO_VEHICULO, { size: 'small' }),
       txt('notas', 'Notas', { size: 'full' }),
     ],
+    secciones: [seccionDepreciacion(true)],
   },
   {
     clave: 'remolques', singular: 'remolque', titulo: 'Remolques', endpoint: '/flota/remolques', icono: 'truck', busqueda: 'Código, placa o tipo',
@@ -120,11 +136,28 @@ const MODULOS = [
     campos: [
       txt('codigo', 'Código interno', { required: true, size: 'small', placeholder: 'R-01' }),
       txt('placa', 'Placa', { required: true, size: 'small' }),
-      opciones('tipo', 'Tipo', [['FURGON', 'Furgón'], ['PLATAFORMA', 'Plataforma'], ['CISTERNA', 'Cisterna'], ['PORTACONTENEDOR', 'Portacontenedor'], ['LOWBOY', 'Lowboy'], ['VOLTEO', 'Volteo'], ['OTRO', 'Otro']], { required: true }),
+      opciones('tipo', 'Tipo', TIPOS_REMOLQUE, { required: true }),
       txt('marca', 'Marca'), num('anio', 'Año'), num('ejes', 'Ejes'),
       num('capacidadToneladas', 'Capacidad (toneladas)'), num('largoMetros', 'Largo (m)'),
       fecha('fechaCompra', 'Fecha de compra'), money('costoCompra', 'Costo de compra'),
       opciones('estado', 'Situación', ESTADO_VEHICULO, { size: 'small' }),
+      txt('notas', 'Notas', { size: 'full' }),
+    ],
+    secciones: [seccionDepreciacion(false)],
+  },
+  {
+    clave: 'reglas-depreciacion', singular: 'regla', titulo: 'Reglas de depreciación', endpoint: '/finanzas/reglas-depreciacion', icono: 'money', busqueda: 'Nombre o marca',
+    columnas: [['nombre', 'Regla'], ['aplicaA', 'Aplica a'], ['marca', 'Marca'], ['tipoRemolque', 'Tipo de remolque'], ['anioDesde', 'Modelo desde'], ['anioHasta', 'Modelo hasta'], ['metodo', 'Método'], ['vidaUtilAnios', 'Vida (años)'], ['vidaUtilKm', 'Vida (km)'], ['valorResidualPct', 'Residual %']],
+    campos: [
+      txt('nombre', 'Nombre', { required: true, size: 'large', placeholder: 'Freightliner 2016 a 2020' }),
+      opciones('aplicaA', 'Aplica a', [['CABEZAL', 'Cabezales'], ['REMOLQUE', 'Remolques']], { required: true, size: 'small' }),
+      txt('marca', 'Marca', { placeholder: 'Vacío = cualquier marca' }),
+      opciones('tipoRemolque', 'Tipo de remolque (vacío: cualquiera)', TIPOS_REMOLQUE),
+      num('anioDesde', 'Año del modelo desde'), num('anioHasta', 'Año del modelo hasta'),
+      opciones('metodo', 'Método', METODOS_DEPRECIACION, { required: true }),
+      num('vidaUtilAnios', 'Vida útil (años)'), num('vidaUtilKm', 'Vida útil (km, método por km)'),
+      num('valorResidualPct', 'Valor residual (% del costo)'),
+      txt('tablaAnual', '% por año (método tabla)', { size: 'large', placeholder: '25, 20, 15, 10, 10, 10, 10 (suman 100)' }),
       txt('notas', 'Notas', { size: 'full' }),
     ],
   },
@@ -276,6 +309,9 @@ function formulario(m) {
       className: 'mb-4',
       fields: [{ name: 'id', label: 'Código', size: 'small', readOnly: true, placeholder: 'Se genera automáticamente' }, ...m.campos],
     },
+    ...(m.secciones ?? []).map((x) => ({
+      subgrupo: x.titulo, icon: x.icono, description: x.descripcion, dataField: m.clave, type: 'table', defaultOpen: true, className: 'mb-4', fields: x.campos,
+    })),
   ]
 }
 

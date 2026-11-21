@@ -12,6 +12,8 @@ import { AuthGuard } from './common/auth/auth.guard';
 import { ErroresFilter } from './common/filters/errores.filter';
 import { ParametrosModule } from './common/parametros/parametros.service';
 import { CargasLaboralesModule } from './common/costos/cargas-laborales';
+import { DepreciacionModule } from './common/costos/depreciacion.service';
+import { DepreciacionApiModule } from './modules/depreciacion/depreciacion.controller';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { ArchivosModule } from './modules/archivos/archivos.module';
 import { LicenciaModule } from './modules/licencia/licencia.module';
@@ -60,6 +62,7 @@ import { SistemaModule } from './modules/sistema/sistema.module';
     AuditModule,
     ParametrosModule,
     CargasLaboralesModule,
+    DepreciacionModule,
     ArchivosModule,
     LicenciaModule,
     CentralModule,
@@ -71,6 +74,7 @@ import { SistemaModule } from './modules/sistema/sistema.module';
     CatalogosModule,
     // Operación de transporte
     ViajesModule,
+    DepreciacionApiModule,
     CombustibleModule,
     InspeccionesModule,
     CasosModule,

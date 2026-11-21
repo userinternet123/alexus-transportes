@@ -87,6 +87,8 @@ export const MENU_ITEMS = {
       label: 'Finanzas y reportes', name: 'mod-reportes', icon: TrendingUp, tag: 'reportes.viajes',
       submenu: [
         pantalla('rentabilidad', 'Rentabilidad de viajes', 'rentabilidad', 'finanzas.costos'),
+        pantalla('depreciacion', 'Depreciación de la flota', 'depreciacion', 'finanzas.costos'),
+        catalogo('reglas-depreciacion', 'Reglas de depreciación', 'finanzas.depreciacion.ver'),
         pantalla('gastos', 'Gastos de operación', 'gastos', 'gastos.ver'),
         pantalla('reportes', 'Centro de reportes', 'reportes', 'reportes.viajes'),
       ],

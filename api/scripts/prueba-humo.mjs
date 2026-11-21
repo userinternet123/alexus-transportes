@@ -227,5 +227,17 @@ await paso('Ranking de rentabilidad', async () => {
   return `${r.porCliente.length} clientes, ${r.porRuta.length} rutas, ${r.viajes.length} viajes`;
 });
 
+await paso('Depreciación de la flota (reglas por marca, tipo y año) y su partida en el costo por km', async () => {
+  const d = ok(await http('GET', '/finanzas/depreciacion')).data;
+  const con = d.unidades.filter((u) => u.estado !== 'SIN_DATOS');
+  if (!con.length) throw new Error('Ninguna unidad tiene costo y fecha de compra');
+  const malas = con.filter((u) => Math.abs(Number(u.costo) - Number(u.acumulada) - Number(u.valorLibros)) > 0.01);
+  if (malas.length) throw new Error(`Valor en libros no cuadra: ${malas.map((u) => u.codigo).join(', ')}`);
+  const ck = ok(await http('GET', '/viajes/costo-km')).data;
+  const partida = ck.partidas.find((x) => x.concepto.startsWith('Depreciación'));
+  if (ck.depreciacion.incluida && !partida) throw new Error('La depreciación está incluida pero no aparece en el costo por km');
+  return `${con.length} unidades · libros Q${Number(d.totales.valorLibros).toFixed(2)} · período Q${Number(d.totales.periodo).toFixed(2)} · ${ck.depreciacion.incluida ? 'incluida' : 'no incluida'} en el costo por km`;
+});
+
 console.log(fallos ? rojo(`\n${fallos} paso(s) fallaron`) : verde('\nTodo en orden'));
 process.exit(fallos ? 1 : 0);

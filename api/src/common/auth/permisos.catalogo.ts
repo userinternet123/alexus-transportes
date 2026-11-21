@@ -89,6 +89,10 @@ export const PERMISOS: Record<string, { modulo: string; descripcion: string }> =
   'gastos.registrar': { modulo: 'Finanzas', descripcion: 'Registrar gastos de operación' },
   'gastos.anular': { modulo: 'Finanzas', descripcion: 'Anular gastos (con motivo)' },
   'finanzas.costos': { modulo: 'Finanzas', descripcion: 'Ver costos, utilidades y márgenes (gerencia y dueño)' },
+  'finanzas.depreciacion.ver': { modulo: 'Finanzas', descripcion: 'Ver las reglas de depreciación' },
+  'finanzas.depreciacion.crear': { modulo: 'Finanzas', descripcion: 'Crear reglas de depreciación' },
+  'finanzas.depreciacion.editar': { modulo: 'Finanzas', descripcion: 'Editar reglas de depreciación' },
+  'finanzas.depreciacion.eliminar': { modulo: 'Finanzas', descripcion: 'Desactivar reglas de depreciación' },
 
   // Reportería
   'reportes.viajes': { modulo: 'Reportes', descripcion: 'Reportes de viajes e ingresos' },
@@ -137,6 +141,7 @@ export const ROLES_BASE: Record<string, { descripcion: string; permisos: string[
     descripcion: 'Contabilidad: gastos, liquidaciones, planilla y reportes financieros',
     permisos: [
       'catalogos.ver', 'terceros.ver', 'viajes.ver', 'viajes.costos', 'viajes.anticipos', 'viajes.liquidar', 'gastos.ver', 'gastos.registrar', 'gastos.anular', 'finanzas.costos',
+      'finanzas.depreciacion.ver', 'finanzas.depreciacion.crear', 'finanzas.depreciacion.editar', 'finanzas.depreciacion.eliminar',
       'reportes.viajes', 'reportes.flota', 'reportes.mantenimiento', 'reportes.financieros', 'reportes.rrhh', 'reportes.tablero',
       'rrhh.empleados.ver', 'rrhh.asistencia', 'rrhh.ausencias', 'rrhh.planilla.ver', 'rrhh.planilla.generar',
     ],

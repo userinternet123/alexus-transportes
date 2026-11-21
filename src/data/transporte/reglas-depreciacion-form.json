@@ -1,0 +1,166 @@
+[
+  {
+    "subgrupo": "Información de reglas de depreciación",
+    "icon": "money",
+    "description": "Los campos marcados con * son obligatorios",
+    "dataField": "reglas-depreciacion",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "id",
+        "label": "Código",
+        "size": "small",
+        "readOnly": true,
+        "placeholder": "Se genera automáticamente"
+      },
+      {
+        "name": "nombre",
+        "label": "Nombre",
+        "type": "text",
+        "size": "large",
+        "placeholder": "Freightliner 2016 a 2020",
+        "required": true
+      },
+      {
+        "name": "aplicaA",
+        "label": "Aplica a",
+        "type": "select",
+        "size": "small",
+        "options": [
+          {
+            "value": "CABEZAL",
+            "label": "Cabezales"
+          },
+          {
+            "value": "REMOLQUE",
+            "label": "Remolques"
+          }
+        ],
+        "required": true
+      },
+      {
+        "name": "marca",
+        "label": "Marca",
+        "type": "text",
+        "size": "medium",
+        "placeholder": "Vacío = cualquier marca"
+      },
+      {
+        "name": "tipoRemolque",
+        "label": "Tipo de remolque (vacío: cualquiera)",
+        "type": "select",
+        "size": "medium",
+        "options": [
+          {
+            "value": "FURGON",
+            "label": "Furgón"
+          },
+          {
+            "value": "PLATAFORMA",
+            "label": "Plataforma"
+          },
+          {
+            "value": "CISTERNA",
+            "label": "Cisterna"
+          },
+          {
+            "value": "PORTACONTENEDOR",
+            "label": "Portacontenedor"
+          },
+          {
+            "value": "LOWBOY",
+            "label": "Lowboy"
+          },
+          {
+            "value": "VOLTEO",
+            "label": "Volteo"
+          },
+          {
+            "value": "OTRO",
+            "label": "Otro"
+          }
+        ]
+      },
+      {
+        "name": "anioDesde",
+        "label": "Año del modelo desde",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "anioHasta",
+        "label": "Año del modelo hasta",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "metodo",
+        "label": "Método",
+        "type": "select",
+        "size": "medium",
+        "options": [
+          {
+            "value": "LINEA_RECTA",
+            "label": "Línea recta"
+          },
+          {
+            "value": "SUMA_DIGITOS",
+            "label": "Suma de dígitos (más al inicio)"
+          },
+          {
+            "value": "SALDO_DECRECIENTE",
+            "label": "Saldo decreciente (más al inicio)"
+          },
+          {
+            "value": "TABLA",
+            "label": "Tabla por año (de la regla)"
+          },
+          {
+            "value": "POR_KM",
+            "label": "Por kilómetro"
+          }
+        ],
+        "required": true
+      },
+      {
+        "name": "vidaUtilAnios",
+        "label": "Vida útil (años)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "vidaUtilKm",
+        "label": "Vida útil (km, método por km)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "valorResidualPct",
+        "label": "Valor residual (% del costo)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "tablaAnual",
+        "label": "% por año (método tabla)",
+        "type": "text",
+        "size": "large",
+        "placeholder": "25, 20, 15, 10, 10, 10, 10 (suman 100)"
+      },
+      {
+        "name": "notas",
+        "label": "Notas",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ingrese notas"
+      }
+    ]
+  }
+]

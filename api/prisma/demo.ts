@@ -92,14 +92,23 @@ async function main() {
     cabezales.push(await prisma.cabezal.create({ data: {
       codigo: `C-0${i + 1}`, placa: `C${100 + i}BCD`, marca: String(marca), modelo: String(modelo), anio: Number(anio), ejes: 3,
       odometro: D(320000 + i * 45000), capacidadTanque: D(150), rendimientoEsperado: D(i === 3 ? 7.5 : 9),
-      fechaCompra: ymd(900 + i * 200), costoCompra: D(450000 + i * 35000), vidaUtilAnios: 10,
+      fechaCompra: ymd(900 + i * 200), costoCompra: D(450000 + i * 35000),
+      // C-05 se deprecia por km (odómetro al comprar); los demás, por las reglas de su marca y año
+      ...(i === 4 ? { metodoDepreciacion: 'POR_KM', vidaUtilKm: D(1_200_000), kmCompra: D(320000 + i * 45000 - 160000) } : {}),
       sucursalId: sucursal.id, pilotoAsignadoId: pilotos[i].id, estado: i === 3 ? 'EN_TALLER' : 'ACTIVO',
     } }));
   }
   const remolques = await Promise.all([
-    prisma.remolque.create({ data: { codigo: 'R-01', placa: 'TC101ABC', tipo: 'PLATAFORMA', marca: 'Great Dane', anio: 2016, ejes: 2, capacidadToneladas: D(30), largoMetros: D(12.2) } }),
-    prisma.remolque.create({ data: { codigo: 'R-02', placa: 'TC102ABC', tipo: 'FURGON', marca: 'Utility', anio: 2018, ejes: 2, capacidadToneladas: D(26), largoMetros: D(16.2) } }),
+    prisma.remolque.create({ data: { codigo: 'R-01', placa: 'TC101ABC', tipo: 'PLATAFORMA', marca: 'Great Dane', anio: 2016, ejes: 2, capacidadToneladas: D(30), largoMetros: D(12.2), fechaCompra: ymd(1500), costoCompra: D(95000) } }),
+    prisma.remolque.create({ data: { codigo: 'R-02', placa: 'TC102ABC', tipo: 'FURGON', marca: 'Utility', anio: 2018, ejes: 2, capacidadToneladas: D(26), largoMetros: D(16.2), fechaCompra: ymd(1100), costoCompra: D(140000) } }),
   ]);
+  // Reglas de depreciación de ejemplo: por marca, por año del modelo y por tipo de remolque (más las generales del seed)
+  const reglasDemo = [
+    { nombre: 'Freightliner', aplicaA: 'CABEZAL', marca: 'Freightliner', metodo: 'LINEA_RECTA', vidaUtilAnios: 12, valorResidualPct: 30 },
+    { nombre: 'Cabezales modelo 2016 o anterior', aplicaA: 'CABEZAL', anioHasta: 2016, metodo: 'SUMA_DIGITOS', vidaUtilAnios: 6, valorResidualPct: 15 },
+    { nombre: 'Furgones', aplicaA: 'REMOLQUE', tipoRemolque: 'FURGON', metodo: 'TABLA', tablaAnual: '20,15,15,10,10,10,10,10', valorResidualPct: 10 },
+  ];
+  for (const r of reglasDemo) await prisma.reglaDepreciacion.upsert({ where: { nombre: r.nombre }, create: r, update: {} });
 
   // Documentos con vencimiento (uno por vencer pronto para que se vea la alerta)
   for (let i = 0; i < cabezales.length; i += 1) {

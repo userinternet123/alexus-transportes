@@ -34,6 +34,8 @@ export const PARAMETROS_DEFECTO: Record<string, { valor: string; tipo: string; m
   'costos.incluir_intecap': { valor: 'true', tipo: 'boolean', modulo: 'Costos laborales', descripcion: 'Incluir INTECAP en los costos (aunque hoy no se pague)' },
   'costos.incluir_prestaciones': { valor: 'true', tipo: 'boolean', modulo: 'Costos laborales', descripcion: 'Incluir aguinaldo, bono 14 e indemnización en los costos (aunque hoy no se provisionen)' },
   'costos.estimar_sueldos': { valor: 'true', tipo: 'boolean', modulo: 'Costos laborales', descripcion: 'Sin planillas aprobadas en el período, estimar los sueldos con los empleados activos' },
+  'costos.incluir_depreciacion': { valor: 'true', tipo: 'boolean', modulo: 'Depreciación', descripcion: 'Incluir la depreciación de cabezales y remolques en el costo por km, el cotizador y la ganancia' },
+  'depreciacion.tasa_fiscal': { valor: '20', tipo: 'number', modulo: 'Depreciación', descripcion: 'Tasa fiscal anual (%) de vehículos y remolques (Ley del ISR, art. 28: máximo 20 % en línea recta). Se usa como referencia y para las unidades sin regla' },
   'casos.horas_urgente': { valor: '4', tipo: 'number', modulo: 'Casos', descripcion: 'Horas para atender un caso URGENTE' },
   'casos.horas_alta': { valor: '24', tipo: 'number', modulo: 'Casos', descripcion: 'Horas para atender un caso de prioridad ALTA' },
   'casos.horas_moderada': { valor: '72', tipo: 'number', modulo: 'Casos', descripcion: 'Horas para atender un caso MODERADO' },

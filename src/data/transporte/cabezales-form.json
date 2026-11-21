@@ -116,13 +116,6 @@
         "mask": "money"
       },
       {
-        "name": "vidaUtilAnios",
-        "label": "Vida útil (años)",
-        "type": "number",
-        "size": "small",
-        "mask": "number"
-      },
-      {
         "name": "pilotoAsignadoId",
         "label": "Piloto asignado",
         "type": "select",
@@ -163,6 +156,85 @@
         "type": "text",
         "size": "full",
         "placeholder": "Ingrese notas"
+      }
+    ]
+  },
+  {
+    "subgrupo": "Depreciación",
+    "icon": "money",
+    "description": "Deje vacío lo que deba salir de su regla (Finanzas › Reglas de depreciación, por marca, tipo y año). Necesita el costo y la fecha de compra. Marque «No depreciar» si es arrendado o no debe entrar a los costos.",
+    "dataField": "cabezales",
+    "type": "table",
+    "defaultOpen": true,
+    "className": "mb-4",
+    "fields": [
+      {
+        "name": "metodoDepreciacion",
+        "label": "Método propio (vacío: el de su regla)",
+        "type": "select",
+        "size": "medium",
+        "options": [
+          {
+            "value": "LINEA_RECTA",
+            "label": "Línea recta"
+          },
+          {
+            "value": "SUMA_DIGITOS",
+            "label": "Suma de dígitos (más al inicio)"
+          },
+          {
+            "value": "SALDO_DECRECIENTE",
+            "label": "Saldo decreciente (más al inicio)"
+          },
+          {
+            "value": "TABLA",
+            "label": "Tabla por año (de la regla)"
+          },
+          {
+            "value": "POR_KM",
+            "label": "Por kilómetro"
+          }
+        ]
+      },
+      {
+        "name": "vidaUtilAnios",
+        "label": "Vida útil (años)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "vidaUtilKm",
+        "label": "Vida útil (km)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "valorResidual",
+        "label": "Valor residual (Q)",
+        "type": "money",
+        "size": "small",
+        "mask": "money"
+      },
+      {
+        "name": "kmCompra",
+        "label": "Odómetro al comprar (km)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "fechaBaja",
+        "label": "Fecha de venta o baja",
+        "type": "date",
+        "size": "small"
+      },
+      {
+        "name": "excluirDepreciacion",
+        "label": "No depreciar",
+        "type": "checkbox",
+        "size": "small"
       }
     ]
   }

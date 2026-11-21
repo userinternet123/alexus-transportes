@@ -542,7 +542,14 @@ model Cabezal {
   rendimientoEsperado Decimal?       @map("rendimiento_esperado") @db.Decimal(6, 2) // km por galón
   fechaCompra         DateTime?      @map("fecha_compra") @db.Date
   costoCompra         Decimal?       @map("costo_compra") @db.Decimal(14, 2)
-  vidaUtilAnios       Int?           @map("vida_util_anios") // para depreciación
+  vidaUtilAnios       Int?           @map("vida_util_anios") // depreciación: vacío = la de su regla
+  // Depreciación propia de la unidad (vacío = lo que diga la regla que le aplica)
+  metodoDepreciacion  String?        @map("metodo_depreciacion") // LINEA_RECTA | SUMA_DIGITOS | SALDO_DECRECIENTE | TABLA | POR_KM
+  vidaUtilKm          Decimal?       @map("vida_util_km") @db.Decimal(12, 0)
+  valorResidual       Decimal?       @map("valor_residual") @db.Decimal(14, 2)
+  kmCompra            Decimal?       @map("km_compra") @db.Decimal(12, 1) // odómetro el día de la compra
+  excluirDepreciacion Boolean @default(false) @map("excluir_depreciacion") // arrendado, ya depreciado o fuera de los costos
+  fechaBaja           DateTime?      @map("fecha_baja") @db.Date // venta o retiro: deja de depreciarse
   sucursalId          Int            @map("sucursal_id")
   pilotoAsignadoId    Int?           @map("piloto_asignado_id")
   estado              EstadoVehiculo @default(ACTIVO)
@@ -577,6 +584,12 @@ model Remolque {
   largoMetros        Decimal?       @map("largo_metros") @db.Decimal(6, 2)
   fechaCompra        DateTime?      @map("fecha_compra") @db.Date
   costoCompra        Decimal?       @map("costo_compra") @db.Decimal(14, 2)
+  vidaUtilAnios      Int?           @map("vida_util_anios")
+  metodoDepreciacion String?        @map("metodo_depreciacion")
+  vidaUtilKm         Decimal?       @map("vida_util_km") @db.Decimal(12, 0)
+  valorResidual      Decimal?       @map("valor_residual") @db.Decimal(14, 2)
+  excluirDepreciacion Boolean @default(false) @map("excluir_depreciacion")
+  fechaBaja          DateTime?      @map("fecha_baja") @db.Date
   estado             EstadoVehiculo @default(ACTIVO)
   notas              String?
   activo             Boolean        @default(true)
@@ -591,6 +604,29 @@ model Remolque {
   casos        Caso[]
 
   @@map("remolques")
+}
+
+/// Regla de depreciación: cómo se deprecia cada tipo de unidad según su marca, tipo de remolque y año del modelo.
+/// A cada unidad le aplica la regla más específica que coincide; lo que la unidad tenga propio manda sobre la regla.
+model ReglaDepreciacion {
+  id               Int      @id @default(autoincrement())
+  nombre           String   @unique
+  aplicaA          String   @map("aplica_a") // CABEZAL | REMOLQUE
+  marca            String? // vacío = cualquier marca
+  tipoRemolque     String?  @map("tipo_remolque") // vacío = cualquier tipo
+  anioDesde        Int?     @map("anio_desde") // año del modelo
+  anioHasta        Int?     @map("anio_hasta")
+  metodo           String   @default("LINEA_RECTA") // LINEA_RECTA | SUMA_DIGITOS | SALDO_DECRECIENTE | TABLA | POR_KM
+  vidaUtilAnios    Int?     @map("vida_util_anios")
+  vidaUtilKm       Decimal? @map("vida_util_km") @db.Decimal(12, 0)
+  valorResidualPct Decimal  @default(0) @map("valor_residual_pct") @db.Decimal(5, 2)
+  tablaAnual       String?  @map("tabla_anual") // TABLA: % de la base por año, ej. "25,20,15,10,10,10,10"
+  notas            String?
+  activo           Boolean  @default(true)
+  creadoEn         DateTime @default(now()) @map("creado_en")
+  actualizadoEn    DateTime @updatedAt @map("actualizado_en")
+
+  @@map("reglas_depreciacion")
 }
 
 /// Documento con vencimiento de un cabezal o remolque: seguro, tarjeta de circulación, calcomanía, permisos.

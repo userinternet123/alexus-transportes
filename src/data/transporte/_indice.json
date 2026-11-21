@@ -368,6 +368,59 @@
       }
     ]
   },
+  "reglas-depreciacion": {
+    "titulo": "Reglas de depreciación",
+    "endpoint": "/finanzas/reglas-depreciacion",
+    "botones": [
+      {
+        "name": "btnGuardarReglasDepreciacion",
+        "action": "create",
+        "url": "/finanzas/reglas-depreciacion",
+        "method": "POST",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Registro creado",
+        "msgFaild": "No se pudo guardar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": [
+          "nombre",
+          "aplicaA",
+          "metodo"
+        ]
+      },
+      {
+        "name": "btnEditarReglasDepreciacion",
+        "action": "edit",
+        "url": "/finanzas/reglas-depreciacion/:id",
+        "method": "PUT",
+        "refreshPage": true,
+        "icon": "save",
+        "msgOk": "Cambios guardados",
+        "msgFaild": "No se pudieron guardar los cambios",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "requiredFields": []
+      },
+      {
+        "name": "btnEliminarReglasDepreciacion",
+        "action": "delete",
+        "url": "/finanzas/reglas-depreciacion/:id",
+        "method": "DELETE",
+        "refreshPage": true,
+        "icon": "delete",
+        "msgOk": "Registro desactivado",
+        "msgFaild": "No se pudo desactivar",
+        "variant": "success",
+        "type": "button",
+        "tamano": "large",
+        "confirm": true,
+        "confirmMessage": "El registro quedará inactivo (no se borra el historial)."
+      }
+    ]
+  },
   "documentos-vehiculo": {
     "titulo": "Documentos de vehículos",
     "endpoint": "/flota/documentos",

@@ -121,7 +121,7 @@ export interface EntradaCotizacion {
   viatico: Num; // por sentido
   pagoPiloto: Num; // por viaje
   factorCargasPiloto?: Num; // % de IGSS, IRTRA, INTECAP y prestaciones incluidas, sobre el pago al piloto
-  costoKmIndirecto: Num; // taller, llantas, sueldos y fijos ÷ km
+  costoKmIndirecto: Num; // taller, llantas, sueldos, depreciación y fijos ÷ km
   extras: { concepto: string; monto: Num }[];
   margenObjetivo: Num; // % sobre el costo
   factores: Factores;
@@ -169,7 +169,7 @@ export function cotizar(e: EntradaCotizacion) {
     { concepto: 'Viáticos', monto: r2(D(e.viatico).times(sentidos)), detalle: `${sentidos} sentido(s)` },
     { concepto: 'Pago al piloto', monto: r2(e.pagoPiloto), detalle: 'bono por viaje' },
     ...(D(e.factorCargasPiloto ?? 0).gt(0) && D(e.pagoPiloto).gt(0) ? [{ concepto: 'Cargas laborales del pago al piloto', monto: r2(D(e.pagoPiloto).times(D(e.factorCargasPiloto)).div(100)), detalle: `${D(e.factorCargasPiloto).toFixed(2)} % (IGSS, IRTRA, INTECAP, prestaciones incluidas)` }] : []),
-    { concepto: 'Taller, llantas, sueldos y fijos', monto: indirectos, detalle: `${kmTotal.toFixed(0)} km × Q${D(e.costoKmIndirecto).toFixed(2)}/km${pctDesgaste.gt(0) ? ` +${pctDesgaste.toFixed(0)} % desgaste por terreno` : ''}` },
+    { concepto: 'Taller, llantas, sueldos, depreciación y fijos', monto: indirectos, detalle: `${kmTotal.toFixed(0)} km × Q${D(e.costoKmIndirecto).toFixed(2)}/km${pctDesgaste.gt(0) ? ` +${pctDesgaste.toFixed(0)} % desgaste por terreno` : ''}` },
     ...(espera.gt(0) ? [{ concepto: 'Esperas y colas', monto: espera, detalle: `${D(e.horasEspera).toFixed(1)} h × Q${D(f.costoHoraEspera).toFixed(2)}` }] : []),
     ...e.extras.filter((x) => D(x.monto).gt(0)).map((x) => ({ concepto: x.concepto, monto: r2(x.monto), detalle: 'extra' })),
   ].filter((p) => !(p.monto.isZero() && ['Peajes', 'Viáticos'].includes(p.concepto)));
