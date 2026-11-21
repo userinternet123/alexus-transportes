@@ -56,7 +56,7 @@ export const MENU_ITEMS = {
     {
       label: 'Taller', name: 'mod-taller', icon: Wrench, tag: 'mantenimiento.ver',
       submenu: [
-        // Fase 2: órdenes de trabajo y alertas de mantenimiento
+        pantalla('taller', 'Órdenes y mantenimiento', 'taller', 'mantenimiento.ver'),
         catalogo('planes-mantenimiento', 'Planes de mantenimiento', 'catalogos.ver'),
         catalogo('repuestos', 'Repuestos', 'catalogos.ver'),
         catalogo('marcas', 'Marcas', 'catalogos.ver'),
@@ -86,6 +86,7 @@ export const MENU_ITEMS = {
     {
       label: 'Finanzas y reportes', name: 'mod-reportes', icon: TrendingUp, tag: 'reportes.viajes',
       submenu: [
+        pantalla('cobros', 'Cuentas por cobrar', 'cobros', 'cobros.ver'),
         pantalla('rentabilidad', 'Rentabilidad de viajes', 'rentabilidad', 'finanzas.costos'),
         pantalla('depreciacion', 'Depreciación de la flota', 'depreciacion', 'finanzas.costos'),
         catalogo('reglas-depreciacion', 'Reglas de depreciación', 'finanzas.depreciacion.ver'),

@@ -12,6 +12,8 @@ import { Ctx, tienePermiso } from '../../common/auth/tipos';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CentralService } from '../central/central.service';
 import { LicenciaService } from '../licencia/licencia.service';
+import { CobrosService } from '../cobros/cobros.service';
+import { TallerService } from '../taller/taller.service';
 
 export interface Notificacion {
   id: string;
@@ -33,6 +35,8 @@ export class NotificacionesController {
     private readonly central: CentralService,
     private readonly licencia: LicenciaService,
     private readonly notificaciones: NotificacionesService,
+    private readonly cobros: CobrosService,
+    private readonly taller: TallerService,
   ) {}
 
   @Get()
@@ -78,6 +82,10 @@ export class NotificacionesController {
       if (vencidos.length) lista.push({ id: `casos-vencidos:${vencidos[0].id}:${vencidos.length}`, tipo: 'caso', nivel: 'critico', titulo: `${vencidos.length} caso(s) con el plazo vencido`, detalle: 'Atiéndalos o cambie su prioridad.', ruta: '/home/casos' });
       if (urgentes) lista.push({ id: `casos-urgentes:${urgentes}`, tipo: 'caso', nivel: 'aviso', titulo: `${urgentes} caso(s) urgente(s) abiertos`, detalle: 'Revise los casos de la flota.', ruta: '/home/casos' });
     }
+    // Cuentas por cobrar: por vencer, vencidas, promesas incumplidas y viajes sin facturar
+    if (puede('cobros.ver') && ctx.sucursalId) lista.push(...(await this.cobros.avisos(ctx.sucursalId)));
+    // Taller: mantenimiento vencido o próximo y órdenes olvidadas
+    if (puede('mantenimiento.ver') && ctx.sucursalId) lista.push(...(await this.taller.avisos(ctx)));
     // Hechos de la última semana (pedido enviado, recibido…)
     lista.push(...(await this.notificaciones.eventosRecientes(ctx, puede)));
     // Visto / no visto (por usuario): las no vistas primero; las vistas siguen abajo, en gris

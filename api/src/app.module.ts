@@ -14,6 +14,8 @@ import { ParametrosModule } from './common/parametros/parametros.service';
 import { CargasLaboralesModule } from './common/costos/cargas-laborales';
 import { DepreciacionModule } from './common/costos/depreciacion.service';
 import { DepreciacionApiModule } from './modules/depreciacion/depreciacion.controller';
+import { CobrosModule } from './modules/cobros/cobros.module';
+import { TallerModule } from './modules/taller/taller.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { ArchivosModule } from './modules/archivos/archivos.module';
 import { LicenciaModule } from './modules/licencia/licencia.module';
@@ -75,6 +77,8 @@ import { SistemaModule } from './modules/sistema/sistema.module';
     // Operación de transporte
     ViajesModule,
     DepreciacionApiModule,
+    CobrosModule,
+    TallerModule,
     CombustibleModule,
     InspeccionesModule,
     CasosModule,

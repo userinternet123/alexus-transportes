@@ -213,7 +213,32 @@ async function main() {
   ] });
   const o2 = await ot(2, { cabezalId: cabezales[1].id, tipo: 'CORRECTIVO', tallerId: taller.id, descripcion: 'Cambio de balatas eje trasero', odometro: D(362000), fechaApertura: dia(9), fechaCierre: dia(8), manoObra: D(900), totalRepuestos: D(2900), total: D(3800), documento: 'F-4471', estado: 'CERRADA' });
   await prisma.ordenTrabajoRepuesto.create({ data: { ordenId: o2.id, repuestoId: repuestos[3].id, marcaId: marcas.Bendix, cantidad: D(2), costoUnitario: D(1450), total: D(2900) } });
-  await ot(3, { cabezalId: cabezales[3].id, tipo: 'SERVICIO_MAYOR', tallerId: taller.id, descripcion: 'Servicio mayor: inyectores y turbo', odometro: D(455000), fechaApertura: dia(2), manoObra: D(6500), totalRepuestos: D(0), total: D(6500), estado: 'EN_PROCESO' });
+  await ot(3, { cabezalId: cabezales[3].id, tipo: 'SERVICIO_MAYOR', tallerId: taller.id, descripcion: 'Servicio mayor: inyectores y turbo', odometro: D(455000), fechaApertura: dia(2), manoObra: D(6500), totalRepuestos: D(0), total: D(6500), estado: 'EN_PROCESO', detieneUnidad: true });
+
+  // Historial de mantenimiento (para las alertas y la comparación de marcas): aceite anterior del C-01 con otro filtro
+  const o4 = await ot(4, { cabezalId: cabezales[0].id, planId: planAceite?.id, tipo: 'PREVENTIVO', descripcion: 'Cambio de aceite y filtros', odometro: D(300000), fechaApertura: dia(110), fechaCierre: dia(110), manoObra: D(350), totalRepuestos: D(175), total: D(525), estado: 'CERRADA' });
+  await prisma.ordenTrabajoRepuesto.create({ data: { ordenId: o4.id, repuestoId: repuestos[0].id, marcaId: marcas.Donaldson, cantidad: D(1), costoUnitario: D(175), total: D(175) } });
+
+  // Cuentas por cobrar: una factura vencida con un abono, otra al día; el resto de viajes queda «sin facturar»
+  const terminados = await prisma.viaje.findMany({ where: { estado: 'LIQUIDADO' }, orderBy: { fechaLlegada: 'asc' }, select: { id: true, clienteId: true, montoCobrado: true } });
+  const deCliente = (cid: number) => terminados.filter((v) => v.clienteId === cid);
+  const facturar = async (n: number, cid: number, viajesCc: { id: number; montoCobrado: Prisma.Decimal }[], emitida: Date, dias: number) => {
+    if (!viajesCc.length) return null;
+    const monto = viajesCc.reduce((a, v) => a.plus(v.montoCobrado), D(0));
+    const cc = await prisma.cuentaCobrar.create({ data: {
+      numero: `CC-${String(n).padStart(6, '0')}`, sucursalId: sucursal.id, clienteId: cid, tipoDocumento: 'FACTURA', serie: 'A', numeroDocumento: String(1200 + n),
+      fechaEmision: emitida, diasCredito: dias, fechaVencimiento: new Date(emitida.getTime() + dias * 86_400_000), monto, saldo: monto, creadoPorId: admin.id,
+    } });
+    await prisma.viaje.updateMany({ where: { id: { in: viajesCc.map((v) => v.id) } }, data: { cuentaCobrarId: cc.id } });
+    return cc;
+  };
+  const cc1 = await facturar(1, clientes[0].id, deCliente(clientes[0].id).slice(0, 2), ymd(45), 30);
+  if (cc1) {
+    await prisma.abonoCobro.create({ data: { cuentaId: cc1.id, fecha: ymd(5), monto: D(2000), medio: 'TRANSFERENCIA', referencia: 'TRF-58812', banco: 'Banco Industrial', registradoPorId: admin.id } });
+    await prisma.cuentaCobrar.update({ where: { id: cc1.id }, data: { saldo: D(cc1.monto).minus(2000), estado: 'PARCIAL' } });
+    await prisma.gestionCobro.create({ data: { cuentaId: cc1.id, tipo: 'PROMESA', nota: 'Contabilidad confirma pago del saldo', promesaFecha: ymd(-3), usuarioId: admin.id } });
+  }
+  await facturar(2, clientes[1].id, deCliente(clientes[1].id).slice(0, 1), ymd(6), 30);
 
   // Gastos de operación del mes
   const cat = async (n: string) => (await prisma.categoriaGasto.findFirst({ where: { nombre: { contains: n } } }))?.id ?? (await prisma.categoriaGasto.create({ data: { nombre: n } })).id;
@@ -224,7 +249,7 @@ async function main() {
     { sucursalId: sucursal.id, categoriaId: await cat('Salarios'), fecha: ymd(10), concepto: 'Planilla administrativa', monto: D(12000), medioPago: 'TRANSFERENCIA', usuarioId: admin.id },
   ] });
 
-  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 3 órdenes de taller, 2 inspecciones y 2 casos${claveDemo ? ' · usuarios piloto1 a piloto5 para la app' : ' (sin usuarios de la app: defina DEMO_CLAVE_PILOTOS)'}.`);
+  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 4 órdenes de taller, 2 cuentas por cobrar, 2 inspecciones y 2 casos${claveDemo ? ' · usuarios piloto1 a piloto5 para la app' : ' (sin usuarios de la app: defina DEMO_CLAVE_PILOTOS)'}.`);
 }
 
 main()

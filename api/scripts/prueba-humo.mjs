@@ -239,5 +239,42 @@ await paso('Depreciación de la flota (reglas por marca, tipo y año) y su parti
   return `${con.length} unidades · libros Q${Number(d.totales.valorLibros).toFixed(2)} · período Q${Number(d.totales.periodo).toFixed(2)} · ${ck.depreciacion.incluida ? 'incluida' : 'no incluida'} en el costo por km`;
 });
 
+await paso('Cuentas por cobrar: facturar un viaje, abonar, antigüedad y recordatorio', async () => {
+  const sin = ok(await http('GET', '/cobros/sin-facturar')).data;
+  if (!sin.length) return 'sin viajes por facturar (se omite)';
+  const g = sin[0];
+  const v = g.viajes[0];
+  const hoy = new Date().toISOString().slice(0, 10);
+  const c = ok(await http('POST', '/cobros', { clienteId: g.clienteId, viajeIds: [v.id], fechaEmision: hoy, diasCredito: 30 })).data;
+  const repetido = await http('POST', '/cobros', { clienteId: g.clienteId, viajeIds: [v.id], fechaEmision: hoy });
+  if (repetido.status !== 409) throw new Error('Se pudo facturar dos veces el mismo viaje');
+  const mitad = Math.round(Number(v.montoCobrado) * 50) / 100;
+  ok(await http('POST', `/cobros/${c.id}/abonos`, { fecha: hoy, monto: mitad, medio: 'TRANSFERENCIA', referencia: 'HUMO' }));
+  const d = ok(await http('GET', `/cobros/${c.id}`)).data;
+  if (d.estado !== 'PARCIAL' || Math.abs(Number(d.saldo) - (Number(v.montoCobrado) - mitad)) > 0.01) throw new Error(`Saldo inesperado: ${d.saldo}`);
+  if (!d.recordatorio?.texto.includes('Total:')) throw new Error('Sin recordatorio');
+  const r = ok(await http('GET', '/cobros/resumen')).data;
+  // Se deja como estaba: se anula el abono y la cuenta (el viaje vuelve a «sin facturar»)
+  ok(await http('PUT', `/cobros/${c.id}/abonos/${d.abonos[0].id}/anular`, { motivo: 'Prueba de humo' }));
+  ok(await http('PUT', `/cobros/${c.id}/anular`, { motivo: 'Prueba de humo' }));
+  return `${c.numero} · ${g.cliente} · saldo tras abono Q${Number(d.saldo).toFixed(2)} · por cobrar Q${Number(r.total.saldo).toFixed(2)} · ${r.tramos.length} tramos`;
+});
+
+await paso('Taller: orden con repuesto, cerrar libera la unidad, alertas de mantenimiento', async () => {
+  const cab = ok(await http('GET', '/flota/cabezales?limit=0')).data.find((c) => c.estado === 'ACTIVO');
+  const rep = ok(await http('GET', '/mantenimiento/repuestos?limit=0')).data[0];
+  if (!cab || !rep) return 'sin cabezal activo o repuestos (se omite)';
+  const o = ok(await http('POST', '/taller/ordenes', { cabezalId: cab.id, tipo: 'CORRECTIVO', descripcion: 'Prueba de humo: revisión', ponerEnTaller: true })).data;
+  const enTaller = ok(await http('GET', `/flota/cabezales/${cab.id}`)).data.estado;
+  ok(await http('POST', `/taller/ordenes/${o.id}/repuestos`, { repuestoId: rep.id, cantidad: 1, costoUnitario: 100 }));
+  ok(await http('PUT', `/taller/ordenes/${o.id}`, { manoObra: 50 }));
+  const cierre = ok(await http('PUT', `/taller/ordenes/${o.id}/estado`, { estado: 'CERRADA', comentario: 'Prueba de humo terminada' }));
+  const despues = ok(await http('GET', `/flota/cabezales/${cab.id}`)).data.estado;
+  if (enTaller !== 'EN_TALLER') throw new Error(`No quedó en taller (${enTaller})`);
+  if (despues !== 'ACTIVO' && !/sigue con la orden/.test(cierre.message)) throw new Error(`No se liberó la unidad (${despues})`);
+  const m = ok(await http('GET', '/taller/mantenimiento')).data;
+  return `${o.numero} · ${cierre.message} · alertas: ${m.resumen.VENCIDO} vencidas, ${m.resumen.PROXIMO} próximas`;
+});
+
 console.log(fallos ? rojo(`\n${fallos} paso(s) fallaron`) : verde('\nTodo en orden'));
 process.exit(fallos ? 1 : 0);

@@ -57,17 +57,18 @@ model Sucursal {
   creadoEn      DateTime @default(now()) @map("creado_en")
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
-  empresa      Empresa            @relation(fields: [empresaId], references: [id])
-  municipio    Municipio?         @relation(fields: [municipioId], references: [id])
-  usuarios     UsuarioSucursal[]
-  empleados    Empleado[]
-  gastos       Gasto[]
-  cabezales    Cabezal[]
-  viajes       Viaje[]
-  cargas       CargaCombustible[]
-  ordenes      OrdenTrabajo[]
-  inspecciones Inspeccion[]
-  casos        Caso[]
+  empresa       Empresa            @relation(fields: [empresaId], references: [id])
+  municipio     Municipio?         @relation(fields: [municipioId], references: [id])
+  usuarios      UsuarioSucursal[]
+  empleados     Empleado[]
+  gastos        Gasto[]
+  cabezales     Cabezal[]
+  viajes        Viaje[]
+  cargas        CargaCombustible[]
+  ordenes       OrdenTrabajo[]
+  inspecciones  Inspeccion[]
+  casos         Caso[]
+  cuentasCobrar CuentaCobrar[]
 
   @@map("sucursales")
 }
@@ -119,6 +120,9 @@ model Usuario {
   cotizaciones        Cotizacion[]
   eventosViaje        EventoViaje[]
   evidencias          Evidencia[]
+  cuentasCobrar       CuentaCobrar[]
+  abonosCobro         AbonoCobro[]
+  gestionesCobro      GestionCobro[]
 
   @@map("usuarios")
 }
@@ -299,6 +303,7 @@ model Tercero {
   llantas       Llanta[]
   ordenesTaller OrdenTrabajo[]
   cotizaciones  Cotizacion[]
+  cuentasCobrar CuentaCobrar[]
 
   @@index([nit])
   @@index([cui])
@@ -548,7 +553,7 @@ model Cabezal {
   vidaUtilKm          Decimal?       @map("vida_util_km") @db.Decimal(12, 0)
   valorResidual       Decimal?       @map("valor_residual") @db.Decimal(14, 2)
   kmCompra            Decimal?       @map("km_compra") @db.Decimal(12, 1) // odómetro el día de la compra
-  excluirDepreciacion Boolean @default(false) @map("excluir_depreciacion") // arrendado, ya depreciado o fuera de los costos
+  excluirDepreciacion Boolean        @default(false) @map("excluir_depreciacion") // arrendado, ya depreciado o fuera de los costos
   fechaBaja           DateTime?      @map("fecha_baja") @db.Date // venta o retiro: deja de depreciarse
   sucursalId          Int            @map("sucursal_id")
   pilotoAsignadoId    Int?           @map("piloto_asignado_id")
@@ -573,28 +578,28 @@ model Cabezal {
 
 /// Remolque: furgón, plataforma, cisterna, portacontenedor...
 model Remolque {
-  id                 Int            @id @default(autoincrement())
-  codigo             String         @unique // R-01...
-  placa              String         @unique
-  tipo               String // FURGON | PLATAFORMA | CISTERNA | PORTACONTENEDOR | LOWBOY | OTRO
-  marca              String?
-  anio               Int?
-  ejes               Int            @default(2)
-  capacidadToneladas Decimal?       @map("capacidad_toneladas") @db.Decimal(8, 2)
-  largoMetros        Decimal?       @map("largo_metros") @db.Decimal(6, 2)
-  fechaCompra        DateTime?      @map("fecha_compra") @db.Date
-  costoCompra        Decimal?       @map("costo_compra") @db.Decimal(14, 2)
-  vidaUtilAnios      Int?           @map("vida_util_anios")
-  metodoDepreciacion String?        @map("metodo_depreciacion")
-  vidaUtilKm         Decimal?       @map("vida_util_km") @db.Decimal(12, 0)
-  valorResidual      Decimal?       @map("valor_residual") @db.Decimal(14, 2)
-  excluirDepreciacion Boolean @default(false) @map("excluir_depreciacion")
-  fechaBaja          DateTime?      @map("fecha_baja") @db.Date
-  estado             EstadoVehiculo @default(ACTIVO)
-  notas              String?
-  activo             Boolean        @default(true)
-  creadoEn           DateTime       @default(now()) @map("creado_en")
-  actualizadoEn      DateTime       @updatedAt @map("actualizado_en")
+  id                  Int            @id @default(autoincrement())
+  codigo              String         @unique // R-01...
+  placa               String         @unique
+  tipo                String // FURGON | PLATAFORMA | CISTERNA | PORTACONTENEDOR | LOWBOY | OTRO
+  marca               String?
+  anio                Int?
+  ejes                Int            @default(2)
+  capacidadToneladas  Decimal?       @map("capacidad_toneladas") @db.Decimal(8, 2)
+  largoMetros         Decimal?       @map("largo_metros") @db.Decimal(6, 2)
+  fechaCompra         DateTime?      @map("fecha_compra") @db.Date
+  costoCompra         Decimal?       @map("costo_compra") @db.Decimal(14, 2)
+  vidaUtilAnios       Int?           @map("vida_util_anios")
+  metodoDepreciacion  String?        @map("metodo_depreciacion")
+  vidaUtilKm          Decimal?       @map("vida_util_km") @db.Decimal(12, 0)
+  valorResidual       Decimal?       @map("valor_residual") @db.Decimal(14, 2)
+  excluirDepreciacion Boolean        @default(false) @map("excluir_depreciacion")
+  fechaBaja           DateTime?      @map("fecha_baja") @db.Date
+  estado              EstadoVehiculo @default(ACTIVO)
+  notas               String?
+  activo              Boolean        @default(true)
+  creadoEn            DateTime       @default(now()) @map("creado_en")
+  actualizadoEn       DateTime       @updatedAt @map("actualizado_en")
 
   documentos   DocumentoVehiculo[]
   viajes       Viaje[]
@@ -819,6 +824,7 @@ model Viaje {
   prorrateo         Decimal?    @db.Decimal(14, 2) // km recorridos × costoKmFijo
   ganancia          Decimal?    @db.Decimal(14, 2) // cobrado − costos directos − pago al piloto (+ cargas) − prorrateo
   factorCargas      Decimal?    @map("factor_cargas") @db.Decimal(6, 2) // % de cargas laborales sobre el pago al piloto usado al liquidar
+  cuentaCobrarId    Int?        @map("cuenta_cobrar_id") // factura que lo cobra
   creadoPorId       Int         @map("creado_por_id")
   creadoEn          DateTime    @default(now()) @map("creado_en")
   actualizadoEn     DateTime    @updatedAt @map("actualizado_en")
@@ -840,8 +846,10 @@ model Viaje {
   casos        Caso[]
   cotizacion   Cotizacion?
   eventos      EventoViaje[]
+  cuentaCobrar CuentaCobrar?      @relation(fields: [cuentaCobrarId], references: [id])
 
   @@index([fechaSalida])
+  @@index([cuentaCobrarId])
   @@index([cabezalId, fechaSalida])
   @@index([pilotoId, fechaSalida])
   @@index([clienteId, fechaSalida])
@@ -1125,29 +1133,31 @@ enum EstadoOrdenTrabajo {
 
 /// Orden de trabajo de taller (propio o externo): mano de obra + repuestos.
 model OrdenTrabajo {
-  id             Int                @id @default(autoincrement())
-  numero         String             @unique // OT-000001
-  sucursalId     Int                @map("sucursal_id")
-  cabezalId      Int?               @map("cabezal_id")
-  remolqueId     Int?               @map("remolque_id")
-  planId         Int?               @map("plan_id")
-  tallerId       Int?               @map("taller_id") // null = taller propio
-  tipo           TipoOrdenTrabajo
-  prioridad      PrioridadCaso      @default(MODERADA)
-  descripcion    String
-  odometro       Decimal?           @db.Decimal(12, 1)
-  fechaApertura  DateTime           @default(now()) @map("fecha_apertura")
-  fechaCierre    DateTime?          @map("fecha_cierre")
-  manoObra       Decimal            @default(0) @map("mano_obra") @db.Decimal(14, 2)
-  totalRepuestos Decimal            @default(0) @map("total_repuestos") @db.Decimal(14, 2)
-  total          Decimal            @default(0) @db.Decimal(14, 2)
-  documento      String? // factura del taller
-  archivoId      String?            @map("archivo_id")
-  estado         EstadoOrdenTrabajo @default(ABIERTA)
-  observaciones  String?
-  creadoPorId    Int                @map("creado_por_id")
-  creadoEn       DateTime           @default(now()) @map("creado_en")
-  actualizadoEn  DateTime           @updatedAt @map("actualizado_en")
+  id              Int                @id @default(autoincrement())
+  numero          String             @unique // OT-000001
+  sucursalId      Int                @map("sucursal_id")
+  cabezalId       Int?               @map("cabezal_id")
+  remolqueId      Int?               @map("remolque_id")
+  planId          Int?               @map("plan_id")
+  tallerId        Int?               @map("taller_id") // null = taller propio
+  tipo            TipoOrdenTrabajo
+  prioridad       PrioridadCaso      @default(MODERADA)
+  descripcion     String
+  odometro        Decimal?           @db.Decimal(12, 1)
+  fechaApertura   DateTime           @default(now()) @map("fecha_apertura")
+  fechaCierre     DateTime?          @map("fecha_cierre")
+  manoObra        Decimal            @default(0) @map("mano_obra") @db.Decimal(14, 2)
+  totalRepuestos  Decimal            @default(0) @map("total_repuestos") @db.Decimal(14, 2)
+  total           Decimal            @default(0) @db.Decimal(14, 2)
+  documento       String? // factura del taller
+  archivoId       String?            @map("archivo_id")
+  estado          EstadoOrdenTrabajo @default(ABIERTA)
+  observaciones   String? // trabajo realizado
+  motivoAnulacion String?            @map("motivo_anulacion")
+  detieneUnidad   Boolean            @default(false) @map("detiene_unidad") // la unidad quedó «en taller» por esta orden
+  creadoPorId     Int                @map("creado_por_id")
+  creadoEn        DateTime           @default(now()) @map("creado_en")
+  actualizadoEn   DateTime           @updatedAt @map("actualizado_en")
 
   sucursal   Sucursal               @relation(fields: [sucursalId], references: [id])
   cabezal    Cabezal?               @relation(fields: [cabezalId], references: [id])
@@ -1162,6 +1172,7 @@ model OrdenTrabajo {
 
   @@index([cabezalId, fechaApertura])
   @@index([fechaApertura])
+  @@index([planId, estado])
   @@map("ordenes_trabajo")
 }
 
@@ -1443,4 +1454,112 @@ model Opinion {
   @@index([enviado])
   @@index([tipo, creadoEn])
   @@map("opiniones")
+}
+
+// ─────────────────────────────── CUENTAS POR COBRAR ─────────────────────────
+
+enum EstadoCuentaCobrar {
+  PENDIENTE
+  PARCIAL
+  PAGADA
+  ANULADA
+}
+
+/// Formas de rebajar el saldo: pagos, retenciones que hace el cliente (con su constancia) y descuentos acordados.
+enum MedioCobro {
+  TRANSFERENCIA
+  DEPOSITO
+  CHEQUE
+  EFECTIVO
+  RETENCION_IVA
+  RETENCION_ISR
+  DESCUENTO
+  OTRO
+}
+
+enum TipoGestionCobro {
+  LLAMADA
+  CORREO
+  WHATSAPP
+  VISITA
+  PROMESA
+  NOTA
+}
+
+/// Cuenta por cobrar: el documento (factura) que se le cobra a un cliente por uno o varios viajes, con su plazo.
+model CuentaCobrar {
+  id               Int                @id @default(autoincrement())
+  numero           String             @unique // CC-000001
+  sucursalId       Int                @map("sucursal_id")
+  clienteId        Int                @map("cliente_id")
+  tipoDocumento    String             @default("FACTURA") @map("tipo_documento") // FACTURA | RECIBO | NOTA_DEBITO | OTRO
+  serie            String?
+  numeroDocumento  String?            @map("numero_documento")
+  autorizacionFel  String?            @map("autorizacion_fel") // número de autorización (UUID) de la factura electrónica
+  fechaEmision     DateTime           @map("fecha_emision") @db.Date
+  diasCredito      Int                @map("dias_credito")
+  fechaVencimiento DateTime           @map("fecha_vencimiento") @db.Date
+  monto            Decimal            @db.Decimal(14, 2)
+  saldo            Decimal            @db.Decimal(14, 2) // monto − abonos vigentes (materializado)
+  estado           EstadoCuentaCobrar @default(PENDIENTE)
+  descripcion      String?
+  archivoId        String?            @map("archivo_id") // copia del documento
+  motivoAnulacion  String?            @map("motivo_anulacion")
+  anuladaEn        DateTime?          @map("anulada_en")
+  creadoPorId      Int                @map("creado_por_id")
+  creadoEn         DateTime           @default(now()) @map("creado_en")
+  actualizadoEn    DateTime           @updatedAt @map("actualizado_en")
+
+  sucursal  Sucursal       @relation(fields: [sucursalId], references: [id])
+  cliente   Tercero        @relation(fields: [clienteId], references: [id])
+  creadoPor Usuario        @relation(fields: [creadoPorId], references: [id])
+  viajes    Viaje[]
+  abonos    AbonoCobro[]
+  gestiones GestionCobro[]
+
+  @@index([clienteId, estado])
+  @@index([sucursalId, estado])
+  @@index([fechaVencimiento])
+  @@map("cuentas_cobrar")
+}
+
+/// Abono a una cuenta: pago, retención o descuento. No se borra: se anula con motivo.
+model AbonoCobro {
+  id              Int        @id @default(autoincrement())
+  cuentaId        Int        @map("cuenta_id")
+  fecha           DateTime   @db.Date
+  monto           Decimal    @db.Decimal(14, 2)
+  medio           MedioCobro
+  referencia      String? // número de boleta, cheque, transferencia o constancia de retención
+  banco           String?
+  archivoId       String?    @map("archivo_id") // comprobante
+  anulado         Boolean    @default(false)
+  motivoAnulacion String?    @map("motivo_anulacion")
+  registradoPorId Int        @map("registrado_por_id")
+  creadoEn        DateTime   @default(now()) @map("creado_en")
+
+  cuenta        CuentaCobrar @relation(fields: [cuentaId], references: [id])
+  registradoPor Usuario      @relation(fields: [registradoPorId], references: [id])
+
+  @@index([cuentaId])
+  @@index([fecha])
+  @@map("abonos_cobro")
+}
+
+/// Seguimiento del cobro: llamadas, correos, visitas y promesas de pago (con fecha y monto).
+model GestionCobro {
+  id           Int              @id @default(autoincrement())
+  cuentaId     Int              @map("cuenta_id")
+  tipo         TipoGestionCobro
+  nota         String
+  promesaFecha DateTime?        @map("promesa_fecha") @db.Date
+  promesaMonto Decimal?         @map("promesa_monto") @db.Decimal(14, 2)
+  usuarioId    Int              @map("usuario_id")
+  creadoEn     DateTime         @default(now()) @map("creado_en")
+
+  cuenta  CuentaCobrar @relation(fields: [cuentaId], references: [id])
+  usuario Usuario      @relation(fields: [usuarioId], references: [id])
+
+  @@index([cuentaId])
+  @@map("gestiones_cobro")
 }

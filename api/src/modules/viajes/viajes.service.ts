@@ -4,6 +4,7 @@
  *
  * Un piloto (usuario ligado a un empleado con datos de piloto y sin permiso de programar) solo ve y toca SUS viajes.
  */
+import { CobrosService } from '../cobros/cobros.service';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { AuditService } from '../../common/audit/audit.service';
@@ -48,6 +49,7 @@ export class ViajesService {
     private readonly audit: AuditService,
     private readonly parametros: ParametrosService,
     private readonly costoKm: CostoKmService,
+    private readonly cobros: CobrosService,
     private readonly notificaciones: NotificacionesService,
     private readonly cargas: CargasLaboralesService,
   ) {}
@@ -123,6 +125,8 @@ export class ViajesService {
     };
     revisarDocs(`Cabezal ${cabezal.codigo}`, cabezal.documentos);
     if (remolque) revisarDocs(`Remolque ${remolque.codigo}`, remolque.documentos);
+    // Crédito: deuda, límite y mora del cliente (bloquea solo si «cobros.bloquear_mora_dias» lo pide)
+    avisos.push(...(await this.cobros.revisarCredito(db, cliente.id, cliente, nombreTercero(cliente))));
     return { cabezal, piloto, cliente, remolque, avisos };
   }
 
