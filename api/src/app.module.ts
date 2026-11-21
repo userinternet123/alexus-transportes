@@ -11,12 +11,21 @@ import { AuditModule } from './common/audit/audit.service';
 import { AuthGuard } from './common/auth/auth.guard';
 import { ErroresFilter } from './common/filters/errores.filter';
 import { ParametrosModule } from './common/parametros/parametros.service';
+import { CargasLaboralesModule } from './common/costos/cargas-laborales';
+import { DepreciacionModule } from './common/costos/depreciacion.service';
+import { DepreciacionApiModule } from './modules/depreciacion/depreciacion.controller';
+import { CobrosModule } from './modules/cobros/cobros.module';
+import { TallerModule } from './modules/taller/taller.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { ArchivosModule } from './modules/archivos/archivos.module';
 import { LicenciaModule } from './modules/licencia/licencia.module';
 import { CentralModule } from './modules/central/central.module';
 import { NotificacionesModule } from './modules/notificaciones/notificaciones.module';
 import { GastosModule } from './modules/gastos/gastos.module';
+import { ViajesModule } from './modules/viajes/viajes.module';
+import { CombustibleModule } from './modules/combustible/combustible.module';
+import { InspeccionesModule } from './modules/inspecciones/inspecciones.module';
+import { CasosModule } from './modules/casos/casos.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CatalogosModule } from './modules/catalogos/catalogos.module';
 import { ReportesModule } from './modules/reportes/reportes.module';
@@ -30,8 +39,9 @@ import { SistemaModule } from './modules/sistema/sistema.module';
  * reportes) + dominio de transporte: flota, pilotos, viajes, combustible,
  * llantas y mantenimiento. Los catálogos (cabezales, remolques, rutas, tarifas,
  * pilotos, llantas, repuestos, planes) nacen del CRUD genérico; las operaciones
- * con reglas propias (viajes, cargas, órdenes de trabajo, montajes) tendrán su
- * módulo en las fases siguientes.
+ * con reglas propias tienen su módulo: viajes (con cotizador y liquidación),
+ * combustible e inspección pre viaje (fase 1); órdenes de trabajo y montajes de
+ * llantas en las fases siguientes.
  */
 @Module({
   imports: [
@@ -53,6 +63,8 @@ import { SistemaModule } from './modules/sistema/sistema.module';
     PrismaModule,
     AuditModule,
     ParametrosModule,
+    CargasLaboralesModule,
+    DepreciacionModule,
     ArchivosModule,
     LicenciaModule,
     CentralModule,
@@ -62,6 +74,14 @@ import { SistemaModule } from './modules/sistema/sistema.module';
     SeguridadModule,
     SistemaModule,
     CatalogosModule,
+    // Operación de transporte
+    ViajesModule,
+    DepreciacionApiModule,
+    CobrosModule,
+    TallerModule,
+    CombustibleModule,
+    InspeccionesModule,
+    CasosModule,
     // Gestión
     GastosModule,
     ReportesModule,

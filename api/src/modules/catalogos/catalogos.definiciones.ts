@@ -2,6 +2,7 @@ import { reglaNegocio } from '../../common/errors';
 import { z } from 'zod';
 import { OpcionesCrud } from '../../common/crud/crud.factory';
 import { zBool, zIdOpt, zIdReq, zMonto, zMontoOpt, zNum } from '../../common/pipes/zod';
+import { errorRegla, METODOS } from '../../common/costos/depreciacion.logica';
 
 /**
  * REGISTRO DE CATÁLOGOS — agregar un catálogo = agregar un objeto aquí
@@ -26,6 +27,20 @@ const km = zNum(z.number().min(0).max(99_999_999));
 const kmOpt = zNum(z.number().min(0).max(99_999_999).optional().nullable());
 const anio = zNum(z.number().int().min(1960).max(2100).optional().nullable());
 const estadoVehiculo = z.enum(['ACTIVO', 'EN_TALLER', 'INACTIVO', 'VENDIDO']).optional();
+/** '' del select => usar lo de la regla */
+const metodoOpt = z.preprocess((v) => (v === '' ? null : v), z.enum(METODOS).nullable().optional());
+const vidaAnios = zNum(z.number().int().min(1).max(40).optional().nullable());
+const vidaKm = zNum(z.number().min(1000).max(20_000_000).optional().nullable());
+/** Depreciación propia de la unidad: lo que se deje vacío sale de su regla. */
+const depreciacionUnidad = { metodoDepreciacion: metodoOpt, vidaUtilAnios: vidaAnios, vidaUtilKm: vidaKm, valorResidual: zMontoOpt, excluirDepreciacion: zBool.optional(), fechaBaja: fechaOpt };
+const reglaUnidad = (d: Record<string, unknown>) => {
+  const m = d.metodoDepreciacion as string | null;
+  if (m === 'POR_KM' && !d.vidaUtilKm) return null; // la regla puede traer los km
+  if (m === 'TABLA') return null;
+  if (d.valorResidual != null && d.costoCompra != null && Number(d.valorResidual) > Number(d.costoCompra)) return 'El valor residual no puede ser mayor que el costo de compra';
+  if (d.fechaBaja && d.fechaCompra && new Date(d.fechaBaja as string) < new Date(d.fechaCompra as string)) return 'La fecha de baja es anterior a la de compra';
+  return null;
+};
 
 const TIPOS_REMOLQUE = ['FURGON', 'PLATAFORMA', 'CISTERNA', 'PORTACONTENEDOR', 'LOWBOY', 'VOLTEO', 'OTRO'] as const;
 const TIPOS_DOCUMENTO = ['SEGURO', 'TARJETA_CIRCULACION', 'CALCOMANIA', 'PERMISO_PESO', 'REVISION', 'OTRO'] as const;
@@ -122,7 +137,13 @@ export const CATALOGOS: OpcionesCrud[] = [
     schema: z.object({
       nombre, origen: nombre, destino: nombre,
       kmEstimados: km, horasEstimadas: zNum(z.number().min(0).max(999).optional().nullable()),
-      peajesEstimados: zMontoOpt, viaticoEstimado: zMontoOpt, activo,
+      peajesEstimados: zMontoOpt, viaticoEstimado: zMontoOpt,
+      terreno: z.preprocess((v) => (v === '' ? undefined : v), z.enum(['PLANO', 'ONDULADO', 'MONTANA']).optional()),
+      subidaMetros: zNum(z.number().int().min(0).max(10_000).optional().nullable()),
+      trafico: z.preprocess((v) => (v === '' ? undefined : v), z.enum(['FLUIDO', 'NORMAL', 'LENTO', 'MUY_LENTO']).optional()),
+      horasEspera: zNum(z.number().min(0).max(240).optional()),
+      notas: z.string().trim().max(300).optional().nullable(),
+      activo,
     }),
     busqueda: ['nombre', 'origen', 'destino'], orderBy: { nombre: 'asc' },
   },
@@ -147,9 +168,10 @@ export const CATALOGOS: OpcionesCrud[] = [
       ejes: zNum(z.number().int().min(2).max(6).optional()),
       odometro: kmOpt, capacidadTanque: zNum(z.number().min(0).max(9999).optional().nullable()),
       rendimientoEsperado: zNum(z.number().min(0).max(99).optional().nullable()),
-      fechaCompra: fechaOpt, costoCompra: zMontoOpt, vidaUtilAnios: zNum(z.number().int().min(1).max(40).optional().nullable()),
+      fechaCompra: fechaOpt, costoCompra: zMontoOpt, ...depreciacionUnidad, kmCompra: kmOpt,
       pilotoAsignadoId: zIdOpt, estado: estadoVehiculo, notas: texto(500), activo,
     }),
+    reglas: reglaUnidad,
     busqueda: ['codigo', 'placa', 'marca', 'modelo'], filtros: ['pilotoAsignadoId'], porSucursal: true, orderBy: { codigo: 'asc' },
     include: { pilotoAsignado: { select: { id: true, empleado: { select: { nombres: true, apellidos: true } } } }, sucursal: { select: { nombre: true } } },
   },
@@ -160,9 +182,26 @@ export const CATALOGOS: OpcionesCrud[] = [
       ejes: zNum(z.number().int().min(1).max(6).optional()),
       capacidadToneladas: zNum(z.number().min(0).max(999).optional().nullable()),
       largoMetros: zNum(z.number().min(0).max(99).optional().nullable()),
-      fechaCompra: fechaOpt, costoCompra: zMontoOpt, estado: estadoVehiculo, notas: texto(500), activo,
+      fechaCompra: fechaOpt, costoCompra: zMontoOpt, ...depreciacionUnidad, estado: estadoVehiculo, notas: texto(500), activo,
     }),
+    reglas: reglaUnidad,
     busqueda: ['codigo', 'placa', 'tipo', 'marca'], orderBy: { codigo: 'asc' },
+  },
+  {
+    // Cómo se deprecia cada tipo de unidad, por marca, tipo de remolque y año del modelo (Finanzas › Depreciación)
+    ruta: 'finanzas/reglas-depreciacion', modelo: 'reglaDepreciacion', permiso: 'finanzas.depreciacion', entidad: 'Regla de depreciación',
+    schema: z.object({
+      nombre, aplicaA: z.enum(['CABEZAL', 'REMOLQUE']),
+      marca: z.preprocess((v) => (v === '' ? null : v), texto(60)),
+      tipoRemolque: z.preprocess((v) => (v === '' ? null : v), z.enum(TIPOS_REMOLQUE).nullable().optional()),
+      anioDesde: anio, anioHasta: anio,
+      metodo: z.enum(METODOS).default('LINEA_RECTA'),
+      vidaUtilAnios: vidaAnios, vidaUtilKm: vidaKm,
+      valorResidualPct: zNum(z.number().min(0).max(90).optional()),
+      tablaAnual: texto(200), notas: texto(300), activo,
+    }),
+    reglas: (d) => errorRegla(d as never),
+    busqueda: ['nombre', 'marca'], orderBy: [{ aplicaA: 'asc' }, { nombre: 'asc' }],
   },
   {
     ruta: 'flota/documentos', modelo: 'documentoVehiculo', permiso: 'flota', entidad: 'Documento de vehículo',

@@ -41,7 +41,7 @@
       },
       {
         "name": "kmEstimados",
-        "label": "Km estimados",
+        "label": "Km de ida",
         "type": "number",
         "size": "small",
         "mask": "number",
@@ -49,24 +49,89 @@
       },
       {
         "name": "horasEstimadas",
-        "label": "Horas estimadas",
+        "label": "Horas de ida",
         "type": "number",
         "size": "small",
         "mask": "number"
       },
       {
         "name": "peajesEstimados",
-        "label": "Peajes estimados",
+        "label": "Peajes por sentido",
         "type": "money",
         "size": "small",
         "mask": "money"
       },
       {
         "name": "viaticoEstimado",
-        "label": "Viático estimado",
+        "label": "Viático por sentido",
         "type": "money",
         "size": "small",
         "mask": "money"
+      },
+      {
+        "name": "terreno",
+        "label": "Terreno",
+        "type": "select",
+        "size": "small",
+        "options": [
+          {
+            "value": "PLANO",
+            "label": "Plano"
+          },
+          {
+            "value": "ONDULADO",
+            "label": "Ondulado"
+          },
+          {
+            "value": "MONTANA",
+            "label": "Montaña"
+          }
+        ]
+      },
+      {
+        "name": "subidaMetros",
+        "label": "Subida acumulada de ida (m)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "trafico",
+        "label": "Tráfico",
+        "type": "select",
+        "size": "small",
+        "options": [
+          {
+            "value": "FLUIDO",
+            "label": "Fluido"
+          },
+          {
+            "value": "NORMAL",
+            "label": "Normal"
+          },
+          {
+            "value": "LENTO",
+            "label": "Lento"
+          },
+          {
+            "value": "MUY_LENTO",
+            "label": "Muy lento"
+          }
+        ]
+      },
+      {
+        "name": "horasEspera",
+        "label": "Horas de espera (colas, aduana, puerto)",
+        "type": "number",
+        "size": "small",
+        "mask": "number"
+      },
+      {
+        "name": "notas",
+        "label": "Notas de la ruta",
+        "type": "text",
+        "size": "full",
+        "placeholder": "Ej. cumbre de Alaska; cola en la portuaria"
       }
     ]
   }

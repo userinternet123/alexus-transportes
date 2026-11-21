@@ -91,18 +91,21 @@ export class RrhhService {
   }
 
   // ───────────────────────────── PLANILLA ───────────────────────────────
+  /** Tasas de la planilla. Lo que la empresa no paga hoy (parámetros rrhh.paga_*) queda en cero. */
   private async tasas(): Promise<TasasPlanilla> {
     const n = (k: string) => this.parametros.numero(k);
+    const si = (k: string) => this.parametros.booleano(k);
+    const [igss, irtra, intecap, prestaciones] = await Promise.all([si('rrhh.paga_igss'), si('rrhh.paga_irtra'), si('rrhh.paga_intecap'), si('rrhh.provisiona_prestaciones')]);
     return {
-      igssLaboral: await n('rrhh.igss_laboral'),
-      igssPatronal: await n('rrhh.igss_patronal'),
-      irtra: await n('rrhh.irtra'),
-      intecap: await n('rrhh.intecap'),
+      igssLaboral: igss ? await n('rrhh.igss_laboral') : 0,
+      igssPatronal: igss ? await n('rrhh.igss_patronal') : 0,
+      irtra: irtra ? await n('rrhh.irtra') : 0,
+      intecap: intecap ? await n('rrhh.intecap') : 0,
       factorHoraExtra: await n('rrhh.factor_hora_extra'),
       horasJornada: await n('rrhh.horas_jornada'),
-      provisionAguinaldo: await n('rrhh.provision_aguinaldo'),
-      provisionBono14: await n('rrhh.provision_bono14'),
-      provisionIndemnizacion: await n('rrhh.provision_indemnizacion'),
+      provisionAguinaldo: prestaciones ? await n('rrhh.provision_aguinaldo') : 0,
+      provisionBono14: prestaciones ? await n('rrhh.provision_bono14') : 0,
+      provisionIndemnizacion: prestaciones ? await n('rrhh.provision_indemnizacion') : 0,
     };
   }
 

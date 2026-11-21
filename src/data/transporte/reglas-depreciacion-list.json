@@ -1,0 +1,126 @@
+{
+  "title": "",
+  "module": "Reglas de depreciación",
+  "endpoint": "/finanzas/reglas-depreciacion",
+  "showSearch": true,
+  "showPagination": true,
+  "searchPlaceHolder": "Nombre o marca",
+  "headerBtn": {
+    "label": "Agregar regla",
+    "action": "create",
+    "icon": "plus",
+    "size": 35,
+    "variant": "primary"
+  },
+  "filters": [
+    {
+      "name": "activo",
+      "type": "select",
+      "options": [
+        {
+          "label": "Activos",
+          "value": "true"
+        },
+        {
+          "label": "Inactivos",
+          "value": "false"
+        },
+        {
+          "label": "Todos",
+          "value": "todos"
+        }
+      ]
+    }
+  ],
+  "columns": [
+    {
+      "accessorKey": "nombre",
+      "header": "Regla"
+    },
+    {
+      "accessorKey": "aplicaA",
+      "header": "Aplica a"
+    },
+    {
+      "accessorKey": "marca",
+      "header": "Marca"
+    },
+    {
+      "accessorKey": "tipoRemolque",
+      "header": "Tipo de remolque"
+    },
+    {
+      "accessorKey": "anioDesde",
+      "header": "Modelo desde"
+    },
+    {
+      "accessorKey": "anioHasta",
+      "header": "Modelo hasta"
+    },
+    {
+      "accessorKey": "metodo",
+      "header": "Método"
+    },
+    {
+      "accessorKey": "vidaUtilAnios",
+      "header": "Vida (años)"
+    },
+    {
+      "accessorKey": "vidaUtilKm",
+      "header": "Vida (km)"
+    },
+    {
+      "accessorKey": "valorResidualPct",
+      "header": "Residual %"
+    },
+    {
+      "accessorKey": "activo",
+      "header": "Estado",
+      "type": "badge"
+    }
+  ],
+  "actions": [
+    {
+      "estado": [
+        "ACTIVO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "view",
+          "icon": "eye",
+          "variant": "text-green-600",
+          "tamano": "icon"
+        },
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        },
+        {
+          "action": "delete",
+          "icon": "trash",
+          "variant": "text-red-600",
+          "tamano": "icon"
+        }
+      ]
+    },
+    {
+      "estado": [
+        "INACTIVO",
+        "BAJA",
+        "SUSPENDIDO"
+      ],
+      "columnaDb": "activo",
+      "options": [
+        {
+          "action": "edit",
+          "icon": "edit",
+          "variant": "na",
+          "tamano": "icon"
+        }
+      ]
+    }
+  ]
+}

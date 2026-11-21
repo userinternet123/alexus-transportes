@@ -5,7 +5,7 @@
 // con scripts/generar-configs.mjs).
 // ─────────────────────────────────────────────────────────────────────────────
 import {
-  Home, Route, Truck, Fuel, Wrench, CircleDot, Users, Building2, TrendingUp, UserCog, Settings, LogOut,
+  Home, Route, Truck, Fuel, Wrench, CircleDot, Users, Building2, TrendingUp, UserCog, Settings, LogOut, LifeBuoy,
 } from 'lucide-react'
 import indice from '../../../../data/transporte/_indice.json'
 
@@ -26,8 +26,9 @@ export const MENU_ITEMS = {
     {
       label: 'Viajes', name: 'mod-viajes', icon: Route, tag: 'viajes.ver',
       submenu: [
-        // Fase 1: pantallas de viajes (programar, en ruta, liquidar) y cotizador
-        catalogo('rutas', 'Rutas', 'catalogos.ver'),
+        pantalla('viajes', 'Viajes', 'viajes', 'viajes.ver'),
+        pantalla('cotizador', 'Cotizador y cotizaciones', 'cotizador', 'viajes.cotizar'),
+        catalogo('rutas', 'Rutas y sus condiciones', 'catalogos.ver'),
         catalogo('tarifas', 'Tarifas por cliente', 'tarifas.ver'),
       ],
     },
@@ -37,18 +38,25 @@ export const MENU_ITEMS = {
         catalogo('cabezales', 'Cabezales', 'flota.ver'),
         catalogo('remolques', 'Remolques', 'flota.ver'),
         catalogo('documentos-vehiculo', 'Documentos y seguros', 'flota.ver'),
+        pantalla('inspecciones', 'Inspección pre viaje', 'inspecciones', 'inspecciones.ver'),
+      ],
+    },
+    {
+      label: 'Casos', name: 'mod-casos', icon: LifeBuoy, tag: 'casos.crear',
+      submenu: [
+        pantalla('casos', 'Casos y requerimientos', 'casos', 'casos.crear'),
       ],
     },
     {
       label: 'Combustible', name: 'mod-combustible', icon: Fuel, tag: 'combustible.ver',
       submenu: [
-        // Fase 1: registro de cargas y rendimiento por cabezal
+        pantalla('combustible', 'Cargas y rendimiento', 'combustible', 'combustible.ver'),
       ],
     },
     {
       label: 'Taller', name: 'mod-taller', icon: Wrench, tag: 'mantenimiento.ver',
       submenu: [
-        // Fase 2: órdenes de trabajo y alertas de mantenimiento
+        pantalla('taller', 'Órdenes y mantenimiento', 'taller', 'mantenimiento.ver'),
         catalogo('planes-mantenimiento', 'Planes de mantenimiento', 'catalogos.ver'),
         catalogo('repuestos', 'Repuestos', 'catalogos.ver'),
         catalogo('marcas', 'Marcas', 'catalogos.ver'),
@@ -78,6 +86,10 @@ export const MENU_ITEMS = {
     {
       label: 'Finanzas y reportes', name: 'mod-reportes', icon: TrendingUp, tag: 'reportes.viajes',
       submenu: [
+        pantalla('cobros', 'Cuentas por cobrar', 'cobros', 'cobros.ver'),
+        pantalla('rentabilidad', 'Rentabilidad de viajes', 'rentabilidad', 'finanzas.costos'),
+        pantalla('depreciacion', 'Depreciación de la flota', 'depreciacion', 'finanzas.costos'),
+        catalogo('reglas-depreciacion', 'Reglas de depreciación', 'finanzas.depreciacion.ver'),
         pantalla('gastos', 'Gastos de operación', 'gastos', 'gastos.ver'),
         pantalla('reportes', 'Centro de reportes', 'reportes', 'reportes.viajes'),
       ],

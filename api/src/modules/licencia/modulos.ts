@@ -33,6 +33,7 @@ const PREFIJOS: [string, string][] = [
   ['llantas.', 'llantas'],
   ['pilotos.', 'pilotos'],
   ['gastos.', 'finanzas'],
+  ['cobros.', 'finanzas'],
   ['finanzas.', 'finanzas'],
 ];
 

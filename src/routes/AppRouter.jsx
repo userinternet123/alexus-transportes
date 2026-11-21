@@ -10,6 +10,15 @@ import Home from '../pages/Home'
 import DynamicPage from '../pages/DynamicPage'
 
 import Gastos from '../components/finanzas/Gastos'
+import Rentabilidad from '../components/finanzas/Rentabilidad'
+import Depreciacion from '../components/finanzas/Depreciacion'
+import Cobros from '../components/finanzas/Cobros'
+import Taller from '../components/operacion/Taller'
+import Viajes from '../components/operacion/Viajes'
+import Cotizador from '../components/operacion/Cotizador'
+import Combustible from '../components/operacion/Combustible'
+import Inspecciones from '../components/operacion/Inspecciones'
+import Casos from '../components/operacion/Casos'
 import CentroReportes from '../components/finanzas/CentroReportes'
 import { RolesPermisos, Usuarios, Parametros, ConfigNegocio, Licencia } from '../components/admin'
 import indice from '../data/transporte/_indice.json'
@@ -29,7 +38,18 @@ function AppRouter() {
             <Route key={clave} path={clave} element={<DynamicPage />} />
           ))}
 
+          {/* Operación */}
+          <Route path="viajes" element={<Viajes />} />
+          <Route path="cotizador" element={<Cotizador />} />
+          <Route path="combustible" element={<Combustible />} />
+          <Route path="inspecciones" element={<Inspecciones />} />
+          <Route path="casos" element={<Casos />} />
+          <Route path="taller" element={<Taller />} />
+
           {/* Finanzas y reportes */}
+          <Route path="rentabilidad" element={<Rentabilidad />} />
+          <Route path="depreciacion" element={<Depreciacion />} />
+          <Route path="cobros" element={<Cobros />} />
           <Route path="gastos" element={<Gastos />} />
           <Route path="reportes" element={<CentroReportes />} />
 

@@ -16,6 +16,7 @@ import { modal } from '../../utils/utilitarios'
 import { useNavigate } from 'react-router-dom'
 import { MENU_ITEMS } from '../../components/layout/sidebar/config/sidebarMenu'
 import { navigateToSubmenu } from '../../utils/NavigationData'
+import indice from '../../data/transporte/_indice.json'
 
 function ListBasePage() {
   const [editModal, setEditModal] = useState({
@@ -33,7 +34,10 @@ function ListBasePage() {
   const savedForm = JSON.parse(sessionStorage.getItem('selectedForm') || '{}')
   const state = location.state || savedForm
 
-  const buttons = state.button || []
+  // Los botones salen del catálogo de la dirección (/home/<clave>), no del último menú que se tocó: así funcionan
+  // también al llegar por un enlace y nunca guardan en el catálogo equivocado.
+  const clave = location.pathname.split('/').filter(Boolean).pop()
+  const buttons = indice[clave]?.botones ?? state.button ?? []
   const name = state.name || ''
   const msg = state.msg || ''
   const menuLabel = state.menuLabel || 'configure'
@@ -86,9 +90,11 @@ function ListBasePage() {
 
     const dataToSend = { ...data }
 
-    // Convertir estados a boolean
+    // Convertir estados a boolean (formularios antiguos). No cuando «estado» es un campo del formulario con sus
+    // propias opciones (situación del cabezal, de la llanta…): ese valor se envía tal cual.
+    const camposDelFormulario = new Set(modalConfig.flatMap((sec) => sec.fields ?? []).map((f) => f.name))
     Object.keys(dataToSend).forEach((key) => {
-      if (key.startsWith('estado')) {
+      if (key.startsWith('estado') && !camposDelFormulario.has(key)) {
         dataToSend[key] = dataToSend[key] === 'ACTIVO'
       }
     })

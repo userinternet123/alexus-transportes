@@ -48,11 +48,23 @@ export const PERMISOS: Record<string, { modulo: string; descripcion: string }> =
   // Viajes
   'viajes.ver': { modulo: 'Viajes', descripcion: 'Ver viajes' },
   'viajes.crear': { modulo: 'Viajes', descripcion: 'Programar e iniciar viajes' },
-  'viajes.editar': { modulo: 'Viajes', descripcion: 'Editar viajes y registrar sus costos' },
+  'viajes.editar': { modulo: 'Viajes', descripcion: 'Editar viajes programados (cliente, cabezal, piloto, tarifa)' },
+  'viajes.costos': { modulo: 'Viajes', descripcion: 'Registrar costos del viaje (peajes, viáticos, combustible) con su recibo' },
+  'viajes.anticipos': { modulo: 'Viajes', descripcion: 'Entregar anticipos de efectivo al piloto' },
+  'viajes.reportar': { modulo: 'Viajes', descripcion: 'Reportar en vivo desde el camino (estado, ubicación, fotos, incidentes)' },
   'viajes.cerrar': { modulo: 'Viajes', descripcion: 'Finalizar viajes (km de llegada)' },
   'viajes.liquidar': { modulo: 'Viajes', descripcion: 'Liquidar viajes: anticipos, costos y pago al piloto' },
   'viajes.anular': { modulo: 'Viajes', descripcion: 'Cancelar viajes' },
   'viajes.cotizar': { modulo: 'Viajes', descripcion: 'Usar el cotizador de viajes' },
+
+  // Inspección pre viaje (núcleo: todos los planes)
+  'inspecciones.ver': { modulo: 'Flota', descripcion: 'Ver inspecciones pre viaje' },
+  'inspecciones.registrar': { modulo: 'Flota', descripcion: 'Registrar la inspección pre viaje del cabezal' },
+
+  // Casos y requerimientos (núcleo)
+  'casos.ver': { modulo: 'Casos', descripcion: 'Ver casos y requerimientos' },
+  'casos.crear': { modulo: 'Casos', descripcion: 'Reportar casos (fallas, pendientes, requerimientos)' },
+  'casos.gestionar': { modulo: 'Casos', descripcion: 'Asignar, cambiar prioridad y resolver casos' },
 
   // Combustible
   'combustible.ver': { modulo: 'Combustible', descripcion: 'Ver cargas y rendimiento' },
@@ -77,6 +89,15 @@ export const PERMISOS: Record<string, { modulo: string; descripcion: string }> =
   'gastos.registrar': { modulo: 'Finanzas', descripcion: 'Registrar gastos de operación' },
   'gastos.anular': { modulo: 'Finanzas', descripcion: 'Anular gastos (con motivo)' },
   'finanzas.costos': { modulo: 'Finanzas', descripcion: 'Ver costos, utilidades y márgenes (gerencia y dueño)' },
+  'cobros.ver': { modulo: 'Finanzas', descripcion: 'Ver cuentas por cobrar, antigüedad de saldos y viajes sin facturar' },
+  'cobros.facturar': { modulo: 'Finanzas', descripcion: 'Registrar cuentas por cobrar (facturar viajes)' },
+  'cobros.abonar': { modulo: 'Finanzas', descripcion: 'Registrar abonos: pagos, retenciones y descuentos' },
+  'cobros.gestionar': { modulo: 'Finanzas', descripcion: 'Registrar seguimiento de cobro y promesas de pago' },
+  'cobros.anular': { modulo: 'Finanzas', descripcion: 'Anular cuentas por cobrar y abonos (con motivo)' },
+  'finanzas.depreciacion.ver': { modulo: 'Finanzas', descripcion: 'Ver las reglas de depreciación' },
+  'finanzas.depreciacion.crear': { modulo: 'Finanzas', descripcion: 'Crear reglas de depreciación' },
+  'finanzas.depreciacion.editar': { modulo: 'Finanzas', descripcion: 'Editar reglas de depreciación' },
+  'finanzas.depreciacion.eliminar': { modulo: 'Finanzas', descripcion: 'Desactivar reglas de depreciación' },
 
   // Reportería
   'reportes.viajes': { modulo: 'Reportes', descripcion: 'Reportes de viajes e ingresos' },
@@ -109,22 +130,24 @@ export const ROLES_BASE: Record<string, { descripcion: string; permisos: string[
     descripcion: 'Despacho: programa viajes, asigna cabezal y piloto, registra costos y combustible',
     permisos: [
       'catalogos.ver', 'terceros.ver', 'terceros.crear', 'terceros.editar', 'tarifas.ver', 'flota.ver', 'pilotos.ver',
-      'viajes.ver', 'viajes.crear', 'viajes.editar', 'viajes.cerrar', 'viajes.cotizar',
-      'combustible.ver', 'combustible.registrar', 'mantenimiento.ver', 'reportes.viajes', 'reportes.flota',
+      'viajes.ver', 'viajes.crear', 'viajes.editar', 'viajes.costos', 'viajes.anticipos', 'viajes.reportar', 'viajes.cerrar', 'viajes.cotizar',
+      'inspecciones.ver', 'inspecciones.registrar', 'casos.ver', 'casos.crear', 'combustible.ver', 'combustible.registrar', 'mantenimiento.ver', 'reportes.viajes', 'reportes.flota',
     ],
   },
   PILOTO: {
     descripcion: 'Piloto: ve sus viajes, registra combustible y gastos del viaje desde el celular',
-    permisos: ['viajes.ver', 'viajes.editar', 'combustible.registrar', 'flota.ver'],
+    permisos: ['viajes.ver', 'viajes.costos', 'viajes.reportar', 'combustible.registrar', 'inspecciones.ver', 'inspecciones.registrar', 'casos.crear', 'flota.ver'],
   },
   TALLER: {
     descripcion: 'Taller: órdenes de trabajo, repuestos y llantas',
-    permisos: ['catalogos.ver', 'flota.ver', 'flota.editar', 'llantas.ver', 'llantas.crear', 'llantas.editar', 'llantas.eliminar', 'mantenimiento.ver', 'mantenimiento.crear', 'mantenimiento.editar', 'mantenimiento.cerrar', 'reportes.mantenimiento'],
+    permisos: ['catalogos.ver', 'flota.ver', 'flota.editar', 'inspecciones.ver', 'casos.ver', 'casos.crear', 'casos.gestionar', 'llantas.ver', 'llantas.crear', 'llantas.editar', 'llantas.eliminar', 'mantenimiento.ver', 'mantenimiento.crear', 'mantenimiento.editar', 'mantenimiento.cerrar', 'reportes.mantenimiento'],
   },
   CONTADOR: {
     descripcion: 'Contabilidad: gastos, liquidaciones, planilla y reportes financieros',
     permisos: [
-      'catalogos.ver', 'terceros.ver', 'viajes.ver', 'viajes.liquidar', 'gastos.ver', 'gastos.registrar', 'gastos.anular', 'finanzas.costos',
+      'catalogos.ver', 'terceros.ver', 'viajes.ver', 'viajes.costos', 'viajes.anticipos', 'viajes.liquidar', 'gastos.ver', 'gastos.registrar', 'gastos.anular', 'finanzas.costos',
+      'finanzas.depreciacion.ver', 'finanzas.depreciacion.crear', 'finanzas.depreciacion.editar', 'finanzas.depreciacion.eliminar',
+      'cobros.ver', 'cobros.facturar', 'cobros.abonar', 'cobros.gestionar', 'cobros.anular',
       'reportes.viajes', 'reportes.flota', 'reportes.mantenimiento', 'reportes.financieros', 'reportes.rrhh', 'reportes.tablero',
       'rrhh.empleados.ver', 'rrhh.asistencia', 'rrhh.ausencias', 'rrhh.planilla.ver', 'rrhh.planilla.generar',
     ],

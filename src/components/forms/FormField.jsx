@@ -142,6 +142,10 @@ function FormField({
   // Listas con "optionsUrl" en el JSON: las opciones vienen del servidor (sucursales, puestos, categorías…)
   const { opciones: remotas, cargando: cargandoOpciones, error: errorOpciones } = useEstadoOpciones(field?.optionsUrl)
   const lista = field?.optionsUrl ? remotas : options
+  // Opciones fijas del JSON ({ value, label }) o del servidor (columnaDb: { codigo, nombre }, con rutas como «empleado.nombres»)
+  const columnas = field?.columnaDb ?? { codigo: 'value', nombre: 'label' }
+  const leer = (o, ruta) => String(ruta ?? '').split('.').reduce((x, k) => x?.[k], o)
+  const textoOpcion = (o) => (field?.optionsUrl ? `${leer(o, columnas.codigo)} - ${leer(o, columnas.nombre)}` : leer(o, columnas.nombre))
   const irA = useNavigate()
   // Lista del servidor que llegó vacía: se explica qué falta crear (el JSON del campo puede traer "vacio": { mensaje, enlace, ruta })
   const listaVacia = type === 'select' && Boolean(field?.optionsUrl) && !cargandoOpciones && !errorOpciones && remotas.length === 0
@@ -166,7 +170,7 @@ function FormField({
         <TextInput
           id={id}
           type={type}
-          value={value || ''}
+          value={type === 'date' && typeof value === 'string' ? value.slice(0, 10) : value || ''}
           placeholder={placeholder}
           icon={Icon}
           onChange={onChange}
@@ -228,16 +232,16 @@ function FormField({
       {type === 'select' && (
         <select
           id={id}
-          value={value}
+          value={value ?? ''}
           onChange={(e) => {
             const selected = lista.find((opt) =>
               typeof opt === 'object'
-                ? String(opt[field?.columnaDb?.codigo]) === e.target.value
+                ? String(leer(opt, columnas.codigo)) === e.target.value
                 : opt === e.target.value
             )
 
             if (typeof selected === 'object') {
-              onChange(selected?.[field?.columnaDb?.codigo], selected?.[field?.columnaDb?.nombre])
+              onChange(leer(selected, columnas.codigo), leer(selected, columnas.nombre))
             } else {
               onChange(selected, selected)
             }
@@ -252,10 +256,8 @@ function FormField({
 
           {lista?.map((opt, i) => (
             //console.log('opt', opt, 'field', field),
-            <option key={i} value={typeof opt === 'object' ? opt[field?.columnaDb?.codigo] : opt}>
-              {typeof opt === 'object'
-                ? `${opt[field?.columnaDb?.codigo]} - ${opt[field?.columnaDb?.nombre]}`
-                : opt}
+            <option key={i} value={typeof opt === 'object' ? leer(opt, columnas.codigo) : opt}>
+              {typeof opt === 'object' ? textoOpcion(opt) : opt}
             </option>
           ))}
         </select>
