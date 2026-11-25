@@ -14,6 +14,9 @@ import Rentabilidad from '../components/finanzas/Rentabilidad'
 import Depreciacion from '../components/finanzas/Depreciacion'
 import Cobros from '../components/finanzas/Cobros'
 import Taller from '../components/operacion/Taller'
+import Incidentes from '../components/operacion/Incidentes'
+import Llantas from '../components/operacion/Llantas'
+import Planilla from '../components/rrhh/Planilla'
 import Viajes from '../components/operacion/Viajes'
 import Cotizador from '../components/operacion/Cotizador'
 import Combustible from '../components/operacion/Combustible'
@@ -45,6 +48,9 @@ function AppRouter() {
           <Route path="inspecciones" element={<Inspecciones />} />
           <Route path="casos" element={<Casos />} />
           <Route path="taller" element={<Taller />} />
+          <Route path="incidentes" element={<Incidentes />} />
+          <Route path="control-llantas" element={<Llantas />} />
+          <Route path="planilla" element={<Planilla />} />
 
           {/* Finanzas y reportes */}
           <Route path="rentabilidad" element={<Rentabilidad />} />

@@ -7,6 +7,7 @@ export const COLOR_MODULO = {
   inicio: 'bg-gray-500',
   'mod-viajes': 'bg-green-600',
   'mod-flota': 'bg-sky-500',
+  'mod-incidentes': 'bg-red-500',
   'mod-combustible': 'bg-amber-500',
   'mod-taller': 'bg-orange-500',
   'mod-llantas': 'bg-zinc-600',
@@ -37,5 +38,6 @@ export const rutaDe = (sub) => (sub ? `/home/${sub.path}` : '/home')
 export function esActual(sub, pathname, search) {
   if (!sub) return pathname === '/home'
   const [ruta, query = ''] = sub.path.split('?')
-  return pathname === `/home/${ruta}` && (query ? search.includes(query) : !search)
+  // Sin consulta en el menú, la opción sigue activa aunque la pantalla agregue la suya (?vista=…)
+  return pathname === `/home/${ruta}` && (query ? search.includes(query) : true)
 }

@@ -242,8 +242,9 @@ export const CATALOGOS: OpcionesCrud[] = [
     schema: z.object({
       codigo, marcaId: zIdOpt, modelo: texto(60), medida: z.string().trim().min(3).max(30),
       precio: zMonto, fechaCompra: fechaOpt, proveedorId: zIdOpt,
-      reencauches: zNum(z.number().int().min(0).max(9).optional()),
-      estado: z.enum(['EN_BODEGA', 'MONTADA', 'EN_REENCAUCHE', 'DESECHADA']).optional(), motivoBaja: texto(200), activo,
+      // Situación, reencauches y km los lleva Llantas › Control de llantas (montar, retirar, reencauchar, desechar)
+      profundidadInicialMm: zNum(z.number().positive().max(40).optional().nullable()),
+      kmEsperados: zNum(z.number().int().positive().max(1_000_000).optional().nullable()), activo,
     }),
     busqueda: ['codigo', 'medida', 'modelo'], filtros: ['marcaId', 'proveedorId'], orderBy: { codigo: 'asc' },
     include: { marca: { select: { nombre: true } }, proveedor: { select: { razonSocial: true, nombreComercial: true } } },

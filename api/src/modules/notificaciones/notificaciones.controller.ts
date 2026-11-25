@@ -14,6 +14,8 @@ import { CentralService } from '../central/central.service';
 import { LicenciaService } from '../licencia/licencia.service';
 import { CobrosService } from '../cobros/cobros.service';
 import { TallerService } from '../taller/taller.service';
+import { IncidentesService } from '../incidentes/incidentes.service';
+import { LlantasService } from '../llantas/llantas.service';
 
 export interface Notificacion {
   id: string;
@@ -37,6 +39,8 @@ export class NotificacionesController {
     private readonly notificaciones: NotificacionesService,
     private readonly cobros: CobrosService,
     private readonly taller: TallerService,
+    private readonly incidentes: IncidentesService,
+    private readonly llantas: LlantasService,
   ) {}
 
   @Get()
@@ -86,6 +90,10 @@ export class NotificacionesController {
     if (puede('cobros.ver') && ctx.sucursalId) lista.push(...(await this.cobros.avisos(ctx.sucursalId)));
     // Taller: mantenimiento vencido o próximo y órdenes olvidadas
     if (puede('mantenimiento.ver') && ctx.sucursalId) lista.push(...(await this.taller.avisos(ctx)));
+    // Incidentes: multas por vencer o vencidas, reclamos al seguro sin respuesta
+    if (puede('incidentes.ver') && ctx.sucursalId) lista.push(...(await this.incidentes.avisos(ctx)));
+    // Llantas: labrado en el mínimo o cerca, km excedidos y sin medir
+    if (puede('llantas.ver')) lista.push(...(await this.llantas.avisos()));
     // Hechos de la última semana (pedido enviado, recibido…)
     lista.push(...(await this.notificaciones.eventosRecientes(ctx, puede)));
     // Visto / no visto (por usuario): las no vistas primero; las vistas siguen abajo, en gris

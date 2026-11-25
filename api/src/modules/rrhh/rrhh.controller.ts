@@ -32,6 +32,8 @@ export class RrhhController {
         entrada: z.string().datetime({ offset: true }).optional(),
         salida: z.string().datetime({ offset: true }).optional(),
         origen: z.enum(['MANUAL', 'BIOMETRICO', 'APP']).optional(),
+        horasNormales: z.coerce.number().min(0).max(24).optional(),
+        horasExtra: z.coerce.number().min(0).max(16).optional(),
       }),
       body,
     );

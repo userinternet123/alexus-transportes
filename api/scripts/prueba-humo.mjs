@@ -276,5 +276,66 @@ await paso('Taller: orden con repuesto, cerrar libera la unidad, alertas de mant
   return `${o.numero} · ${cierre.message} · alertas: ${m.resumen.VENCIDO} vencidas, ${m.resumen.PROXIMO} próximas`;
 });
 
+await paso('Incidentes: multa con pago, accidente con orden, seguro y descuento al piloto en planilla', async () => {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const cab = ok(await http('GET', '/flota/cabezales?limit=0')).data.find((c) => c.estado === 'ACTIVO');
+  const pil = ok(await http('GET', '/pilotos?limit=0')).data[0];
+  if (!cab || !pil) return 'sin cabezal o piloto (se omite)';
+  espera(await http('POST', '/incidentes', { tipo: 'MULTA', fecha: hoy, descripcion: 'Multa sin monto' }), 'VALIDACION');
+  const m = ok(await http('POST', '/incidentes', { tipo: 'MULTA', fecha: hoy, descripcion: 'Prueba de humo: exceso de velocidad', cabezalId: cab.id, pilotoId: pil.id, montoMulta: 400, fechaLimitePago: hoy })).data;
+  espera(await http('PUT', `/incidentes/${m.id}/estado`, { estado: 'CERRADO', comentario: 'sin pagar' }), 'MULTA_SIN_PAGAR');
+  ok(await http('PUT', `/incidentes/${m.id}/gestion`, { pagadoEn: hoy, montoPagado: 300, responsable: 'EMPRESA' }));
+  ok(await http('PUT', `/incidentes/${m.id}/estado`, { estado: 'CERRADO', comentario: 'Pagada con descuento' }));
+  const a = ok(await http('POST', '/incidentes', { tipo: 'ACCIDENTE', fecha: hoy, descripcion: 'Prueba de humo: golpe en defensa', cabezalId: cab.id, pilotoId: pil.id, costoDanos: 3000, abrirOrden: true }));
+  espera(await http('PUT', `/incidentes/${a.data.id}/gestion`, { descuentoPiloto: 600 }), 'RESPONSABLE');
+  ok(await http('PUT', `/incidentes/${a.data.id}/gestion`, { responsable: 'PILOTO', descuentoPiloto: 600, cuotasDescuento: 2, aseguradora: 'Seguros de prueba', estadoReclamo: 'PRESENTADO' }));
+  const d = ok(await http('GET', `/incidentes/${a.data.id}`)).data;
+  if (!d.ordenTrabajo) throw new Error('No abrió la orden de taller');
+  const r = ok(await http('GET', '/incidentes/resumen')).data;
+  // Se deja como estaba: la orden se anula y el incidente también
+  ok(await http('PUT', `/taller/ordenes/${d.ordenTrabajo.id}/estado`, { estado: 'ANULADA', comentario: 'Prueba de humo' }));
+  ok(await http('PUT', `/incidentes/${a.data.id}/estado`, { estado: 'ANULADO', comentario: 'Prueba de humo' }));
+  return `${m.numero} pagada y cerrada · ${a.data.numero} con ${d.ordenTrabajo.numero}, neto Q${Number(d.neto).toFixed(2)} · ${r.totales.incidentes} incidentes en el año`;
+});
+
+await paso('Llantas: montar, medir, rotar, retirar a reencauche y volver; rendimiento por marca', async () => {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const t = ok(await http('GET', '/llantas-control/tablero?estado=EN_BODEGA')).data;
+  const l = t.filas[0];
+  const cab = ok(await http('GET', '/flota/cabezales?limit=0')).data.find((c) => c.estado === 'ACTIVO' && c.codigo !== 'C-01') ?? null;
+  if (!l || !cab) return 'sin llantas en bodega o cabezal (se omite)';
+  const u = ok(await http('GET', `/llantas-control/unidad?cabezalId=${cab.id}`)).data;
+  const libres = u.posiciones.filter((p) => !p.llanta && p.posicion !== 'REP');
+  if (libres.length < 2) return 'sin posiciones libres (se omite)';
+  ok(await http('POST', `/llantas-control/${l.id}/montar`, { cabezalId: cab.id, posicion: libres[0].posicion, fecha: hoy }));
+  espera(await http('POST', `/llantas-control/${l.id}/montar`, { cabezalId: cab.id, posicion: libres[1].posicion, fecha: hoy }), 'LLANTA_NO_DISPONIBLE');
+  const mm = Number(l.profundidadInicialMm ?? 18);
+  espera(await http('POST', `/llantas-control/${l.id}/medicion`, { fecha: hoy, profundidadMm: mm + 1 }), 'MEDICION_INVALIDA');
+  ok(await http('POST', `/llantas-control/${l.id}/medicion`, { fecha: hoy, profundidadMm: mm - 1, presionPsi: 110 }));
+  ok(await http('POST', `/llantas-control/${l.id}/rotar`, { cabezalId: cab.id, posicion: libres[1].posicion, fecha: hoy }));
+  ok(await http('POST', `/llantas-control/${l.id}/retirar`, { fecha: hoy, motivo: 'Prueba de humo', destino: 'EN_REENCAUCHE', profundidadMm: mm - 2 }));
+  ok(await http('POST', `/llantas-control/${l.id}/reencauche`, { fecha: hoy, costo: 1200, profundidadMm: 15 }));
+  const h = ok(await http('GET', `/llantas-control/${l.id}/historial`)).data;
+  if (h.estado !== 'EN_BODEGA' || h.reencauches < 1 || h.montajes.length < 2) throw new Error(`Historial inesperado: ${h.estado}, ${h.montajes.length} montajes`);
+  const pm = ok(await http('GET', '/llantas-control/por-marca')).data;
+  return `${l.codigo}: ${h.montajes.length} montajes, ${h.mediciones.length} mediciones, reencauche ${h.reencauches} · ${pm.length} marcas comparadas · alertas: ${t.resumen.CAMBIAR} cambiar, ${t.resumen.PRONTO} pronto`;
+});
+
+await paso('Planilla con horas extra, pago por viajes y descuentos por incidentes', async () => {
+  const hoy = new Date();
+  const p = ok(await http('POST', '/rrhh/planillas/generar', { anio: hoy.getUTCFullYear(), mes: hoy.getUTCMonth() + 1, tipo: 'MENSUAL' })).data;
+  const d = ok(await http('GET', `/rrhh/planillas/${p.id}`)).data;
+  const extra = d.detalles.reduce((a, x) => a + Number(x.horasExtraMonto), 0);
+  const desc = d.descuentos.reduce((a, x) => a + Number(x.monto), 0);
+  if (!d.detalles.length) throw new Error('La planilla salió vacía');
+  return `${d.periodo}: ${d.detalles.length} empleados · horas extra Q${extra.toFixed(2)} · descuentos por incidentes Q${desc.toFixed(2)} · líquido Q${Number(d.totalLiquido).toFixed(2)}`;
+});
+
+await paso('Avisos en la campana (mantenimiento, llantas, multas)', async () => {
+  const n = ok(await http('GET', '/notificaciones')).data;
+  const tipos = [...new Set(n.map((x) => x.tipo))];
+  return `${n.length} avisos · ${tipos.join(', ')}`;
+});
+
 console.log(fallos ? rojo(`\n${fallos} paso(s) fallaron`) : verde('\nTodo en orden'));
 process.exit(fallos ? 1 : 0);

@@ -11,6 +11,7 @@ export const MODULOS: Record<string, { nombre: string; descripcion: string }> = 
   combustible: { nombre: 'Combustible', descripcion: 'Cargas, rendimiento km/gal por cabezal y piloto, alertas de consumo' },
   mantenimiento: { nombre: 'Mantenimiento y taller', descripcion: 'Planes por km o fecha, servicios mayores, reparaciones, repuestos por marca y alertas' },
   llantas: { nombre: 'Llantas', descripcion: 'Vida de cada llanta por posición, rotaciones, reencauches y costo por km por marca' },
+  incidentes: { nombre: 'Incidentes y multas', descripcion: 'Multas, accidentes, robos y daños: costo, seguro, descuento al piloto y alertas de pago' },
   pilotos: { nombre: 'Pilotos', descripcion: 'Licencias de conducir con vencimiento, pago por viaje, viáticos y scorecard' },
   rrhh: { nombre: 'Recursos humanos', descripcion: 'Empleados, asistencia, horas extra, ausencias y planillas' },
   finanzas: { nombre: 'Finanzas', descripcion: 'Gastos de operación, costo por km, rentabilidad por viaje, cabezal, piloto y cliente' },
@@ -32,6 +33,7 @@ const PREFIJOS: [string, string][] = [
   ['mantenimiento.', 'mantenimiento'],
   ['llantas.', 'llantas'],
   ['pilotos.', 'pilotos'],
+  ['incidentes.', 'incidentes'],
   ['gastos.', 'finanzas'],
   ['cobros.', 'finanzas'],
   ['finanzas.', 'finanzas'],
@@ -45,7 +47,7 @@ export function moduloDe(permiso: string): string | null {
 /** Planes predefinidos (atajo para emitir licencias; una licencia puede listar módulos a medida). */
 export const PLANES: Record<string, { nombre: string; modulos: string[]; reportesConfigurables: boolean }> = {
   BASICO: { nombre: 'Básico', modulos: ['viajes', 'combustible', 'pilotos'], reportesConfigurables: false },
-  PROFESIONAL: { nombre: 'Profesional', modulos: ['viajes', 'combustible', 'pilotos', 'mantenimiento', 'llantas', 'reportes', 'finanzas'], reportesConfigurables: true },
+  PROFESIONAL: { nombre: 'Profesional', modulos: ['viajes', 'combustible', 'pilotos', 'mantenimiento', 'llantas', 'incidentes', 'reportes', 'finanzas'], reportesConfigurables: true },
   // La marca blanca es un servicio aparte (licencia mensual): ningún plan la incluye
   EMPRESARIAL: { nombre: 'Empresarial', modulos: Object.keys(MODULOS).filter((m) => m !== 'sinmarca'), reportesConfigurables: true },
 };

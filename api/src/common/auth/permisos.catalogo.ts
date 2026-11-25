@@ -77,6 +77,12 @@ export const PERMISOS: Record<string, { modulo: string; descripcion: string }> =
   'llantas.editar': { modulo: 'Llantas', descripcion: 'Montar, rotar, retirar y reencauchar llantas' },
   'llantas.eliminar': { modulo: 'Llantas', descripcion: 'Desechar llantas' },
 
+  // Incidentes y multas
+  'incidentes.ver': { modulo: 'Incidentes', descripcion: 'Ver incidentes, multas y su costo' },
+  'incidentes.registrar': { modulo: 'Incidentes', descripcion: 'Registrar multas, accidentes, robos, daños y reclamos' },
+  'incidentes.gestionar': { modulo: 'Incidentes', descripcion: 'Registrar pagos, reclamos al seguro, descuentos al piloto y cerrar incidentes' },
+  'incidentes.anular': { modulo: 'Incidentes', descripcion: 'Anular incidentes (con motivo)' },
+
   // Mantenimiento
   'mantenimiento.ver': { modulo: 'Mantenimiento', descripcion: 'Ver órdenes de trabajo y alertas' },
   'mantenimiento.crear': { modulo: 'Mantenimiento', descripcion: 'Abrir órdenes de trabajo' },
@@ -131,7 +137,7 @@ export const ROLES_BASE: Record<string, { descripcion: string; permisos: string[
     permisos: [
       'catalogos.ver', 'terceros.ver', 'terceros.crear', 'terceros.editar', 'tarifas.ver', 'flota.ver', 'pilotos.ver',
       'viajes.ver', 'viajes.crear', 'viajes.editar', 'viajes.costos', 'viajes.anticipos', 'viajes.reportar', 'viajes.cerrar', 'viajes.cotizar',
-      'inspecciones.ver', 'inspecciones.registrar', 'casos.ver', 'casos.crear', 'combustible.ver', 'combustible.registrar', 'mantenimiento.ver', 'reportes.viajes', 'reportes.flota',
+      'inspecciones.ver', 'inspecciones.registrar', 'casos.ver', 'casos.crear', 'combustible.ver', 'combustible.registrar', 'mantenimiento.ver', 'llantas.ver', 'incidentes.ver', 'incidentes.registrar', 'reportes.viajes', 'reportes.flota',
     ],
   },
   PILOTO: {
@@ -140,14 +146,14 @@ export const ROLES_BASE: Record<string, { descripcion: string; permisos: string[
   },
   TALLER: {
     descripcion: 'Taller: órdenes de trabajo, repuestos y llantas',
-    permisos: ['catalogos.ver', 'flota.ver', 'flota.editar', 'inspecciones.ver', 'casos.ver', 'casos.crear', 'casos.gestionar', 'llantas.ver', 'llantas.crear', 'llantas.editar', 'llantas.eliminar', 'mantenimiento.ver', 'mantenimiento.crear', 'mantenimiento.editar', 'mantenimiento.cerrar', 'reportes.mantenimiento'],
+    permisos: ['catalogos.ver', 'flota.ver', 'flota.editar', 'inspecciones.ver', 'casos.ver', 'casos.crear', 'casos.gestionar', 'llantas.ver', 'llantas.crear', 'llantas.editar', 'llantas.eliminar', 'mantenimiento.ver', 'mantenimiento.crear', 'mantenimiento.editar', 'mantenimiento.cerrar', 'reportes.mantenimiento', 'incidentes.ver'],
   },
   CONTADOR: {
     descripcion: 'Contabilidad: gastos, liquidaciones, planilla y reportes financieros',
     permisos: [
       'catalogos.ver', 'terceros.ver', 'viajes.ver', 'viajes.costos', 'viajes.anticipos', 'viajes.liquidar', 'gastos.ver', 'gastos.registrar', 'gastos.anular', 'finanzas.costos',
       'finanzas.depreciacion.ver', 'finanzas.depreciacion.crear', 'finanzas.depreciacion.editar', 'finanzas.depreciacion.eliminar',
-      'cobros.ver', 'cobros.facturar', 'cobros.abonar', 'cobros.gestionar', 'cobros.anular',
+      'cobros.ver', 'cobros.facturar', 'cobros.abonar', 'cobros.gestionar', 'cobros.anular', 'incidentes.ver', 'incidentes.gestionar',
       'reportes.viajes', 'reportes.flota', 'reportes.mantenimiento', 'reportes.financieros', 'reportes.rrhh', 'reportes.tablero',
       'rrhh.empleados.ver', 'rrhh.asistencia', 'rrhh.ausencias', 'rrhh.planilla.ver', 'rrhh.planilla.generar',
     ],
@@ -157,7 +163,7 @@ export const ROLES_BASE: Record<string, { descripcion: string; permisos: string[
     permisos: [
       'catalogos.ver', 'rrhh.empleados.ver', 'rrhh.empleados.crear', 'rrhh.empleados.editar', 'rrhh.empleados.eliminar',
       'pilotos.ver', 'pilotos.crear', 'pilotos.editar', 'pilotos.eliminar',
-      'rrhh.asistencia', 'rrhh.ausencias', 'rrhh.planilla.ver', 'rrhh.planilla.generar', 'reportes.rrhh',
+      'rrhh.asistencia', 'rrhh.ausencias', 'rrhh.planilla.ver', 'rrhh.planilla.generar', 'reportes.rrhh', 'incidentes.ver',
     ],
   },
 };

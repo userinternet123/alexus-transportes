@@ -198,8 +198,8 @@ const MODULOS = [
       txt('medida', 'Medida', { required: true, size: 'small', placeholder: '11R22.5' }),
       money('precio', 'Precio', { required: true }), fecha('fechaCompra', 'Fecha de compra'),
       sel('proveedorId', 'Proveedor', '/terceros/proveedores', { columnaDb: NOMBRE_TERCERO }),
-      num('reencauches', 'Reencauches'),
-      opciones('estado', 'Situación', [['EN_BODEGA', 'En bodega'], ['MONTADA', 'Montada'], ['EN_REENCAUCHE', 'En reencauche'], ['DESECHADA', 'Desechada']], { size: 'small' }),
+      num('profundidadInicialMm', 'Labrado nuevo (mm)'), num('kmEsperados', 'Km que se espera que dé'),
+      // Montar, rotar, medir, reencauchar y desechar: en Llantas › Control de llantas
     ],
   },
 

@@ -1,7 +1,7 @@
 /**
  * DATOS DE PRUEBA (ficticios): 5 cabezales, 5 pilotos, 2 remolques, clientes, rutas con sus condiciones,
  * tarifas, documentos, llantas, repuestos, viajes del último mes con anticipos, costos, cargas de combustible
- * (con rendimiento) y liquidación, órdenes de taller, inspecciones y casos. Sirven para ver reportes y pantallas con números antes de tener registros reales.
+ * (con rendimiento) y liquidación, órdenes de taller, llantas con labrado, incidentes y multas, horas extra, inspecciones y casos. Sirven para ver reportes y pantallas con números antes de tener registros reales.
  *
  *   npm run db:demo          (requiere haber corrido npm run db:seed)
  *
@@ -117,16 +117,28 @@ async function main() {
   }
   for (const r of remolques) await prisma.documentoVehiculo.create({ data: { remolqueId: r.id, tipo: 'TARJETA_CIRCULACION', numero: `TC-${r.codigo}`, emisor: 'SAT', vence: ymd(-200) } });
 
-  // Llantas: 10 montadas en C-01 (posiciones) y 4 en bodega; 3 ya retiradas con km acumulados
+  // Llantas: 10 montadas en C-01 con su labrado, 4 en un remolque sin medir, 4 en bodega, 1 reencauchada y 3 desechadas
   const medidas = ['11R22.5', '295/80R22.5'];
   const marcasLlanta = ['Michelin', 'Bridgestone', 'Goodyear'];
   const posiciones = ['E1-I', 'E1-D', 'E2-IE', 'E2-II', 'E2-DI', 'E2-DE', 'E3-IE', 'E3-II', 'E3-DI', 'E3-DE'];
+  // Labrado medido hace 10 días: una en el mínimo, una cerca y las demás bien (para ver las alertas)
+  const labrado = [11.5, 11, 9, 9.5, 3, 8.5, 10, 4.5, 9, 10.5];
+  // Montadas hace 6 meses a los 260,000 km (los viajes de la demo dejan el C-01 en unos 301,000 km)
   for (let i = 0; i < 10; i += 1) {
-    const l = await prisma.llanta.create({ data: { codigo: `DOT${2024}${1000 + i}`, marcaId: marcas[marcasLlanta[i % 3]], medida: medidas[i % 2], precio: D(3200 + (i % 3) * 400), fechaCompra: ymd(180), proveedorId: proveedor.id, estado: 'MONTADA' } });
-    await prisma.montajeLlanta.create({ data: { llantaId: l.id, cabezalId: cabezales[0].id, posicion: posiciones[i], fechaMontaje: ymd(180), kmMontaje: D(300000) } });
+    const l = await prisma.llanta.create({ data: { codigo: `DOT${2024}${1000 + i}`, marcaId: marcas[marcasLlanta[i % 3]], medida: medidas[i % 2], precio: D(3200 + (i % 3) * 400), fechaCompra: ymd(180), proveedorId: proveedor.id, estado: 'MONTADA', profundidadInicialMm: D(18) } });
+    const m = await prisma.montajeLlanta.create({ data: { llantaId: l.id, cabezalId: cabezales[0].id, posicion: posiciones[i], fechaMontaje: ymd(180), kmMontaje: D(260000) } });
+    await prisma.medicionLlanta.create({ data: { llantaId: l.id, montajeId: m.id, fecha: ymd(10), profundidadMm: D(labrado[i]), presionPsi: D(i === 4 ? 85 : 105), creadoPorId: admin.id } });
   }
-  for (let i = 0; i < 4; i += 1) await prisma.llanta.create({ data: { codigo: `DOT${2026}${2000 + i}`, marcaId: marcas[marcasLlanta[i % 3]], medida: medidas[0], precio: D(3400), fechaCompra: ymd(20), proveedorId: proveedor.id, estado: 'EN_BODEGA' } });
+  // Remolque R-01: 4 llantas del eje 1 montadas hace dos meses y aún sin medir
+  for (let i = 0; i < 4; i += 1) {
+    const l = await prisma.llanta.create({ data: { codigo: `DOT${2025}${4000 + i}`, marcaId: marcas[marcasLlanta[(i + 1) % 3]], medida: medidas[0], precio: D(3100), fechaCompra: ymd(70), proveedorId: proveedor.id, estado: 'MONTADA', profundidadInicialMm: D(16) } });
+    await prisma.montajeLlanta.create({ data: { llantaId: l.id, remolqueId: remolques[0].id, posicion: ['E1-IE', 'E1-II', 'E1-DI', 'E1-DE'][i], fechaMontaje: ymd(60), kmMontaje: D(0) } });
+  }
+  for (let i = 0; i < 4; i += 1) await prisma.llanta.create({ data: { codigo: `DOT${2026}${2000 + i}`, marcaId: marcas[marcasLlanta[i % 3]], medida: medidas[0], precio: D(3400), fechaCompra: ymd(20), proveedorId: proveedor.id, estado: 'EN_BODEGA', profundidadInicialMm: D(18) } });
   for (let i = 0; i < 3; i += 1) await prisma.llanta.create({ data: { codigo: `DOT${2023}${3000 + i}`, marcaId: marcas[marcasLlanta[i]], medida: medidas[0], precio: D(3000 + i * 300), fechaCompra: ymd(700), estado: 'DESECHADA', kmAcumulados: D(60000 + i * 18000), motivoBaja: 'Desgaste' } });
+  // Una reencauchada que volvió a bodega
+  const re = await prisma.llanta.create({ data: { codigo: 'DOT20235000', marcaId: marcas.Michelin, medida: medidas[0], precio: D(3600), fechaCompra: ymd(500), estado: 'EN_BODEGA', kmAcumulados: D(95000), reencauches: 1, costoReencauches: D(1400), profundidadInicialMm: D(15) } });
+  await prisma.reencaucheLlanta.create({ data: { llantaId: re.id, fecha: ymd(15), proveedorId: proveedor.id, costo: D(1400), documento: 'FAC-7781', kmAlEnviar: D(95000) } });
 
   // Repuestos
   const repuestos = await Promise.all([
@@ -218,6 +230,18 @@ async function main() {
   // Historial de mantenimiento (para las alertas y la comparación de marcas): aceite anterior del C-01 con otro filtro
   const o4 = await ot(4, { cabezalId: cabezales[0].id, planId: planAceite?.id, tipo: 'PREVENTIVO', descripcion: 'Cambio de aceite y filtros', odometro: D(300000), fechaApertura: dia(110), fechaCierre: dia(110), manoObra: D(350), totalRepuestos: D(175), total: D(525), estado: 'CERRADA' });
   await prisma.ordenTrabajoRepuesto.create({ data: { ordenId: o4.id, repuestoId: repuestos[0].id, marcaId: marcas.Donaldson, cantidad: D(1), costoUnitario: D(175), total: D(175) } });
+  // Servicios anteriores del resto de la flota: uno vencido, varios próximos (alertas del Inicio y del taller)
+  const plan = async (n: string) => prisma.planMantenimiento.findFirst({ where: { nombre: { contains: n } } });
+  const [pEngrase, pMayor] = await Promise.all([plan('Engrase'), plan('Servicio mayor')]);
+  const odo = async (i: number) => (await prisma.cabezal.findUniqueOrThrow({ where: { id: cabezales[i].id } })).odometro;
+  const previos: [number, typeof planAceite, string, number, number][] = [
+    [1, planAceite, 'Cambio de aceite y filtros', 15600, 70], [2, planAceite, 'Cambio de aceite y filtros', 14300, 45],
+    [1, pEngrase, 'Engrase general', 4000, 33], [4, pMayor, 'Servicio mayor', 146500, 400], [4, planAceite, 'Cambio de aceite y filtros', 6000, 30],
+  ];
+  for (const [k, [i, p, desc, kmAtras, dias]] of previos.entries()) {
+    if (!p) continue;
+    await ot(10 + k, { cabezalId: cabezales[i].id, planId: p.id, tipo: /mayor/i.test(desc) ? 'SERVICIO_MAYOR' : 'PREVENTIVO', descripcion: desc, odometro: D(await odo(i)).minus(kmAtras), fechaApertura: dia(dias), fechaCierre: dia(dias), manoObra: D(/mayor/i.test(desc) ? 9500 : 350), totalRepuestos: D(0), total: D(/mayor/i.test(desc) ? 9500 : 350), estado: 'CERRADA' });
+  }
 
   // Cuentas por cobrar: una factura vencida con un abono, otra al día; el resto de viajes queda «sin facturar»
   const terminados = await prisma.viaje.findMany({ where: { estado: 'LIQUIDADO' }, orderBy: { fechaLlegada: 'asc' }, select: { id: true, clienteId: true, montoCobrado: true } });
@@ -240,6 +264,25 @@ async function main() {
   }
   await facturar(2, clientes[1].id, deCliente(clientes[1].id).slice(0, 1), ymd(6), 30);
 
+  // Incidentes y multas: una multa vencida, otra por vencer, una pagada; un accidente con reclamo al seguro y descuento
+  // al piloto en 3 cuotas; y un daño a la carga que asumió la empresa
+  const inc = async (n: number, data: Omit<Prisma.IncidenteUncheckedCreateInput, 'numero' | 'sucursalId' | 'creadoPorId'>) =>
+    prisma.incidente.create({ data: { numero: `IN-${String(n).padStart(6, '0')}`, sucursalId: sucursal.id, creadoPorId: admin.id, ...data } });
+  await inc(1, { tipo: 'MULTA', fecha: dia(25), lugar: 'Km 45 CA-9, Escuintla', descripcion: 'Exceso de velocidad (radar PMT)', cabezalId: cabezales[1].id, pilotoId: pilotos[1].id, autoridad: 'PMT Escuintla', numeroBoleta: 'B-559812', montoMulta: D(500), fechaLimitePago: ymd(3), responsable: 'PILOTO' });
+  await inc(2, { tipo: 'MULTA', fecha: dia(6), lugar: 'Km 18 CA-1 Occidente', descripcion: 'Circular en carril izquierdo con carga pesada', cabezalId: cabezales[2].id, pilotoId: pilotos[2].id, autoridad: 'Provial', numeroBoleta: 'PV-22134', montoMulta: D(750), fechaLimitePago: ymd(-4) });
+  await inc(3, { tipo: 'MULTA', fecha: dia(40), lugar: 'Zona 12, Ciudad de Guatemala', descripcion: 'Estacionar en zona prohibida', cabezalId: cabezales[0].id, pilotoId: pilotos[0].id, autoridad: 'PMT Guatemala', numeroBoleta: 'G-88120', montoMulta: D(300), fechaLimitePago: ymd(10), pagadoEn: ymd(12), montoPagado: D(225), responsable: 'EMPRESA', estado: 'CERRADO', cerradoEn: dia(12), resolucion: 'Pagada con 25 % de descuento por pronto pago' });
+  await inc(4, { tipo: 'ACCIDENTE', fecha: dia(42), lugar: 'Cuesta de Villalobos', descripcion: 'Alcance a vehículo liviano en tráfico lento; daños en defensa y radiador', cabezalId: cabezales[3].id, pilotoId: pilotos[3].id, costoDanos: D(12000), costoTerceros: D(4500), responsable: 'PILOTO', aseguradora: 'Seguros G&T', numeroReclamo: 'SIN-2026-4471', estadoReclamo: 'PRESENTADO', reclamoEn: ymd(40), deducible: D(5000), descuentoPiloto: D(1500), cuotasDescuento: 3, estado: 'EN_TRAMITE' });
+  await inc(5, { tipo: 'DANO_CARGA', fecha: dia(15), lugar: 'Bodega DICESA, zona 18', descripcion: '12 cajas golpeadas por mala estiba', cabezalId: cabezales[4].id, pilotoId: pilotos[4].id, costoTerceros: D(2500), responsable: 'EMPRESA' });
+
+  // Horas extra de los pilotos en las dos últimas semanas (días largos de ruta)
+  for (const [i, p] of pilotos.entries()) {
+    for (let d = 1; d <= 14; d += 1) {
+      if ((d + i) % 7 === 0) continue; // descanso
+      const extra = (d + i) % 4 === 0 ? 3 : (d + i) % 3 === 0 ? 2 : 0;
+      await prisma.asistencia.create({ data: { empleadoId: p.empleadoId, fecha: ymd(d), horasNormales: D(8), horasExtra: D(extra), origen: 'MANUAL' } });
+    }
+  }
+
   // Gastos de operación del mes
   const cat = async (n: string) => (await prisma.categoriaGasto.findFirst({ where: { nombre: { contains: n } } }))?.id ?? (await prisma.categoriaGasto.create({ data: { nombre: n } })).id;
   await prisma.gasto.createMany({ data: [
@@ -249,7 +292,7 @@ async function main() {
     { sucursalId: sucursal.id, categoriaId: await cat('Salarios'), fecha: ymd(10), concepto: 'Planilla administrativa', monto: D(12000), medioPago: 'TRANSFERENCIA', usuarioId: admin.id },
   ] });
 
-  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 4 órdenes de taller, 2 cuentas por cobrar, 2 inspecciones y 2 casos${claveDemo ? ' · usuarios piloto1 a piloto5 para la app' : ' (sin usuarios de la app: defina DEMO_CLAVE_PILOTOS)'}.`);
+  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 9 órdenes de taller, 2 cuentas por cobrar, 5 incidentes, 2 inspecciones y 2 casos${claveDemo ? ' · usuarios piloto1 a piloto5 para la app' : ' (sin usuarios de la app: defina DEMO_CLAVE_PILOTOS)'}.`);
 }
 
 main()
