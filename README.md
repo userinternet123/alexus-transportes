@@ -69,7 +69,12 @@ Entre con `admin` y la contraseña del seed (pide cambiarla). El API trae la cla
   - **Inicio**: viajes en ruta, unidades en taller, mantenimiento vencido o próximo y lo que requiere atención (multas, llantas, cobros, casos).
   - Al actualizar: `npx prisma migrate deploy` y `npm run db:seed` (permisos y parámetros nuevos).
 - **App del piloto (Android)** ✅: «Mi día», reportar en vivo con cámara y GPS (*Salí* inicia el viaje), inspección pre viaje, combustible y gastos con foto, problemas con prioridad, todo cifrado en el teléfono, sin señal y sin duplicar al reenviar.
-- **Fase 3:** scorecard del piloto, presupuesto de mantenimiento, costo total por cabezal, tablero de gerencia.
+- **Fase 3 (en revisión): gerencia** (menú Gerencia):
+  - **Tablero de la flota**: ingresos, costo total, utilidad y margen; costo e ingreso por km; utilización (días con viaje ÷ días disponibles), km vacíos, entregas a tiempo, disponibilidad (unidades fuera de taller), por cobrar y vencido, multas sin pagar; tendencia de 6 meses y en qué se va el dinero.
+  - **Costo total por cabezal (TCO)**: todo lo que cuesta cada unidad en el período: combustible, costos de sus viajes, piloto (bono por viaje y sueldo repartido por los km que manejó en cada cabezal, de la planilla aprobada o estimado), taller, llantas (km × costo por km esperado de las montadas), incidentes (neto), depreciación, seguros y documentos (prorrateados por días) y su parte de los gastos generales (por km). Utilidad, margen y costo por km de cada cabezal. Solo con `finanzas.costos`.
+  - **Scorecard de pilotos**: puntaje de 0 a 100 con puntualidad (30 %), rendimiento de combustible contra lo esperado del cabezal (25 %), seguridad (30 %: accidentes, multas e incidentes de los que fue responsable) e inspecciones pre viaje (15 %); si falta un dato su peso se reparte. Avisa licencias por vencer.
+  - **Presupuesto de mantenimiento** (también en Taller): monto mensual para la flota y por cabezal (permiso `mantenimiento.presupuesto`), contra órdenes cerradas, llantas compradas y reencauches; sugerido con el promedio de los meses con gasto. La campana avisa al 90 % y al pasarlo.
+  - Al actualizar: `npx prisma migrate deploy` y `npm run db:seed` (permiso nuevo).
 
 ## Agregar un catálogo nuevo
 1. Modelo en `api/prisma/schema.prisma` con campo `activo` → `npx prisma migrate dev`.

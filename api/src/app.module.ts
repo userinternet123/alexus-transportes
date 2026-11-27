@@ -18,6 +18,7 @@ import { CobrosModule } from './modules/cobros/cobros.module';
 import { TallerModule } from './modules/taller/taller.module';
 import { IncidentesModule } from './modules/incidentes/incidentes.module';
 import { LlantasModule } from './modules/llantas/llantas.module';
+import { GerenciaModule } from './modules/gerencia/gerencia.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { ArchivosModule } from './modules/archivos/archivos.module';
 import { LicenciaModule } from './modules/licencia/licencia.module';
@@ -82,6 +83,7 @@ import { SistemaModule } from './modules/sistema/sistema.module';
     CobrosModule,
     IncidentesModule,
     LlantasModule,
+    GerenciaModule,
     TallerModule,
     CombustibleModule,
     InspeccionesModule,

@@ -57,8 +57,8 @@ model Sucursal {
   creadoEn      DateTime @default(now()) @map("creado_en")
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
-  empresa       Empresa            @relation(fields: [empresaId], references: [id])
-  municipio     Municipio?         @relation(fields: [municipioId], references: [id])
+  empresa       Empresa                    @relation(fields: [empresaId], references: [id])
+  municipio     Municipio?                 @relation(fields: [municipioId], references: [id])
   usuarios      UsuarioSucursal[]
   empleados     Empleado[]
   gastos        Gasto[]
@@ -70,6 +70,7 @@ model Sucursal {
   casos         Caso[]
   cuentasCobrar CuentaCobrar[]
   incidentes    Incidente[]
+  presupuestos  PresupuestoMantenimiento[]
 
   @@map("sucursales")
 }
@@ -569,8 +570,8 @@ model Cabezal {
   creadoEn            DateTime       @default(now()) @map("creado_en")
   actualizadoEn       DateTime       @updatedAt @map("actualizado_en")
 
-  sucursal       Sucursal            @relation(fields: [sucursalId], references: [id])
-  pilotoAsignado Piloto?             @relation(fields: [pilotoAsignadoId], references: [id])
+  sucursal       Sucursal                   @relation(fields: [sucursalId], references: [id])
+  pilotoAsignado Piloto?                    @relation(fields: [pilotoAsignadoId], references: [id])
   documentos     DocumentoVehiculo[]
   viajes         Viaje[]
   cargas         CargaCombustible[]
@@ -579,6 +580,7 @@ model Cabezal {
   inspecciones   Inspeccion[]
   casos          Caso[]
   incidentes     Incidente[]
+  presupuestos   PresupuestoMantenimiento[]
 
   @@map("cabezales")
 }
@@ -1721,4 +1723,27 @@ model DescuentoIncidente {
 
   @@unique([planillaId, incidenteId])
   @@map("descuentos_incidente")
+}
+
+// ─────────────────────────────── GERENCIA ───────────────────────────────────
+
+/// Presupuesto mensual de mantenimiento (taller + llantas) por sede: de toda la flota (cabezalId vacío) o de un cabezal.
+/// Se compara contra lo gastado en órdenes cerradas y llantas compradas; avisa al llegar al 90 %.
+model PresupuestoMantenimiento {
+  id             Int      @id @default(autoincrement())
+  sucursalId     Int      @map("sucursal_id")
+  anio           Int
+  mes            Int
+  cabezalId      Int?     @map("cabezal_id")
+  monto          Decimal  @db.Decimal(14, 2)
+  notas          String?
+  actualizadoPor Int      @map("actualizado_por")
+  creadoEn       DateTime @default(now()) @map("creado_en")
+  actualizadoEn  DateTime @updatedAt @map("actualizado_en")
+
+  sucursal Sucursal @relation(fields: [sucursalId], references: [id])
+  cabezal  Cabezal? @relation(fields: [cabezalId], references: [id])
+
+  @@index([sucursalId, anio, mes])
+  @@map("presupuestos_mantenimiento")
 }

@@ -244,7 +244,7 @@ await paso('Cuentas por cobrar: facturar un viaje, abonar, antigüedad y recorda
   if (!sin.length) return 'sin viajes por facturar (se omite)';
   const g = sin[0];
   const v = g.viajes[0];
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guatemala' }).format(new Date()); // día de Guatemala (el API rechaza fechas futuras)
   const c = ok(await http('POST', '/cobros', { clienteId: g.clienteId, viajeIds: [v.id], fechaEmision: hoy, diasCredito: 30 })).data;
   const repetido = await http('POST', '/cobros', { clienteId: g.clienteId, viajeIds: [v.id], fechaEmision: hoy });
   if (repetido.status !== 409) throw new Error('Se pudo facturar dos veces el mismo viaje');
@@ -277,7 +277,7 @@ await paso('Taller: orden con repuesto, cerrar libera la unidad, alertas de mant
 });
 
 await paso('Incidentes: multa con pago, accidente con orden, seguro y descuento al piloto en planilla', async () => {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guatemala' }).format(new Date()); // día de Guatemala (el API rechaza fechas futuras)
   const cab = ok(await http('GET', '/flota/cabezales?limit=0')).data.find((c) => c.estado === 'ACTIVO');
   const pil = ok(await http('GET', '/pilotos?limit=0')).data[0];
   if (!cab || !pil) return 'sin cabezal o piloto (se omite)';
@@ -299,7 +299,7 @@ await paso('Incidentes: multa con pago, accidente con orden, seguro y descuento 
 });
 
 await paso('Llantas: montar, medir, rotar, retirar a reencauche y volver; rendimiento por marca', async () => {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guatemala' }).format(new Date()); // día de Guatemala (el API rechaza fechas futuras)
   const t = ok(await http('GET', '/llantas-control/tablero?estado=EN_BODEGA')).data;
   const l = t.filas[0];
   const cab = ok(await http('GET', '/flota/cabezales?limit=0')).data.find((c) => c.estado === 'ACTIVO' && c.codigo !== 'C-01') ?? null;
@@ -331,7 +331,41 @@ await paso('Planilla con horas extra, pago por viajes y descuentos por incidente
   return `${d.periodo}: ${d.detalles.length} empleados · horas extra Q${extra.toFixed(2)} · descuentos por incidentes Q${desc.toFixed(2)} · líquido Q${Number(d.totalLiquido).toFixed(2)}`;
 });
 
-await paso('Avisos en la campana (mantenimiento, llantas, multas)', async () => {
+await paso('Gerencia: costo total por cabezal y rentabilidad', async () => {
+  const d = ok(await http('GET', '/gerencia/unidades')).data;
+  if (!d.unidades.length) throw new Error('sin cabezales');
+  const f = d.flota;
+  const suma = d.unidades.reduce((a, u) => a + Number(u.costoTotal), 0);
+  if (Math.abs(suma - Number(f.costoTotal)) > 0.05) throw new Error(`la flota (${f.costoTotal}) no cuadra con la suma de cabezales (${suma.toFixed(2)})`);
+  const partes = Object.values(d.unidades[0].partidas).reduce((a, x) => a + Number(x), 0);
+  if (Math.abs(partes - Number(d.unidades[0].costoTotal)) > 0.05) throw new Error('las partidas no suman el costo total');
+  espera(await http('GET', '/gerencia/unidades?desde=2026-02-10&hasta=2026-02-01'), 'PERIODO_INVALIDO');
+  return `${d.desde} a ${d.hasta} · ${d.unidades.length} cabezales · costo Q${Number(f.costoTotal).toFixed(2)} · ingresos Q${Number(f.ingresos).toFixed(2)} · Q${f.costoKm ?? '—'}/km · margen ${f.margen ?? '—'} %`;
+});
+
+await paso('Gerencia: scorecard de pilotos y tablero', async () => {
+  const s = ok(await http('GET', '/gerencia/pilotos')).data;
+  const con = s.pilotos.filter((p) => p.puntaje != null);
+  if (con.some((p) => p.puntaje < 0 || p.puntaje > 100)) throw new Error('puntaje fuera de 0 a 100');
+  const t = ok(await http('GET', '/gerencia/tablero')).data;
+  if (!t.tendencia.length) throw new Error('sin tendencia');
+  return `${con.length} pilotos con puntaje (mejor ${con[0]?.piloto.nombre ?? '—'}: ${con[0]?.puntaje ?? '—'}) · utilización ${t.kpis.utilizacion ?? '—'} % · a tiempo ${t.kpis.aTiempoPct ?? '—'} % · ${t.tendencia.length} meses de tendencia`;
+});
+
+await paso('Presupuesto de mantenimiento: definir, comparar con lo gastado y avisar', async () => {
+  const p0 = ok(await http('GET', '/gerencia/presupuesto')).data;
+  const cab = p0.cabezales[p0.cabezales.length - 1].cabezal;
+  espera(await http('PUT', '/gerencia/presupuesto', { anio: p0.anio, mes: p0.mes, monto: -5 }), 'VALIDACION');
+  const antes = p0.cabezales.find((x) => x.cabezal.id === cab.id);
+  // Un presupuesto mínimo para que quede pasado (si ya hay gasto) y luego se restaura
+  const p1 = ok(await http('PUT', '/gerencia/presupuesto', { anio: p0.anio, mes: p0.mes, cabezalId: cab.id, monto: 1 })).data;
+  const f1 = p1.cabezales.find((x) => x.cabezal.id === cab.id);
+  if (Number(f1.presupuesto) !== 1) throw new Error('no guardó el presupuesto');
+  ok(await http('PUT', '/gerencia/presupuesto', { anio: p0.anio, mes: p0.mes, cabezalId: cab.id, monto: antes.presupuesto ?? 0 }));
+  return `${p0.periodo} · flota: ${p0.flota.estado}${p0.flota.usado != null ? ` (${p0.flota.usado} %)` : ''} · gastado Q${Number(p0.flota.gastado.total).toFixed(2)} · sugerido Q${p0.flota.sugerido ?? '—'} · ${cab.codigo} con Q1: ${f1.estado}`;
+});
+
+await paso('Avisos en la campana (mantenimiento, llantas, multas, presupuesto)', async () => {
   const n = ok(await http('GET', '/notificaciones')).data;
   const tipos = [...new Set(n.map((x) => x.tipo))];
   return `${n.length} avisos · ${tipos.join(', ')}`;

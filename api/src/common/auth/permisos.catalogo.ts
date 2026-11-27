@@ -89,6 +89,7 @@ export const PERMISOS: Record<string, { modulo: string; descripcion: string }> =
   'mantenimiento.editar': { modulo: 'Mantenimiento', descripcion: 'Registrar mano de obra y repuestos' },
   'mantenimiento.cerrar': { modulo: 'Mantenimiento', descripcion: 'Cerrar órdenes de trabajo' },
   'mantenimiento.anular': { modulo: 'Mantenimiento', descripcion: 'Anular órdenes de trabajo' },
+  'mantenimiento.presupuesto': { modulo: 'Mantenimiento', descripcion: 'Definir el presupuesto mensual de mantenimiento (flota y por cabezal)' },
 
   // Finanzas y gastos
   'gastos.ver': { modulo: 'Finanzas', descripcion: 'Ver los gastos de operación (alquiler, seguros, servicios…)' },

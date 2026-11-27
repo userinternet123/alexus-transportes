@@ -5,6 +5,7 @@ import { hasPermission } from '../../../services/authService'
 /** Color del cuadro de ícono por módulo (estilo Configuración de macOS). */
 export const COLOR_MODULO = {
   inicio: 'bg-gray-500',
+  'mod-gerencia': 'bg-emerald-700',
   'mod-viajes': 'bg-green-600',
   'mod-flota': 'bg-sky-500',
   'mod-incidentes': 'bg-red-500',

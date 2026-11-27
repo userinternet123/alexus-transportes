@@ -5,6 +5,7 @@ import { CobrosModule } from '../cobros/cobros.module';
 import { TallerModule } from '../taller/taller.module';
 import { IncidentesModule } from '../incidentes/incidentes.module';
 import { LlantasModule } from '../llantas/llantas.module';
+import { GerenciaModule } from '../gerencia/gerencia.module';
 
-@Module({ imports: [CobrosModule, TallerModule, IncidentesModule, LlantasModule], controllers: [NotificacionesController], providers: [NotificacionesService], exports: [NotificacionesService] })
+@Module({ imports: [CobrosModule, TallerModule, IncidentesModule, LlantasModule, GerenciaModule], controllers: [NotificacionesController], providers: [NotificacionesService], exports: [NotificacionesService] })
 export class NotificacionesModule {}

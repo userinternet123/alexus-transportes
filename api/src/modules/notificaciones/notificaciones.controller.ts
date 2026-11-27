@@ -16,6 +16,7 @@ import { CobrosService } from '../cobros/cobros.service';
 import { TallerService } from '../taller/taller.service';
 import { IncidentesService } from '../incidentes/incidentes.service';
 import { LlantasService } from '../llantas/llantas.service';
+import { GerenciaService } from '../gerencia/gerencia.service';
 
 export interface Notificacion {
   id: string;
@@ -41,6 +42,7 @@ export class NotificacionesController {
     private readonly taller: TallerService,
     private readonly incidentes: IncidentesService,
     private readonly llantas: LlantasService,
+    private readonly gerencia: GerenciaService,
   ) {}
 
   @Get()
@@ -94,6 +96,8 @@ export class NotificacionesController {
     if (puede('incidentes.ver') && ctx.sucursalId) lista.push(...(await this.incidentes.avisos(ctx)));
     // Llantas: labrado en el mínimo o cerca, km excedidos y sin medir
     if (puede('llantas.ver')) lista.push(...(await this.llantas.avisos()));
+    // Presupuesto de mantenimiento del mes al 90 % o pasado
+    if (puede('mantenimiento.ver') && ctx.sucursalId) lista.push(...(await this.gerencia.avisos(ctx)));
     // Hechos de la última semana (pedido enviado, recibido…)
     lista.push(...(await this.notificaciones.eventosRecientes(ctx, puede)));
     // Visto / no visto (por usuario): las no vistas primero; las vistas siguen abajo, en gris

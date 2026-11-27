@@ -292,7 +292,15 @@ async function main() {
     { sucursalId: sucursal.id, categoriaId: await cat('Salarios'), fecha: ymd(10), concepto: 'Planilla administrativa', monto: D(12000), medioPago: 'TRANSFERENCIA', usuarioId: admin.id },
   ] });
 
-  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 9 órdenes de taller, 2 cuentas por cobrar, 5 incidentes, 2 inspecciones y 2 casos${claveDemo ? ' · usuarios piloto1 a piloto5 para la app' : ' (sin usuarios de la app: defina DEMO_CLAVE_PILOTOS)'}.`);
+  // Presupuesto de mantenimiento del mes: toda la flota y uno ajustado para el C-01 (se ve el aviso al pasarlo)
+  const hoyD = new Date();
+  const [anioP, mesP] = [hoyD.getUTCFullYear(), hoyD.getUTCMonth() + 1];
+  await prisma.presupuestoMantenimiento.createMany({ data: [
+    { sucursalId: sucursal.id, anio: anioP, mes: mesP, monto: D(15000), notas: 'Servicios del mes y reserva para correctivos', actualizadoPor: admin.id },
+    { sucursalId: sucursal.id, anio: anioP, mes: mesP, cabezalId: cabezales[0].id, monto: D(2500), notas: 'Solo el servicio de aceite', actualizadoPor: admin.id },
+  ] });
+
+  console.log(`✔ Datos de prueba: ${cabezales.length} cabezales, ${pilotos.length} pilotos, ${remolques.length} remolques, ${clientes.length} clientes, ${rutas.length} rutas, ${numero - 1} viajes, 9 órdenes de taller, 2 cuentas por cobrar, 5 incidentes, 2 presupuestos de mantenimiento, 2 inspecciones y 2 casos${claveDemo ? ' · usuarios piloto1 a piloto5 para la app' : ' (sin usuarios de la app: defina DEMO_CLAVE_PILOTOS)'}.`);
 }
 
 main()
