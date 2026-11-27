@@ -41,7 +41,8 @@ Entre con `admin` y la contraseña del seed (pide cambiarla). El API trae la cla
 | `combustible` | Cargas con foto, rendimiento km/gal, alertas de consumo | 1 |
 | `pilotos` | Licencias con vencimiento, pago por viaje, viáticos, scorecard | 1 |
 | `mantenimiento` | Planes por km o fecha, órdenes de trabajo, servicios mayores, repuestos por marca, alertas | 2 |
-| `llantas` | Vida por posición, rotaciones, reencauches, costo por km por marca | 3 |
+| `llantas` | Vida por posición, rotaciones, labrado, reencauches, costo por km por marca | 2 |
+| `incidentes` | Multas, accidentes, robos y daños: costo, seguro, descuento al piloto y alertas de pago | 2 |
 | `finanzas` | Gastos de operación, costo por km, rentabilidad por viaje, cliente, ruta, cabezal y piloto | 1-2 |
 | `reportes` · `tablero` | Centro de reportes y tablero de gerencia | 0-3 |
 | `rrhh` · `multisede` · `sinmarca` | Planilla, varias sedes, marca blanca | |
@@ -62,9 +63,18 @@ Entre con `admin` y la contraseña del seed (pide cambiarla). El API trae la cla
 - **Fase 2 (en revisión):**
   - **Cuentas por cobrar** (Finanzas › Cuentas por cobrar): facturar viajes terminados (uno o varios por factura, con serie, número y autorización FEL), plazo de 30, 60, 90 días o el del cliente; abonos con pagos, retenciones de IVA o ISR y descuentos; seguimiento con promesas de pago; antigüedad de saldos por tramos configurables (`cobros.tramos`), días promedio de cobro y viajes sin facturar. Recordatorio al cliente listo para WhatsApp o correo. La campana avisa lo que vence, lo vencido (se repite cada `cobros.repetir_aviso_dias`), promesas incumplidas y viajes sin facturar. Al programar un viaje avisa si el cliente pasa su límite o tiene cuentas vencidas; con `cobros.bloquear_mora_dias` > 0 lo impide.
   - **Taller** (Taller › Órdenes y mantenimiento): órdenes de trabajo con repuestos por marca y mano de obra; dejar la unidad en taller hasta cerrar; al cerrar se resuelven sus casos y la unidad vuelve a estar disponible. Alertas de mantenimiento por km o días (lo que ocurra primero) por unidad y plan, con registro de servicios ya hechos. Duración y costo por km de cada marca de repuesto.
-  - Pendiente de la fase: incidentes y multas.
+  - **Incidentes y multas** (Incidentes y multas): multas de tránsito (autoridad, boleta, monto, fecha límite y pago), accidentes, robos, daños a la carga, averías en ruta y reclamos de clientes. Costo (multa, daños propios, terceros), lo recuperado (seguro con reclamo, deducible y pago; descuento al piloto responsable en cuotas por planilla, con tope `incidentes.max_cuota_piloto`) y costo neto por piloto, cabezal y tipo. Un accidente puede abrir su orden de taller. Para cerrar se exige la multa pagada, el seguro resuelto y la reparación cerrada. La campana avisa multas vencidas o por vencer (`incidentes.avisar_multa_dias`) y reclamos sin respuesta (`incidentes.dias_reclamo`).
+  - **Control de llantas** (Llantas › Control de llantas): diagrama por cabezal o remolque con la llanta de cada posición; montar, rotar, retirar (a bodega, reencauche o desecho), medir labrado y presión, registrar reencauches y desechar. Km por llanta (odómetro en cabezales, viajes en remolques), km desde el último reencauche, desgaste en mm por 1,000 km, km que le quedan hasta el mínimo y costo por km. Rendimiento por marca: vida promedio, desgaste y costo por km. Avisos de labrado mínimo o cercano (`llantas.profundidad_minima_mm`, `llantas.profundidad_aviso_mm`), km esperados pasados y llantas sin medir.
+  - **Sueldos y horas extra** (Recursos humanos › Sueldos y horas extra): horas del día por persona (los pilotos en ruta no marcan entrada y salida) y planilla mensual o quincenal con salario, horas extra, pago por viajes, bonificación, IGSS, ISR y descuentos por incidentes; aprobarla marca esas cuotas como descontadas.
+  - **Inicio**: viajes en ruta, unidades en taller, mantenimiento vencido o próximo y lo que requiere atención (multas, llantas, cobros, casos).
+  - Al actualizar: `npx prisma migrate deploy` y `npm run db:seed` (permisos y parámetros nuevos).
 - **App del piloto (Android)** ✅: «Mi día», reportar en vivo con cámara y GPS (*Salí* inicia el viaje), inspección pre viaje, combustible y gastos con foto, problemas con prioridad, todo cifrado en el teléfono, sin señal y sin duplicar al reenviar.
-- **Fase 3:** llantas con **km por cada vida** (nueva y cada reencauche), scorecard del piloto, presupuesto de mantenimiento, costo total por cabezal, tablero de gerencia.
+- **Fase 3 (en revisión): gerencia** (menú Gerencia):
+  - **Tablero de la flota**: ingresos, costo total, utilidad y margen; costo e ingreso por km; utilización (días con viaje ÷ días disponibles), km vacíos, entregas a tiempo, disponibilidad (unidades fuera de taller), por cobrar y vencido, multas sin pagar; tendencia de 6 meses y en qué se va el dinero.
+  - **Costo total por cabezal (TCO)**: todo lo que cuesta cada unidad en el período: combustible, costos de sus viajes, piloto (bono por viaje y sueldo repartido por los km que manejó en cada cabezal, de la planilla aprobada o estimado), taller, llantas (km × costo por km esperado de las montadas), incidentes (neto), depreciación, seguros y documentos (prorrateados por días) y su parte de los gastos generales (por km). Utilidad, margen y costo por km de cada cabezal. Solo con `finanzas.costos`.
+  - **Scorecard de pilotos**: puntaje de 0 a 100 con puntualidad (30 %), rendimiento de combustible contra lo esperado del cabezal (25 %), seguridad (30 %: accidentes, multas e incidentes de los que fue responsable) e inspecciones pre viaje (15 %); si falta un dato su peso se reparte. Avisa licencias por vencer.
+  - **Presupuesto de mantenimiento** (también en Taller): monto mensual para la flota y por cabezal (permiso `mantenimiento.presupuesto`), contra órdenes cerradas, llantas compradas y reencauches; sugerido con el promedio de los meses con gasto. La campana avisa al 90 % y al pasarlo.
+  - Al actualizar: `npx prisma migrate deploy` y `npm run db:seed` (permiso nuevo).
 
 ## Agregar un catálogo nuevo
 1. Modelo en `api/prisma/schema.prisma` con campo `activo` → `npx prisma migrate dev`.

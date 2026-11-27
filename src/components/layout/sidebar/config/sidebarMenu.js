@@ -5,7 +5,7 @@
 // con scripts/generar-configs.mjs).
 // ─────────────────────────────────────────────────────────────────────────────
 import {
-  Home, Route, Truck, Fuel, Wrench, CircleDot, Users, Building2, TrendingUp, UserCog, Settings, LogOut, LifeBuoy,
+  Home, Route, Truck, Fuel, Wrench, CircleDot, Users, Building2, TrendingUp, UserCog, Settings, LogOut, LifeBuoy, AlertTriangle, Gauge,
 } from 'lucide-react'
 import indice from '../../../../data/transporte/_indice.json'
 
@@ -22,6 +22,15 @@ export const MENU_ITEMS = {
   nombreSistema: 'Control de flota y viajes',
   menu: [
     { label: 'Inicio', name: 'inicio', icon: Home, tag: 777, action: 'path', path: '/home' },
+
+    {
+      label: 'Gerencia', name: 'mod-gerencia', icon: Gauge, tag: 'reportes.tablero',
+      submenu: [
+        pantalla('tablero', 'Tablero de la flota', 'tablero?vista=TABLERO', 'reportes.tablero'),
+        pantalla('costo-cabezal', 'Costo total por cabezal', 'tablero?vista=UNIDADES', 'finanzas.costos'),
+        pantalla('scorecard', 'Scorecard de pilotos', 'tablero?vista=PILOTOS', 'reportes.tablero'),
+      ],
+    },
 
     {
       label: 'Viajes', name: 'mod-viajes', icon: Route, tag: 'viajes.ver',
@@ -48,6 +57,12 @@ export const MENU_ITEMS = {
       ],
     },
     {
+      label: 'Incidentes y multas', name: 'mod-incidentes', icon: AlertTriangle, tag: 'incidentes.ver',
+      submenu: [
+        pantalla('incidentes', 'Incidentes y multas', 'incidentes', 'incidentes.ver'),
+      ],
+    },
+    {
       label: 'Combustible', name: 'mod-combustible', icon: Fuel, tag: 'combustible.ver',
       submenu: [
         pantalla('combustible', 'Cargas y rendimiento', 'combustible', 'combustible.ver'),
@@ -57,6 +72,7 @@ export const MENU_ITEMS = {
       label: 'Taller', name: 'mod-taller', icon: Wrench, tag: 'mantenimiento.ver',
       submenu: [
         pantalla('taller', 'Órdenes y mantenimiento', 'taller', 'mantenimiento.ver'),
+        pantalla('presupuesto', 'Presupuesto de mantenimiento', 'tablero?vista=PRESUPUESTO', 'mantenimiento.ver'),
         catalogo('planes-mantenimiento', 'Planes de mantenimiento', 'catalogos.ver'),
         catalogo('repuestos', 'Repuestos', 'catalogos.ver'),
         catalogo('marcas', 'Marcas', 'catalogos.ver'),
@@ -66,8 +82,8 @@ export const MENU_ITEMS = {
     {
       label: 'Llantas', name: 'mod-llantas', icon: CircleDot, tag: 'llantas.ver',
       submenu: [
-        catalogo('llantas', 'Llantas', 'llantas.ver'),
-        // Fase 3: montajes, rotaciones y costo por km
+        pantalla('control-llantas', 'Control de llantas', 'control-llantas', 'llantas.ver'),
+        catalogo('llantas', 'Llantas (registro)', 'llantas.ver'),
       ],
     },
     {
@@ -97,6 +113,7 @@ export const MENU_ITEMS = {
     {
       label: 'Recursos humanos', name: 'mod-rrhh', icon: UserCog, tag: 'rrhh.empleados.ver',
       submenu: [
+        pantalla('planilla', 'Sueldos y horas extra', 'planilla', 'rrhh.planilla.ver'),
         catalogo('empleados', 'Empleados', 'rrhh.empleados.ver'),
         catalogo('departamentos', 'Áreas de la empresa', 'catalogos.ver'),
         catalogo('puestos', 'Puestos', 'catalogos.ver'),

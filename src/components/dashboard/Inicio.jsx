@@ -1,7 +1,7 @@
 /**
- * INICIO: saludo, avisos de Central y licencia, resumen de la flota y accesos rápidos.
- * El resumen sale de los catálogos y reportes del API; cuando entren viajes y combustible
- * (fase 1) se completa con viajes en ruta, ingresos del mes y alertas de mantenimiento.
+ * INICIO: saludo, avisos de Central y licencia, resumen de la flota (viajes en ruta, en taller),
+ * lo que requiere atención hoy (mantenimiento vencido o próximo, llantas, multas, cobros, casos)
+ * y accesos rápidos. Las alertas son las mismas de la campana, según los permisos de cada usuario.
  */
 import FirmaAlexus from '../comun/FirmaAlexus'
 import { useContext, useEffect, useState } from 'react'
@@ -26,6 +26,9 @@ export default function Inicio() {
   const marca = useMarca()
   const [flota, setFlota] = useState(null)
   const [porVencer, setPorVencer] = useState(null)
+  const [alertas, setAlertas] = useState(null)
+  const [mant, setMant] = useState(null)
+  const [enRuta, setEnRuta] = useState(null)
 
   useEffect(() => {
     if (hasPermission('flota.ver')) {
@@ -36,6 +39,14 @@ export default function Inicio() {
         const cabezales = c.data.data ?? []
         setFlota({ cabezales: cabezales.length, enTaller: cabezales.filter((x) => x.estado === 'EN_TALLER').length, pilotos: (p.data.data ?? []).length })
       }).catch(() => {})
+    }
+    // Lo que requiere atención: situaciones vigentes de la campana (no los hechos ya pasados)
+    api.get('/notificaciones').then(({ data }) => setAlertas((data.data ?? []).filter((n) => !n.fecha && (n.nivel === 'critico' || n.nivel === 'aviso') && n.ruta && !['actualizacion', 'licencia', ...(hasPermission('mantenimiento.ver') ? ['mantenimiento'] : [])].includes(n.tipo)))).catch(() => {})
+    if (hasPermission('mantenimiento.ver')) {
+      api.get('/taller/mantenimiento').then(({ data }) => setMant(data.data)).catch(() => {})
+    }
+    if (hasPermission('viajes.ver')) {
+      api.get('/viajes', { params: { estado: 'EN_RUTA', limit: 50 } }).then(({ data }) => setEnRuta(data.data?.viajes?.length ?? 0)).catch(() => {})
     }
     if (hasPermission('reportes.flota')) {
       api.get('/reportes/documentos-por-vencer', { params: { dias: 30 } }).then(({ data }) => setPorVencer(data.data ?? [])).catch(() => {})
@@ -78,17 +89,60 @@ export default function Inicio() {
       {porVencer?.length > 0 && (
         <button type="button" onClick={() => navigate('/home/reportes?clave=documentos-por-vencer')} className="flex w-full items-center justify-between gap-3 rounded-tarjeta border border-amber-300 bg-amber-50 p-4 text-left">
           <span><span className="block font-semibold text-amber-900">{porVencer.length === 1 ? 'Un documento o licencia vence en los próximos 30 días' : `${porVencer.length} documentos o licencias vencen en los próximos 30 días`}</span>
-          <span className="text-sm text-amber-800">Seguros, tarjetas de circulación y licencias de pilotos. Renuévelos antes de que la unidad quede fuera de ruta.</span></span>
+            <span className="text-sm text-amber-800">Seguros, tarjetas de circulación y licencias de pilotos. Renuévelos antes de que la unidad quede fuera de ruta.</span></span>
           <span className="shrink-0 font-medium text-amber-900">Ver →</span>
         </button>
       )}
 
       {flota && (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-xl border bg-white p-4"><p className="text-sm text-gray-500">Cabezales activos</p><p className="text-2xl font-semibold tabular-nums">{flota.cabezales}</p></div>
-          <div className="rounded-xl border bg-white p-4"><p className="text-sm text-gray-500">En taller</p><p className={`text-2xl font-semibold tabular-nums ${flota.enTaller ? 'text-amber-700' : ''}`}>{flota.enTaller}</p></div>
+          <button type="button" onClick={() => navigate('/home/viajes')} className="rounded-xl border bg-white p-4 text-left hover:border-green-600"><p className="text-sm text-gray-500">En ruta ahora</p><p className="text-2xl font-semibold tabular-nums">{enRuta ?? '—'}</p></button>
+          <button type="button" onClick={() => navigate('/home/taller')} className="rounded-xl border bg-white p-4 text-left hover:border-green-600"><p className="text-sm text-gray-500">En taller</p><p className={`text-2xl font-semibold tabular-nums ${flota.enTaller ? 'text-amber-700' : ''}`}>{flota.enTaller}</p></button>
           <div className="rounded-xl border bg-white p-4"><p className="text-sm text-gray-500">Pilotos</p><p className="text-2xl font-semibold tabular-nums">{flota.pilotos}</p></div>
         </div>
+      )}
+
+      {(alertas?.length > 0 || (mant && !mant.sinPlanes)) && (
+        <section className="grid gap-3 lg:grid-cols-2">
+          {mant && !mant.sinPlanes && (
+            <div className="rounded-xl border bg-white">
+              <div className="flex items-center justify-between border-b px-4 py-3">
+                <h2 className="font-semibold">Mantenimiento</h2>
+                <button type="button" onClick={() => navigate('/home/taller?vista=MANTENIMIENTO')} className="text-sm text-green-700 hover:underline">Ver todo →</button>
+              </div>
+              <div className="grid grid-cols-3 divide-x border-b text-center">
+                <div className="p-3"><p className={`text-xl font-semibold tabular-nums ${mant.resumen.VENCIDO ? 'text-red-700' : ''}`}>{mant.resumen.VENCIDO}</p><p className="text-xs text-gray-500">vencidos</p></div>
+                <div className="p-3"><p className={`text-xl font-semibold tabular-nums ${mant.resumen.PROXIMO ? 'text-amber-700' : ''}`}>{mant.resumen.PROXIMO}</p><p className="text-xs text-gray-500">próximos</p></div>
+                <div className="p-3"><p className="text-xl font-semibold tabular-nums">{mant.resumen.SIN_HISTORIAL}</p><p className="text-xs text-gray-500">sin historial</p></div>
+              </div>
+              <ul className="divide-y text-sm">
+                {mant.filas.filter((f) => f.estado === 'VENCIDO' || f.estado === 'PROXIMO').slice(0, 5).map((f) => (
+                  <li key={`${f.planId}-${f.tipo}-${f.unidadId}`} className="flex items-center gap-3 px-4 py-2">
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${f.estado === 'VENCIDO' ? 'bg-red-600' : 'bg-amber-500'}`} aria-hidden />
+                    <span className="w-14 font-medium">{f.unidad}</span>
+                    <span className="min-w-0 flex-1 truncate">{f.plan}</span>
+                    <span className="text-xs text-gray-500">{f.ordenAbierta ? `en ${f.ordenAbierta.numero}` : [f.faltaKm !== null && f.faltaKm !== undefined && `${Number(f.faltaKm) <= 0 ? 'pasado ' : ''}${Math.abs(Number(f.faltaKm)).toLocaleString('es-GT')} km`, f.faltaDias !== null && f.faltaDias !== undefined && `${Number(f.faltaDias) <= 0 ? 'pasado ' : ''}${Math.abs(Number(f.faltaDias))} días`].filter(Boolean).join(' · ')}</span>
+                  </li>
+                ))}
+                {!mant.resumen.VENCIDO && !mant.resumen.PROXIMO && <li className="px-4 py-3 text-gray-500">Toda la flota al día.{mant.resumen.SIN_HISTORIAL ? ' Registre el último servicio de las unidades sin historial para que las alertas cuenten desde ahí.' : ''}</li>}
+              </ul>
+            </div>
+          )}
+          {alertas?.length > 0 && (
+            <div className="rounded-xl border bg-white">
+              <h2 className="border-b px-4 py-3 font-semibold">Requiere atención</h2>
+              <ul className="divide-y text-sm">
+                {alertas.slice(0, 8).map((a) => (
+                  <li key={a.id}><button type="button" onClick={() => navigate(a.ruta)} className="flex w-full items-start gap-3 px-4 py-2 text-left hover:bg-gray-50">
+                    <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${a.nivel === 'critico' ? 'bg-red-600' : 'bg-amber-500'}`} aria-hidden />
+                    <span className="min-w-0 flex-1"><span className="block font-medium">{a.titulo}</span><span className="block truncate text-xs text-gray-500">{a.detalle}</span></span>
+                  </button></li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
       )}
 
       <section>

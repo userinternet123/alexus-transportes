@@ -75,35 +75,18 @@
         }
       },
       {
-        "name": "reencauches",
-        "label": "Reencauches",
+        "name": "profundidadInicialMm",
+        "label": "Labrado nuevo (mm)",
         "type": "number",
         "size": "small",
         "mask": "number"
       },
       {
-        "name": "estado",
-        "label": "Situación",
-        "type": "select",
+        "name": "kmEsperados",
+        "label": "Km que se espera que dé",
+        "type": "number",
         "size": "small",
-        "options": [
-          {
-            "value": "EN_BODEGA",
-            "label": "En bodega"
-          },
-          {
-            "value": "MONTADA",
-            "label": "Montada"
-          },
-          {
-            "value": "EN_REENCAUCHE",
-            "label": "En reencauche"
-          },
-          {
-            "value": "DESECHADA",
-            "label": "Desechada"
-          }
-        ]
+        "mask": "number"
       }
     ]
   }

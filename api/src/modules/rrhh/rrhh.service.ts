@@ -4,9 +4,10 @@ import { AuditService } from '../../common/audit/audit.service';
 import type { Ctx } from '../../common/auth/tipos';
 import { conflicto, noEncontrado, reglaNegocio } from '../../common/errors';
 import { parseFecha } from '../../common/fecha';
-import { D, r2, suma } from '../../common/money';
+import { D, Decimal, r2, suma } from '../../common/money';
 import { ParametrosService } from '../../common/parametros/parametros.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { repartirDescuentos } from '../incidentes/incidentes.logica';
 import { calcularLineaPlanilla, diasEnPeriodo, TasasPlanilla } from './planilla.calculo';
 
 const AUSENCIAS_NO_PAGADAS: TipoAusencia[] = ['PERMISO_SIN_GOCE', 'FALTA_INJUSTIFICADA', 'SUSPENSION_IGSS'];
@@ -20,11 +21,15 @@ export class RrhhService {
   ) {}
 
   // ───────────────────────────── ASISTENCIA ─────────────────────────────
-  async registrarAsistencia(ctx: Ctx, dto: { empleadoId: number; fecha: string; entrada?: string; salida?: string; origen?: string }) {
+  async registrarAsistencia(ctx: Ctx, dto: { empleadoId: number; fecha: string; entrada?: string; salida?: string; origen?: string; horasNormales?: number; horasExtra?: number }) {
     const jornada = D(await this.parametros.numero('rrhh.horas_jornada'));
     let horasNormales = D(0);
     let horasExtra = D(0);
-    if (dto.entrada && dto.salida) {
+    // Pilotos en ruta: no marcan entrada y salida; se registran las horas del día (normales y extra) directamente
+    if (dto.horasNormales != null || dto.horasExtra != null) {
+      horasNormales = D(dto.horasNormales ?? jornada);
+      horasExtra = D(dto.horasExtra ?? 0);
+    } else if (dto.entrada && dto.salida) {
       const horas = D(new Date(dto.salida).getTime() - new Date(dto.entrada).getTime()).div(3_600_000);
       if (horas.lte(0)) throw reglaNegocio('ASISTENCIA_INVALIDA', 'La salida debe ser posterior a la entrada');
       horasNormales = horas.gt(jornada) ? jornada : horas;
@@ -124,7 +129,11 @@ export class RrhhService {
     const resultado = await this.prisma.enTransaccion(async (tx) => {
       const existente = await tx.planilla.findUnique({ where: { periodo_tipo: { periodo, tipo: dto.tipo } } });
       if (existente && existente.estado !== 'BORRADOR') throw conflicto('PLANILLA_CERRADA', `La planilla ${periodo} ya está ${existente.estado}`);
-      if (existente) await tx.planillaDetalle.deleteMany({ where: { planillaId: existente.id } });
+      if (existente) {
+        await tx.planillaDetalle.deleteMany({ where: { planillaId: existente.id } });
+        await tx.descuentoIncidente.deleteMany({ where: { planillaId: existente.id } });
+      }
+      const topeCuota = await this.parametros.numero('incidentes.max_cuota_piloto');
 
       const planilla = existente
         ? await tx.planilla.update({ where: { id: existente.id }, data: { generadaPor: ctx.usuario.sub, fechaInicio: inicio, fechaFin: fin } })
@@ -132,10 +141,11 @@ export class RrhhService {
 
       const empleados = await tx.empleado.findMany({
         where: { fechaIngreso: { lte: fin }, OR: [{ fechaBaja: null }, { fechaBaja: { gte: inicio } }], estado: { not: 'BAJA' } },
-        include: { usuario: { select: { id: true } } },
+        include: { usuario: { select: { id: true } }, piloto: { select: { id: true } } },
       });
 
       const lineas = [];
+      const cuotas: { planillaId: number; incidenteId: number; empleadoId: number; monto: Decimal }[] = [];
       for (const e of empleados) {
         // Pago por viaje: bono fijo por cada viaje FINALIZADO o LIQUIDADO del piloto en el período (comisiones de la planilla)
         const [horas, ausencias, viajes] = await Promise.all([
@@ -149,6 +159,19 @@ export class RrhhService {
           const d2 = a.hasta < fin ? a.hasta : fin;
           return acc + Math.max(0, Math.round((d2.getTime() - d1.getTime()) / 86_400_000) + 1);
         }, 0);
+        // Descuentos por incidentes del piloto (multas o daños de los que fue responsable), en cuotas y con tope
+        let descIncidentes = D(0);
+        if (e.piloto) {
+          const pendientes = await tx.incidente.findMany({
+            where: { pilotoId: e.piloto.id, estado: { not: 'ANULADO' }, responsable: 'PILOTO', descuentoPiloto: { gt: 0 } },
+            select: { id: true, descuentoPiloto: true, cuotasDescuento: true, descontado: true, descuentos: { where: { planilla: { estado: 'BORRADOR' }, planillaId: { not: planilla.id } }, select: { monto: true } } },
+          });
+          const tope = D(e.salarioBase).times(fraccion).times(topeCuota).div(100);
+          for (const c of repartirDescuentos(pendientes.map((p) => ({ incidenteId: p.id, descuento: p.descuentoPiloto, cuotas: p.cuotasDescuento, descontado: p.descontado, reservado: suma(p.descuentos.map((x) => x.monto)) })), tope)) {
+            cuotas.push({ planillaId: planilla.id, incidenteId: c.incidenteId, empleadoId: e.id, monto: c.monto });
+            descIncidentes = descIncidentes.plus(c.monto);
+          }
+        }
         const diasBase = diasEnPeriodo(inicio, fin, diasPeriodo, e.fechaIngreso, e.fechaBaja);
         const linea = calcularLineaPlanilla(
           {
@@ -161,12 +184,14 @@ export class RrhhService {
             porcentajeComision: e.porcentajeComision,
             ventasNetasPeriodo: D(0),
             pagoPorViajes: D(viajes._sum.pagoPiloto),
+            otrosDescuentos: descIncidentes,
           },
           tasas,
         );
         lineas.push({ planillaId: planilla.id, empleadoId: e.id, ...linea });
       }
       if (lineas.length) await tx.planillaDetalle.createMany({ data: lineas });
+      if (cuotas.length) await tx.descuentoIncidente.createMany({ data: cuotas });
 
       const totales = await tx.planilla.update({
         where: { id: planilla.id },
@@ -196,7 +221,9 @@ export class RrhhService {
       const baseAfecta = D(l.salarioDevengado).plus(D(l.horasExtraMonto)).plus(D(l.comisiones)).plus(otrosIngresos);
       const igss = r2(baseAfecta.times(D(tasas.igssLaboral)).div(100));
       const isr = r2(dto.isr ?? l.isr);
-      const otrosDescuentos = r2(dto.otrosDescuentos ?? l.otrosDescuentos);
+      // Lo que se escribe a mano se suma a las cuotas por incidentes (esas no se quitan desde aquí)
+      const incidentes = suma((await tx.descuentoIncidente.findMany({ where: { planillaId, empleadoId }, select: { monto: true } })).map((x) => x.monto));
+      const otrosDescuentos = r2(dto.otrosDescuentos != null ? D(dto.otrosDescuentos).plus(incidentes) : l.otrosDescuentos);
       const totalDevengado = baseAfecta.plus(D(l.bonificacionIncentivo));
       const totalDescuentos = igss.plus(isr).plus(otrosDescuentos);
       const pctPat = (t: number) => r2(baseAfecta.times(t).div(100));
@@ -228,8 +255,13 @@ export class RrhhService {
     if (!p) throw noEncontrado('Planilla', id);
     if (p.estado !== 'BORRADOR') throw reglaNegocio('PLANILLA_ESTADO', `La planilla está ${p.estado}`);
     if (p.generadaPor === ctx.usuario.sub) throw reglaNegocio('SEGREGACION', 'Quien genera la planilla no puede aprobarla (segregación de funciones)');
-    const data = await this.prisma.planilla.update({ where: { id }, data: { estado: 'APROBADA', aprobadaPor: ctx.usuario.sub } });
-    await this.audit.registrar(ctx, { accion: 'APROBAR_PLANILLA', entidad: 'Planilla', entidadId: id });
+    const data = await this.prisma.enTransaccion(async (tx) => {
+      const act = await tx.planilla.update({ where: { id }, data: { estado: 'APROBADA', aprobadaPor: ctx.usuario.sub } });
+      // Las cuotas por incidentes de esta planilla cuentan como descontadas al piloto
+      for (const c of await tx.descuentoIncidente.findMany({ where: { planillaId: id } })) await tx.incidente.update({ where: { id: c.incidenteId }, data: { descontado: { increment: c.monto } } });
+      await this.audit.registrar(ctx, { accion: 'APROBAR_PLANILLA', entidad: 'Planilla', entidadId: id }, tx);
+      return act;
+    });
     return { data, message: 'Planilla aprobada' };
   }
 
@@ -245,6 +277,7 @@ export class RrhhService {
           include: { empleado: { select: { codigo: true, nombres: true, apellidos: true, cui: true, afiliacionIgss: true, puesto: { select: { nombre: true } } } } },
           orderBy: { empleado: { apellidos: 'asc' } },
         },
+        descuentos: { select: { empleadoId: true, monto: true, incidente: { select: { id: true, numero: true, tipo: true, descripcion: true } } } },
       },
     });
     if (!data) throw noEncontrado('Planilla', id);
